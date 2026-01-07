@@ -105,7 +105,7 @@ const RegulatoryAdvisor = () => {
         model: 'gemini-3-flash-preview',
         contents: userText,
         config: {
-          systemInstruction: `Bạn là chuyên gia QC Lab Việt Nam. Nếu người dùng hỏi về hành động khắc phục, hãy gợi ý các bước: Kiểm tra lại máy, kiểm tra thuốc thử, calibration lại, hoặc chạy mẫu QC mới. Trả lời súc tích.`,
+          systemInstruction: `Bạn là chuyên gia QC Lab Việt Nam. Trả lời súc tích.`,
           tools: [{ googleSearch: {} }]
         }
       });
@@ -147,23 +147,40 @@ const RegulatoryAdvisor = () => {
 const App = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [tests, setTests] = useState<LabTest[]>(INITIAL_TESTS);
-  const [results, setResults] = useState<QCResult[]>(MOCK_RESULTS);
-  const [selectedTestId, setSelectedTestId] = useState(INITIAL_TESTS[0].id);
+  
+  // Khởi tạo state từ LocalStorage
+  const [tests, setTests] = useState<LabTest[]>(() => {
+    const saved = localStorage.getItem('mdlab_tests');
+    return saved ? JSON.parse(saved) : INITIAL_TESTS;
+  });
+  
+  const [results, setResults] = useState<QCResult[]>(() => {
+    const saved = localStorage.getItem('mdlab_results');
+    return saved ? JSON.parse(saved) : MOCK_RESULTS;
+  });
+
+  const [selectedTestId, setSelectedTestId] = useState(tests[0]?.id || INITIAL_TESTS[0].id);
   const [selectedLevel, setSelectedLevel] = useState<QCLevel>(QCLevel.NORMAL);
   const [hoveredResultData, setHoveredResultData] = useState<any | null>(null);
 
-  // States for new entry
   const [newValue, setNewValue] = useState('');
   const [newCorrectiveAction, setNewCorrectiveAction] = useState('');
   const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
-  const [currentSDDiff, setCurrentSDDiff] = useState(0); // Chỉ cập nhật khi blur hoặc bấm lưu
+  const [currentSDDiff, setCurrentSDDiff] = useState(0);
 
-  // States for inline editing in log
   const [editingResultId, setEditingResultId] = useState<string | null>(null);
   const [editActionText, setEditActionText] = useState('');
 
   const correctiveActionRef = useRef<HTMLTextAreaElement>(null);
+
+  // Lưu dữ liệu vào LocalStorage mỗi khi có thay đổi
+  useEffect(() => {
+    localStorage.setItem('mdlab_tests', JSON.stringify(tests));
+  }, [tests]);
+
+  useEffect(() => {
+    localStorage.setItem('mdlab_results', JSON.stringify(results));
+  }, [results]);
 
   const activeTest = tests.find(t => t.id === selectedTestId) || tests[0];
   const activeConfig = activeTest.configs[selectedLevel];
@@ -181,7 +198,6 @@ const App = () => {
     return { sigma: sigma.toFixed(2), cv: cv.toFixed(2), status };
   }, [activeTest, selectedLevel, activeConfig]);
 
-  // Hàm kiểm tra vi phạm (Chỉ gọi khi Blur hoặc Lưu)
   const validateViolation = (val: string) => {
     const num = parseFloat(val);
     if (isNaN(num) || activeConfig.sd === 0) {
@@ -193,7 +209,6 @@ const App = () => {
     return diff;
   };
 
-  // Tự động focus ô khắc phục khi phát hiện lỗi (sau khi validate)
   useEffect(() => {
     if (currentSDDiff > 2 && correctiveActionRef.current) {
       correctiveActionRef.current.focus();
@@ -201,16 +216,13 @@ const App = () => {
   }, [currentSDDiff]);
 
   const handleAddResult = () => {
-    // Validate lại một lần nữa trước khi lưu
     const diff = validateViolation(newValue);
-    
     if (!newValue || isNaN(Number(newValue))) {
         alert("Vui lòng nhập giá trị đo hợp lệ.");
         return;
     }
-
     if (diff > 2 && !newCorrectiveAction.trim()) {
-        alert("Kết quả vi phạm quy tắc Westgard. Vui lòng nhập hành động khắc phục trước khi lưu.");
+        alert("Kết quả vi phạm. Vui lòng nhập hành động khắc phục.");
         correctiveActionRef.current?.focus();
         return;
     }
@@ -227,7 +239,7 @@ const App = () => {
     setResults(prev => [...prev, res]);
     setNewValue('');
     setNewCorrectiveAction('');
-    setCurrentSDDiff(0); // Reset SD diff
+    setCurrentSDDiff(0);
     setActiveTab('dashboard');
   };
 
@@ -240,6 +252,14 @@ const App = () => {
       }
       return t;
     }));
+  };
+
+  const handleResetData = () => {
+    if (window.confirm("Bạn có chắc muốn xóa toàn bộ dữ liệu đã nhập và quay về mặc định?")) {
+      localStorage.removeItem('mdlab_tests');
+      localStorage.removeItem('mdlab_results');
+      window.location.reload();
+    }
   };
 
   const saveInlineAction = (id: string) => {
@@ -258,44 +278,35 @@ const App = () => {
   return (
     <div className="flex min-h-screen bg-slate-50 relative overflow-x-hidden">
       {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        />
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden" onClick={() => setIsSidebarOpen(false)} />
       )}
 
-      <aside className={`
-        fixed inset-y-0 left-0 w-72 bg-slate-900 text-slate-300 z-50 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
+      <aside className={`fixed inset-y-0 left-0 w-72 bg-slate-900 text-slate-300 z-50 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-8 border-b border-slate-800">
           <div className="flex items-center gap-3">
             <div className="bg-blue-600 p-2 rounded-xl"><i className="fas fa-microscope text-white"></i></div>
-            <h1 className="text-white font-bold text-xl">MinhDucLab</h1>
+            <h1 className="text-white font-bold text-xl leading-tight">MinhDucLab</h1>
           </div>
-          <p className="text-[10px] text-slate-500 font-bold uppercase mt-2">Six Sigma Management</p>
+          <p className="text-[10px] text-slate-500 font-bold uppercase mt-2 tracking-widest">Persistence Enabled</p>
         </div>
-        <nav className="p-4 space-y-2">
+        <nav className="p-4 space-y-2 flex-1">
           {MenuItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => { setActiveTab(item.id); setIsSidebarOpen(false); }}
-              className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${
-                activeTab === item.id ? 'bg-blue-600 text-white' : 'hover:bg-slate-800'
-              }`}
-            >
+            <button key={item.id} onClick={() => { setActiveTab(item.id); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${activeTab === item.id ? 'bg-blue-600 text-white' : 'hover:bg-slate-800'}`}>
               <i className={`fas ${item.icon}`}></i>
               <span className="font-semibold text-sm">{item.label}</span>
             </button>
           ))}
         </nav>
+        <div className="p-6 border-t border-slate-800">
+          <button onClick={handleResetData} className="w-full flex items-center justify-center gap-2 text-[10px] font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest">
+            <i className="fas fa-trash-alt"></i> Reset Dữ Liệu
+          </button>
+        </div>
       </aside>
 
       <main className="flex-1 w-full max-w-full overflow-x-hidden">
-        <header className="lg:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-30">
-          <button onClick={() => setIsSidebarOpen(true)} className="p-2 text-slate-600">
-            <i className="fas fa-bars text-xl"></i>
-          </button>
+        <header className="lg:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+          <button onClick={() => setIsSidebarOpen(true)} className="p-2 text-slate-600"><i className="fas fa-bars text-xl"></i></button>
           <div className="flex items-center gap-2">
             <div className="bg-blue-600 w-8 h-8 rounded-lg flex items-center justify-center"><i className="fas fa-microscope text-white text-xs"></i></div>
             <span className="font-bold text-slate-800 text-sm">MinhDucLab</span>
@@ -305,21 +316,14 @@ const App = () => {
 
         <div className="p-4 md:p-10 max-w-7xl mx-auto">
           <div className="mb-6 md:mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-xl md:text-3xl font-black text-slate-900">
-                {MenuItems.find(m => m.id === activeTab)?.label}
-              </h2>
-            </div>
-            
+            <h2 className="text-xl md:text-3xl font-black text-slate-900 tracking-tight">{MenuItems.find(m => m.id === activeTab)?.label}</h2>
             <div className="flex flex-wrap gap-2 p-1 bg-white rounded-xl shadow-sm border border-slate-200">
               <select value={selectedTestId} onChange={e => setSelectedTestId(e.target.value)} className="bg-slate-50 border-none px-3 py-2 rounded-lg font-bold text-xs outline-none">
                 {tests.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
               <div className="flex gap-1 overflow-x-auto no-scrollbar">
                 {Object.values(QCLevel).map(lvl => (
-                  <button key={lvl} onClick={() => setSelectedLevel(lvl)} className={`px-3 py-2 rounded-lg text-[10px] font-black uppercase whitespace-nowrap ${selectedLevel === lvl ? 'bg-slate-900 text-white' : 'text-slate-500'}`}>
-                    {lvl}
-                  </button>
+                  <button key={lvl} onClick={() => setSelectedLevel(lvl)} className={`px-3 py-2 rounded-lg text-[10px] font-black uppercase whitespace-nowrap ${selectedLevel === lvl ? 'bg-slate-900 text-white' : 'text-slate-500'}`}>{lvl}</button>
                 ))}
               </div>
             </div>
@@ -335,9 +339,9 @@ const App = () => {
                       <h4 className="text-5xl md:text-6xl font-black">{sigmaMetrics.sigma}</h4>
                       <div className="inline-block mt-2 px-3 py-1 rounded-lg bg-white/10 border border-white/20 text-xs font-bold uppercase">{sigmaMetrics.status}</div>
                     </div>
-                    <div className="text-right border-l border-white/20 pl-4 md:pl-8">
-                      <p className="text-[8px] md:text-[10px] text-blue-300 font-black uppercase">CV: {sigmaMetrics.cv}%</p>
-                      <p className="text-[8px] md:text-[10px] text-blue-300 font-black uppercase">TEa: {activeTest.tea}%</p>
+                    <div className="text-right border-l border-white/20 pl-8">
+                      <p className="text-[10px] text-blue-300 font-black uppercase">CV: {sigmaMetrics.cv}%</p>
+                      <p className="text-[10px] text-blue-300 font-black uppercase">TEa: {activeTest.tea}%</p>
                     </div>
                   </div>
                 </div>
@@ -355,9 +359,7 @@ const App = () => {
 
               <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mt-6">
                 <div className="p-4 border-b bg-slate-50 flex items-center justify-between">
-                  <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                    <i className="fas fa-exclamation-triangle text-orange-500"></i> Nhật ký Lỗi & Khắc phục
-                  </h3>
+                  <h3 className="font-bold text-slate-800 flex items-center gap-2"><i className="fas fa-exclamation-triangle text-orange-500"></i> Nhật ký Lỗi & Khắc phục</h3>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs md:text-sm">
@@ -366,54 +368,30 @@ const App = () => {
                         <th className="p-4">Thời gian</th>
                         <th className="p-4">Giá trị</th>
                         <th className="p-4">Độ lệch (SD)</th>
-                        <th className="p-4">Hành động khắc phục (Click để sửa)</th>
+                        <th className="p-4">Hành động khắc phục (Bấm để sửa)</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {filteredResults.filter(r => Math.abs((r.value - activeConfig.mean) / activeConfig.sd) > 2).length === 0 ? (
-                        <tr><td colSpan={4} className="p-8 text-center text-slate-400 italic">Không có vi phạm nào trong kỳ kiểm soát này.</td></tr>
+                        <tr><td colSpan={4} className="p-8 text-center text-slate-400 italic">Dữ liệu ổn định, không có vi phạm.</td></tr>
                       ) : (
                         filteredResults.filter(r => Math.abs((r.value - activeConfig.mean) / activeConfig.sd) > 2).slice().sort((a,b) => b.timestamp - a.timestamp).map(r => {
                           const sdDiff = (r.value - activeConfig.mean) / activeConfig.sd;
                           const isEditing = editingResultId === r.id;
                           return (
-                            <tr key={r.id} className="hover:bg-slate-50 transition-colors">
+                            <tr key={r.id} className="hover:bg-slate-50">
                               <td className="p-4 whitespace-nowrap">{new Date(r.timestamp).toLocaleString('vi-VN')}</td>
                               <td className="p-4 font-bold">{r.value}</td>
-                              <td className={`p-4 font-bold ${Math.abs(sdDiff) > 3 ? 'text-red-600' : 'text-orange-600'}`}>
-                                {sdDiff > 0 ? '+' : ''}{sdDiff.toFixed(2)} SD
-                              </td>
+                              <td className={`p-4 font-bold ${Math.abs(sdDiff) > 3 ? 'text-red-600' : 'text-orange-600'}`}>{sdDiff > 0 ? '+' : ''}{sdDiff.toFixed(2)} SD</td>
                               <td className="p-4">
                                 {isEditing ? (
-                                  <div className="flex gap-2 items-center">
-                                    <textarea 
-                                      autoFocus
-                                      className="flex-1 bg-white border border-blue-300 p-2 rounded text-xs outline-none"
-                                      value={editActionText}
-                                      onChange={e => setEditActionText(e.target.value)}
-                                    />
-                                    <button onClick={() => saveInlineAction(r.id)} className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700">
-                                      <i className="fas fa-check"></i>
-                                    </button>
-                                    <button onClick={() => setEditingResultId(null)} className="bg-slate-200 text-slate-600 p-2 rounded-lg">
-                                      <i className="fas fa-times"></i>
-                                    </button>
+                                  <div className="flex gap-2">
+                                    <textarea autoFocus className="flex-1 bg-white border border-blue-300 p-2 rounded text-xs outline-none" value={editActionText} onChange={e => setEditActionText(e.target.value)} />
+                                    <button onClick={() => saveInlineAction(r.id)} className="bg-blue-600 text-white px-2 rounded hover:bg-blue-700"><i className="fas fa-check"></i></button>
                                   </div>
                                 ) : (
-                                  <div 
-                                    onClick={() => { setEditingResultId(r.id); setEditActionText(r.correctiveAction || ''); }}
-                                    className="cursor-pointer group relative"
-                                  >
-                                    {r.correctiveAction ? (
-                                      <span className="text-slate-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 block max-w-xs md:max-w-md">
-                                        {r.correctiveAction}
-                                        <i className="fas fa-pen ml-2 text-[10px] text-blue-300 opacity-0 group-hover:opacity-100 transition-opacity"></i>
-                                      </span>
-                                    ) : (
-                                      <span className="text-red-500 font-bold animate-pulse italic flex items-center gap-2 bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 w-fit">
-                                        <i className="fas fa-edit"></i> Chưa nhập xử lý! (Bấm để nhập)
-                                      </span>
-                                    )}
+                                  <div onClick={() => { setEditingResultId(r.id); setEditActionText(r.correctiveAction || ''); }} className="cursor-pointer">
+                                    {r.correctiveAction ? <span className="text-slate-600 bg-blue-50 px-3 py-1 rounded-lg border border-blue-100">{r.correctiveAction}</span> : <span className="text-red-500 font-bold italic animate-pulse underline">Chưa nhập xử lý!</span>}
                                   </div>
                                 )}
                               </td>
@@ -444,40 +422,15 @@ const App = () => {
                 </div>
                 <div className="space-y-1 text-center">
                   <label className="text-[10px] font-black text-slate-400 uppercase block">Giá trị ({activeTest.unit})</label>
-                  <input 
-                    type="number" 
-                    step="0.01" 
-                    className={`w-full bg-slate-50 p-4 md:p-6 rounded-2xl font-black text-2xl md:text-4xl border-none text-center outline-none ring-2 transition-all duration-300 ${currentSDDiff > 3 ? 'text-red-600 ring-red-500' : currentSDDiff > 2 ? 'text-orange-600 ring-orange-500' : 'text-blue-600 ring-transparent'}`} 
-                    placeholder="0.00" 
-                    value={newValue} 
-                    onChange={e => setNewValue(e.target.value)}
-                    onBlur={e => validateViolation(e.target.value)} // Kiểm tra khi rời khỏi ô nhập
-                  />
-                  <p className="text-[9px] text-slate-400 mt-1 italic">Nhấp chuột ra ngoài hoặc bấm Lưu để kiểm tra lỗi QC.</p>
+                  <input type="number" step="0.01" className={`w-full bg-slate-50 p-6 rounded-2xl font-black text-3xl md:text-4xl border-none text-center outline-none ring-2 transition-all ${currentSDDiff > 3 ? 'text-red-600 ring-red-500' : currentSDDiff > 2 ? 'text-orange-600 ring-orange-500' : 'text-blue-600 ring-transparent'}`} placeholder="0.00" value={newValue} onChange={e => setNewValue(e.target.value)} onBlur={e => validateViolation(e.target.value)} />
+                  <p className="text-[9px] text-slate-400 mt-2 italic font-bold">Dữ liệu sẽ được tự động lưu vào trình duyệt của bạn.</p>
                 </div>
-
                 {currentSDDiff > 2 && (
-                  <div className={`p-4 rounded-xl border animate-in slide-in-from-top duration-300 ${currentSDDiff > 3 ? 'bg-red-50 border-red-200 shadow-sm shadow-red-100' : 'bg-orange-50 border-orange-200 shadow-sm shadow-orange-100'}`}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <i className={`fas ${currentSDDiff > 3 ? 'fa-times-circle text-red-600' : 'fa-exclamation-triangle text-orange-600'}`}></i>
-                      <span className="text-[10px] font-black uppercase text-slate-800">
-                        {currentSDDiff > 3 ? 'LỖI HỆ THỐNG (>3SD)' : 'CẢNH BÁO (>2SD)'} - CẦN XỬ LÝ
-                      </span>
-                    </div>
-                    <textarea 
-                      ref={correctiveActionRef}
-                      className="w-full bg-white border border-slate-200 rounded-lg p-3 text-xs outline-none focus:ring-2 focus:ring-blue-500 h-24 shadow-inner"
-                      placeholder="Nguyên nhân: chuẩn hỏng, thuốc thử hết hạn... | Khắc phục: Chuẩn lại, thay thuốc thử mới..."
-                      value={newCorrectiveAction}
-                      onChange={e => setNewCorrectiveAction(e.target.value)}
-                    ></textarea>
-                    <p className="text-[9px] text-slate-400 mt-1 italic">Vui lòng nhập chi tiết để tuân thủ tiêu chuẩn ISO 15189.</p>
+                  <div className={`p-4 rounded-xl border animate-in slide-in-from-top ${currentSDDiff > 3 ? 'bg-red-50 border-red-200' : 'bg-orange-50 border-orange-200'}`}>
+                    <textarea ref={correctiveActionRef} className="w-full bg-white border border-slate-200 rounded-lg p-3 text-xs outline-none h-24" placeholder="Nhập hành động khắc phục..." value={newCorrectiveAction} onChange={e => setNewCorrectiveAction(e.target.value)} />
                   </div>
                 )}
-
-                <button onClick={handleAddResult} className="w-full bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg mt-4 flex items-center justify-center gap-2 hover:bg-blue-700 active:scale-95 transition-all">
-                  <i className="fas fa-save"></i> Lưu kết quả QC
-                </button>
+                <button onClick={handleAddResult} className="w-full bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg mt-4 flex items-center justify-center gap-2 hover:bg-blue-700 transition-all active:scale-95"><i className="fas fa-save"></i> Lưu & Đồng bộ</button>
               </div>
             </div>
           )}
@@ -487,20 +440,17 @@ const App = () => {
               {tests.map(test => (
                 <div key={test.id} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
                   <div className="flex items-center justify-between mb-6">
-                    <h4 className="font-black text-slate-900">{test.name}</h4>
-                    <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded-lg text-[8px] font-bold uppercase">TEa: {test.tea}%</span>
+                    <h4 className="font-black text-slate-900 tracking-tight">{test.name}</h4>
+                    <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded-lg text-[8px] font-bold uppercase tracking-widest">TEa: {test.tea}%</span>
                   </div>
                   <div className="space-y-4">
                     {Object.values(QCLevel).map(lvl => (
                       <div key={lvl} className="p-4 rounded-xl bg-slate-50 border border-slate-100">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-[9px] font-black text-slate-400 uppercase">Mức {lvl}</span>
-                          <span className="text-[8px] font-bold text-orange-600">2SD: {(test.configs[lvl].sd * 2).toFixed(2)}</span>
-                        </div>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Cấu hình {lvl}</span>
                         <div className="grid grid-cols-3 gap-2">
-                          <input type="number" step="0.01" value={test.configs[lvl].mean} onChange={(e) => handleUpdateConfig(test.id, lvl, 'mean', e.target.value)} className="bg-white border p-2 rounded-lg text-xs font-black outline-none" placeholder="Mean" />
-                          <input type="number" step="0.01" value={test.configs[lvl].sd} onChange={(e) => handleUpdateConfig(test.id, lvl, 'sd', e.target.value)} className="bg-white border p-2 rounded-lg text-xs font-black outline-none" placeholder="SD" />
-                          <input type="number" step="0.01" value={test.configs[lvl].bias} onChange={(e) => handleUpdateConfig(test.id, lvl, 'bias', e.target.value)} className="bg-white border p-2 rounded-lg text-xs font-black text-orange-600" placeholder="Bias" />
+                          <div className="space-y-1"><label className="text-[8px] text-slate-400 uppercase font-bold">Mean</label><input type="number" step="0.01" value={test.configs[lvl].mean} onChange={(e) => handleUpdateConfig(test.id, lvl, 'mean', e.target.value)} className="w-full bg-white border p-2 rounded-lg text-xs font-black outline-none" /></div>
+                          <div className="space-y-1"><label className="text-[8px] text-slate-400 uppercase font-bold">SD</label><input type="number" step="0.01" value={test.configs[lvl].sd} onChange={(e) => handleUpdateConfig(test.id, lvl, 'sd', e.target.value)} className="w-full bg-white border p-2 rounded-lg text-xs font-black outline-none" /></div>
+                          <div className="space-y-1"><label className="text-[8px] text-slate-400 uppercase font-bold">Bias</label><input type="number" step="0.01" value={test.configs[lvl].bias} onChange={(e) => handleUpdateConfig(test.id, lvl, 'bias', e.target.value)} className="w-full bg-white border p-2 rounded-lg text-xs font-black text-orange-600 outline-none" /></div>
                         </div>
                       </div>
                     ))}
