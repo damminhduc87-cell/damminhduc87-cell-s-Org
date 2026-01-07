@@ -72,7 +72,7 @@ const App: React.FC = () => {
             <i className="fas fa-microscope text-white text-xl"></i>
           </div>
           <div>
-            <h1 className="font-bold text-white text-lg leading-tight tracking-tight">BioQC Lab</h1>
+            <h1 className="font-bold text-white text-lg leading-tight tracking-tight">MinhDucLab</h1>
             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Management System</p>
           </div>
         </div>
@@ -176,6 +176,8 @@ const App: React.FC = () => {
             <LeveyJenningsChart 
               data={activeResults} 
               config={activeLevelConfig} 
+              /* Fix: Pass unit prop separately to the chart */
+              unit={activeTest.unit}
               title={`${activeTest.name} (${selectedLevel})`} 
             />
 

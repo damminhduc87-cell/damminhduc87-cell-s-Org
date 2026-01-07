@@ -8,10 +8,12 @@ import { QCConfig, QCResult } from '../types';
 interface Props {
   data: QCResult[];
   config: QCConfig;
+  /* Fix: Added unit as a separate prop to handle unit-less QCConfig objects */
+  unit: string;
   title: string;
 }
 
-const LeveyJenningsChart: React.FC<Props> = ({ data, config, title }) => {
+const LeveyJenningsChart: React.FC<Props> = ({ data, config, unit, title }) => {
   const { mean, sd } = config;
   
   // Format data for Recharts
@@ -32,7 +34,7 @@ const LeveyJenningsChart: React.FC<Props> = ({ data, config, title }) => {
         <LineChart data={chartData} margin={{ top: 10, right: 30, left: 20, bottom: 20 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="date" />
-          <YAxis domain={yDomain} label={{ value: config.unit, angle: -90, position: 'insideLeft' }} />
+          <YAxis domain={yDomain} label={{ value: unit, angle: -90, position: 'insideLeft' }} />
           <Tooltip />
           <Legend />
           

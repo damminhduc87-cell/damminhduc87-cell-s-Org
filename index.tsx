@@ -6,144 +6,8 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, 
   ResponsiveContainer, ReferenceLine 
 } from 'recharts';
-
-// --- Types & Constants ---
-enum QCLevel { LOW = 'Low', NORMAL = 'Normal', HIGH = 'High' }
-
-interface QCConfig { 
-  mean: number; 
-  sd: number; 
-  bias: number; // Độ chệch (%)
-}
-
-interface LabTest {
-  id: string;
-  name: string;
-  unit: string;
-  tea: number; // Sai số cho phép (%)
-  configs: Record<QCLevel, QCConfig>;
-}
-
-interface QCResult {
-  id: string;
-  testId: string;
-  level: QCLevel;
-  value: number;
-  timestamp: number;
-}
-
-interface ChatMessage { role: 'user' | 'model'; text: string; }
-
-// Danh mục xét nghiệm mở rộng
-const INITIAL_TESTS: LabTest[] = [
-  {
-    id: 'glucose',
-    name: 'Glucose (Máu)',
-    unit: 'mmol/L',
-    tea: 10,
-    configs: {
-      [QCLevel.LOW]: { mean: 3.5, sd: 0.12, bias: 1.5 },
-      [QCLevel.NORMAL]: { mean: 5.6, sd: 0.18, bias: 1.2 },
-      [QCLevel.HIGH]: { mean: 15.2, sd: 0.45, bias: 2.0 },
-    }
-  },
-  {
-    id: 'ast',
-    name: 'AST (GOT)',
-    unit: 'U/L',
-    tea: 15,
-    configs: {
-      [QCLevel.LOW]: { mean: 25, sd: 1.2, bias: 2.5 },
-      [QCLevel.NORMAL]: { mean: 45, sd: 2.1, bias: 2.0 },
-      [QCLevel.HIGH]: { mean: 180, sd: 8.5, bias: 3.2 },
-    }
-  },
-  {
-    id: 'alt',
-    name: 'ALT (GPT)',
-    unit: 'U/L',
-    tea: 15,
-    configs: {
-      [QCLevel.LOW]: { mean: 22, sd: 1.1, bias: 2.2 },
-      [QCLevel.NORMAL]: { mean: 40, sd: 2.0, bias: 1.8 },
-      [QCLevel.HIGH]: { mean: 165, sd: 7.8, bias: 2.9 },
-    }
-  },
-  {
-    id: 'creatinine',
-    name: 'Creatinine',
-    unit: 'µmol/L',
-    tea: 12,
-    configs: {
-      [QCLevel.LOW]: { mean: 55, sd: 2.5, bias: 1.0 },
-      [QCLevel.NORMAL]: { mean: 90, sd: 4.2, bias: 1.5 },
-      [QCLevel.HIGH]: { mean: 450, sd: 18.0, bias: 2.5 },
-    }
-  },
-  {
-    id: 'urea',
-    name: 'Urea',
-    unit: 'mmol/L',
-    tea: 9,
-    configs: {
-      [QCLevel.LOW]: { mean: 3.2, sd: 0.15, bias: 1.2 },
-      [QCLevel.NORMAL]: { mean: 7.5, sd: 0.35, bias: 1.4 },
-      [QCLevel.HIGH]: { mean: 25.0, sd: 1.10, bias: 2.1 },
-    }
-  },
-  {
-    id: 'cholesterol',
-    name: 'Cholesterol TP',
-    unit: 'mmol/L',
-    tea: 10,
-    configs: {
-      [QCLevel.LOW]: { mean: 3.1, sd: 0.14, bias: 1.1 },
-      [QCLevel.NORMAL]: { mean: 5.2, sd: 0.22, bias: 1.3 },
-      [QCLevel.HIGH]: { mean: 8.5, sd: 0.38, bias: 1.9 },
-    }
-  },
-  {
-    id: 'triglycerides',
-    name: 'Triglycerides',
-    unit: 'mmol/L',
-    tea: 15,
-    configs: {
-      [QCLevel.LOW]: { mean: 0.9, sd: 0.05, bias: 2.0 },
-      [QCLevel.NORMAL]: { mean: 1.8, sd: 0.09, bias: 2.2 },
-      [QCLevel.HIGH]: { mean: 5.5, sd: 0.25, bias: 3.1 },
-    }
-  },
-  {
-    id: 'sodium',
-    name: 'Natri (Na+)',
-    unit: 'mmol/L',
-    tea: 4,
-    configs: {
-      [QCLevel.LOW]: { mean: 125, sd: 1.5, bias: 0.5 },
-      [QCLevel.NORMAL]: { mean: 140, sd: 1.8, bias: 0.4 },
-      [QCLevel.HIGH]: { mean: 160, sd: 2.1, bias: 0.6 },
-    }
-  },
-  {
-    id: 'potassium',
-    name: 'Kali (K+)',
-    unit: 'mmol/L',
-    tea: 5.8,
-    configs: {
-      [QCLevel.LOW]: { mean: 2.8, sd: 0.08, bias: 0.9 },
-      [QCLevel.NORMAL]: { mean: 4.5, sd: 0.12, bias: 0.8 },
-      [QCLevel.HIGH]: { mean: 7.2, sd: 0.22, bias: 1.1 },
-    }
-  }
-];
-
-const INITIAL_RESULTS: QCResult[] = [
-  { id: '1', testId: 'glucose', level: QCLevel.NORMAL, value: 5.5, timestamp: Date.now() - 86400000 * 4 },
-  { id: '2', testId: 'glucose', level: QCLevel.NORMAL, value: 5.8, timestamp: Date.now() - 86400000 * 3 },
-  { id: '3', testId: 'glucose', level: QCLevel.NORMAL, value: 5.4, timestamp: Date.now() - 86400000 * 2 },
-  { id: '4', testId: 'glucose', level: QCLevel.NORMAL, value: 5.65, timestamp: Date.now() - 86400000 * 1 },
-  { id: '5', testId: 'glucose', level: QCLevel.NORMAL, value: 5.6, timestamp: Date.now() },
-];
+import { INITIAL_TESTS, MOCK_RESULTS } from './constants';
+import { QCLevel, LabTest, QCResult, QCConfig } from './types';
 
 // --- Components ---
 
@@ -155,7 +19,7 @@ const LeveyJenningsChart = ({
   onHover 
 }: { 
   results: QCResult[], 
-  config: QCConfig, 
+  config: { mean: number; sd: number; bias: number }, 
   unit: string, 
   title: string,
   onHover: (data: any | null) => void
@@ -223,8 +87,8 @@ const LeveyJenningsChart = ({
 };
 
 const RegulatoryAdvisor = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'model', text: 'Chào bạn! Tôi là trợ lý AI chuyên trách quản lý chất lượng Lab. Tôi có thể giúp bạn tra cứu Quyết định 2429, Thông tư 37 hoặc tư vấn về Six Sigma. Bạn cần hỗ trợ gì?' }
+  const [messages, setMessages] = useState<{ role: 'user' | 'model'; text: string }[]>([
+    { role: 'model', text: 'Chào bạn! Tôi là trợ lý AI MinhDucLab. Tôi có thể giải đáp về Westgard, cách tính SD từ khoảng giới hạn của nhà sản xuất, hoặc Quyết định 2429. Bạn cần hỗ trợ gì?' }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -243,27 +107,22 @@ const RegulatoryAdvisor = () => {
         model: 'gemini-3-flash-preview',
         contents: userText,
         config: {
-          systemInstruction: `Bạn là một chuyên gia tư vấn QC Lab tại Việt Nam. Trả lời dựa trên: 
-          1. Quyết định 2429/QĐ-BYT.
-          2. Westgard Rules và Six Sigma trong Lab.
-          3. Công thức Sigma = (TEa - Bias) / CV.
-          Trả lời chuyên nghiệp, cấu trúc bảng biểu bằng Markdown.`,
+          systemInstruction: `Bạn là chuyên gia QC Lab. Nếu user hỏi về khoảng giới hạn NSX (ví dụ +/- 2SD), hãy hướng dẫn họ: SD = (Giới hạn trên - Mean) / 2. Trả lời bằng tiếng Việt, Markdown.`,
           tools: [{ googleSearch: {} }]
         }
       });
-
-      let resultText = response.text || 'Lỗi xử lý.';
+      
+      let text = response.text || 'Lỗi xử lý.';
       const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
       if (groundingChunks && groundingChunks.length > 0) {
-        const sources = groundingChunks
+        const links = groundingChunks
           .map((chunk: any) => chunk.web ? `[${chunk.web.title}](${chunk.web.uri})` : null)
           .filter(Boolean);
-        if (sources.length > 0) {
-          resultText += '\n\n**Nguồn tham khảo:**\n' + sources.join('\n');
+        if (links.length > 0) {
+          text += '\n\n**Nguồn tham khảo:**\n' + links.join('\n');
         }
       }
-
-      setMessages(prev => [...prev, { role: 'model', text: resultText }]);
+      setMessages(prev => [...prev, { role: 'model', text }]);
     } catch (err) {
       setMessages(prev => [...prev, { role: 'model', text: 'Có lỗi kết nối AI.' }]);
     } finally {
@@ -276,12 +135,12 @@ const RegulatoryAdvisor = () => {
   return (
     <div className="flex flex-col h-[600px] bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="bg-slate-900 p-4 text-white flex items-center justify-between">
-        <h3 className="font-bold flex items-center gap-2"><i className="fas fa-brain text-blue-400"></i> Cố vấn AI BioQC</h3>
+        <h3 className="font-bold flex items-center gap-2"><i className="fas fa-brain text-blue-400"></i> Cố vấn AI MinhDucLab</h3>
       </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 text-sm">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed ${m.role === 'user' ? 'bg-blue-600 text-white shadow-md' : 'bg-white border border-slate-200 text-slate-800 shadow-sm'}`}>
+            <div className={`max-w-[85%] p-4 rounded-2xl ${m.role === 'user' ? 'bg-blue-600 text-white shadow-md' : 'bg-white border border-slate-200 text-slate-800 shadow-sm'}`}>
               <div className="whitespace-pre-wrap">{m.text}</div>
             </div>
           </div>
@@ -289,19 +148,17 @@ const RegulatoryAdvisor = () => {
         {loading && <div className="text-slate-400 text-xs italic animate-pulse px-4">AI đang phân tích...</div>}
         <div ref={chatEndRef} />
       </div>
-      <div className="p-4 border-t border-slate-100 bg-white">
-        <div className="flex gap-2">
-          <input 
-            className="flex-1 bg-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Hỏi về cách tính Sigma hoặc quy tắc Westgard..."
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyPress={e => e.key === 'Enter' && sendMessage()}
-          />
-          <button onClick={sendMessage} className="bg-blue-600 text-white p-3 rounded-xl hover:bg-blue-700">
-            <i className="fas fa-paper-plane"></i>
-          </button>
-        </div>
+      <div className="p-4 border-t border-slate-100 bg-white flex gap-2">
+        <input 
+          className="flex-1 bg-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Hỏi AI..."
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyPress={e => e.key === 'Enter' && sendMessage()}
+        />
+        <button onClick={sendMessage} className="bg-blue-600 text-white p-3 rounded-xl hover:bg-blue-700">
+          <i className="fas fa-paper-plane"></i>
+        </button>
       </div>
     </div>
   );
@@ -312,18 +169,13 @@ const RegulatoryAdvisor = () => {
 const App = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [tests, setTests] = useState<LabTest[]>(INITIAL_TESTS);
-  const [results, setResults] = useState<QCResult[]>(INITIAL_RESULTS);
+  const [results, setResults] = useState<QCResult[]>(MOCK_RESULTS);
   const [selectedTestId, setSelectedTestId] = useState(INITIAL_TESTS[0].id);
   const [selectedLevel, setSelectedLevel] = useState<QCLevel>(QCLevel.NORMAL);
   const [hoveredResultData, setHoveredResultData] = useState<any | null>(null);
 
   const [newValue, setNewValue] = useState('');
   const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
-
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [newTestName, setNewTestName] = useState('');
-  const [newTestUnit, setNewTestUnit] = useState('');
-  const [newTestTea, setNewTestTea] = useState('10');
 
   const activeTest = tests.find(t => t.id === selectedTestId) || tests[0];
   const filteredResults = results.filter(r => r.testId === selectedTestId && r.level === selectedLevel);
@@ -333,26 +185,18 @@ const App = () => {
     return filteredResults.length > 0 ? filteredResults[filteredResults.length - 1] : null;
   }, [hoveredResultData, filteredResults]);
 
-  const zScore = displayResult 
-    ? (displayResult.value - activeTest.configs[selectedLevel].mean) / activeTest.configs[selectedLevel].sd 
-    : 0;
-
-  // Sigma Calculation
   const sigmaMetrics = useMemo(() => {
     const config = activeTest.configs[selectedLevel];
     const cv = config.mean !== 0 ? (config.sd / config.mean) * 100 : 0;
     const sigma = cv !== 0 ? (activeTest.tea - config.bias) / cv : 0;
     
     let status = "Kém";
-    let color = "text-red-500";
-    let bg = "bg-red-50";
+    if (sigma >= 6) status = "Đẳng cấp Thế giới";
+    else if (sigma >= 5) status = "Rất tốt";
+    else if (sigma >= 4) status = "Tốt";
+    else if (sigma >= 3) status = "Tạm được";
     
-    if (sigma >= 6) { status = "Đẳng cấp Thế giới"; color = "text-blue-600"; bg = "bg-blue-50"; }
-    else if (sigma >= 5) { status = "Rất tốt"; color = "text-emerald-600"; bg = "bg-emerald-50"; }
-    else if (sigma >= 4) { status = "Tốt"; color = "text-green-600"; bg = "bg-green-50"; }
-    else if (sigma >= 3) { status = "Tạm được"; color = "text-orange-500"; bg = "bg-orange-50"; }
-    
-    return { sigma: sigma.toFixed(2), cv: cv.toFixed(2), status, color, bg };
+    return { sigma: sigma.toFixed(2), cv: cv.toFixed(2), status };
   }, [activeTest, selectedLevel]);
 
   const handleAddResult = () => {
@@ -369,7 +213,7 @@ const App = () => {
     setActiveTab('dashboard');
   };
 
-  const updateTestConfig = (testId: string, level: QCLevel, field: keyof QCConfig, val: string) => {
+  const handleUpdateConfig = (testId: string, level: QCLevel, field: keyof QCConfig, val: string) => {
     const num = parseFloat(val);
     if (isNaN(num)) return;
     setTests(prev => prev.map(t => {
@@ -386,44 +230,16 @@ const App = () => {
     }));
   };
 
-  const updateTea = (testId: string, val: string) => {
-    const num = parseFloat(val);
-    if (isNaN(num)) return;
-    setTests(prev => prev.map(t => t.id === testId ? { ...t, tea: num } : t));
-  };
-
-  const handleCreateNewTest = () => {
-    if (!newTestName || !newTestUnit) {
-      alert("Vui lòng nhập đầy đủ tên và đơn vị!");
-      return;
-    }
-    const newTest: LabTest = {
-      id: newTestName.toLowerCase().replace(/\s+/g, '-'),
-      name: newTestName,
-      unit: newTestUnit,
-      tea: parseFloat(newTestTea) || 10,
-      configs: {
-        [QCLevel.LOW]: { mean: 0, sd: 0.1, bias: 0 },
-        [QCLevel.NORMAL]: { mean: 0, sd: 0.1, bias: 0 },
-        [QCLevel.HIGH]: { mean: 0, sd: 0.1, bias: 0 },
-      }
-    };
-    setTests([...tests, newTest]);
-    setNewTestName('');
-    setNewTestUnit('');
-    setIsAddModalOpen(false);
-  };
-
   return (
     <div className="flex min-h-screen bg-slate-50">
       {/* Sidebar */}
       <aside className="w-72 bg-slate-900 text-slate-300 hidden lg:flex flex-col border-r border-slate-800 shrink-0">
         <div className="p-8 border-b border-slate-800">
           <div className="flex items-center gap-3 mb-2">
-            <div className="bg-gradient-to-tr from-blue-600 to-blue-400 p-2.5 rounded-xl shadow-lg shadow-blue-900/40">
+            <div className="bg-gradient-to-tr from-blue-600 to-blue-400 p-2.5 rounded-xl shadow-lg">
               <i className="fas fa-microscope text-white text-xl"></i>
             </div>
-            <h1 className="text-white font-bold text-xl tracking-tight">BioQC <span className="text-blue-500 text-sm font-normal">v2.1</span></h1>
+            <h1 className="text-white font-bold text-xl tracking-tight">MinhDucLab</h1>
           </div>
           <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Six Sigma Lab Management</p>
         </div>
@@ -438,9 +254,7 @@ const App = () => {
               key={item.id}
               onClick={() => setActiveTab(item.id)}
               className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${
-                activeTab === item.id 
-                ? 'bg-blue-600 text-white shadow-xl shadow-blue-900/40' 
-                : 'hover:bg-slate-800 hover:text-white'
+                activeTab === item.id ? 'bg-blue-600 text-white shadow-xl shadow-blue-900/40' : 'hover:bg-slate-800 hover:text-white'
               }`}
             >
               <i className={`fas ${item.icon} text-lg`}></i>
@@ -448,43 +262,32 @@ const App = () => {
             </button>
           ))}
         </nav>
-        <div className="p-6 bg-slate-800/40 m-4 rounded-3xl border border-slate-700/50">
-            <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold text-slate-100 uppercase tracking-tighter">Chất lượng Sigma</span>
-                <span className="text-xs font-black text-blue-400">Target 6σ</span>
-            </div>
-            <div className="h-2 w-full bg-slate-700 rounded-full overflow-hidden">
-                <div className="h-full bg-blue-500 w-[85%] rounded-full"></div>
-            </div>
-        </div>
       </aside>
 
       <main className="flex-1 p-6 lg:p-10 max-w-7xl mx-auto w-full overflow-y-auto h-screen">
         <header className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
           <div>
-            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">
                 {activeTab === 'dashboard' && 'Năng lực Xét nghiệm Six Sigma'}
                 {activeTab === 'entry' && 'Cập nhật Dữ liệu QC'}
                 {activeTab === 'config' && 'Tham số Sigma & Mean/SD'}
                 {activeTab === 'advisor' && 'Trợ lý AI Phân tích Sigma'}
             </h2>
-            <p className="text-slate-500 mt-1 font-medium italic">Tối ưu hóa quy trình theo tiêu chuẩn quốc tế</p>
+            <p className="text-slate-500 mt-1 font-medium italic">MinhDucLab - Tiêu chuẩn quốc tế</p>
           </div>
           
-          {activeTab === 'dashboard' && (
-            <div className="flex flex-wrap gap-3 p-1.5 bg-white rounded-2xl shadow-sm border border-slate-200">
-                <select value={selectedTestId} onChange={e => setSelectedTestId(e.target.value)} className="bg-slate-50 border-none px-4 py-2.5 rounded-xl font-bold text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                  {tests.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                </select>
-                <div className="flex gap-1">
-                  {Object.values(QCLevel).map(lvl => (
-                    <button key={lvl} onClick={() => setSelectedLevel(lvl)} className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase transition-all ${selectedLevel === lvl ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'}`}>
-                      {lvl}
-                    </button>
-                  ))}
-                </div>
-            </div>
-          )}
+          <div className="flex flex-wrap gap-3 p-1.5 bg-white rounded-2xl shadow-sm border border-slate-200">
+              <select value={selectedTestId} onChange={e => setSelectedTestId(e.target.value)} className="bg-slate-50 border-none px-4 py-2.5 rounded-xl font-bold text-sm focus:ring-2 focus:ring-blue-500 outline-none min-w-[180px]">
+                {tests.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+              <div className="flex gap-1">
+                {Object.values(QCLevel).map(lvl => (
+                  <button key={lvl} onClick={() => setSelectedLevel(lvl)} className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase transition-all ${selectedLevel === lvl ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'}`}>
+                    {lvl}
+                  </button>
+                ))}
+              </div>
+          </div>
         </header>
 
         {activeTab === 'dashboard' && (
@@ -492,81 +295,31 @@ const App = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                <div className="lg:col-span-2 bg-gradient-to-br from-indigo-700 to-blue-900 p-8 rounded-[40px] shadow-2xl text-white relative overflow-hidden">
                   <div className="relative z-10">
-                     <div className="flex items-center gap-3 mb-6">
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200">Phân tích năng lực (Sigma Metric)</span>
-                     </div>
-                     <div className="flex flex-col md:flex-row md:items-end gap-10">
+                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200">Sigma Metric Analysis</span>
+                     <div className="flex flex-col md:flex-row md:items-end gap-10 mt-6">
                         <div className="flex-1">
-                           <div className="text-sm text-blue-200 font-bold mb-1 italic">Chỉ số Sigma đạt được:</div>
-                           <h4 className="text-7xl font-black mb-4 flex items-baseline gap-3">
-                              {sigmaMetrics.sigma} <span className="text-2xl font-medium text-blue-300">σ</span>
-                           </h4>
-                           <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20`}>
-                              <div className={`w-3 h-3 rounded-full ${sigmaMetrics.sigma >= 4 ? 'bg-emerald-400' : 'bg-red-400'} animate-pulse`}></div>
+                           <h4 className="text-7xl font-black mb-4">{sigmaMetrics.sigma} <span className="text-2xl font-medium text-blue-300">σ</span></h4>
+                           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20">
                               <span className="text-lg font-black uppercase tracking-tight">{sigmaMetrics.status}</span>
                            </div>
                         </div>
                         <div className="grid grid-cols-2 gap-8 border-l border-white/20 pl-8">
-                           <div>
-                              <p className="text-[10px] font-black text-blue-300 uppercase mb-2">Hệ số biến thiên (CV)</p>
-                              <div className="text-2xl font-black text-white">{sigmaMetrics.cv}%</div>
-                           </div>
-                           <div>
-                              <p className="text-[10px] font-black text-blue-300 uppercase mb-2">TEa Cho phép</p>
-                              <div className="text-2xl font-black text-white">{activeTest.tea}%</div>
-                           </div>
+                           <div><p className="text-[10px] font-black text-blue-300 uppercase mb-2">CV (%)</p><div className="text-2xl font-black">{sigmaMetrics.cv}%</div></div>
+                           <div><p className="text-[10px] font-black text-blue-300 uppercase mb-2">TEa (%)</p><div className="text-2xl font-black">{activeTest.tea}%</div></div>
                         </div>
                      </div>
                   </div>
                </div>
-
                <div className="bg-white p-8 rounded-[40px] border border-slate-200 shadow-sm flex flex-col justify-center">
-                  <h5 className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-6">Diễn giải Sigma</h5>
+                  <h5 className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-6">Thang đo Sigma</h5>
                   <div className="space-y-4">
-                     {[
-                        { label: 'World Class', val: '6σ+', color: 'bg-blue-500' },
-                        { label: 'Excellent', val: '5σ', color: 'bg-emerald-500' },
-                        { label: 'Good', val: '4σ', color: 'bg-green-500' },
-                        { label: 'Marginal', val: '3σ', color: 'bg-orange-500' },
-                        { label: 'Poor', val: '<3σ', color: 'bg-red-500' },
-                     ].map(item => (
-                        <div key={item.label} className="flex items-center justify-between group">
-                           <div className="flex items-center gap-3">
-                              <div className={`w-2 h-2 rounded-full ${item.color}`}></div>
-                              <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors">{item.label}</span>
-                           </div>
-                           <span className="text-xs font-black text-slate-400">{item.val}</span>
-                        </div>
+                     {[{ l: 'World Class', v: '6σ+', c: 'bg-blue-500' }, { l: 'Excellent', v: '5σ', c: 'bg-emerald-500' }, { l: 'Good', v: '4σ', c: 'bg-green-500' }].map(i => (
+                        <div key={i.l} className="flex items-center justify-between text-xs font-bold"><div className="flex items-center gap-2"><div className={`w-2 h-2 rounded-full ${i.c}`}></div>{i.l}</div><span className="text-slate-400">{i.v}</span></div>
                      ))}
                   </div>
                </div>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               <div className="bg-white p-7 rounded-3xl shadow-sm border border-slate-200">
-                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest block mb-4">Target Mean</span>
-                  <div className="flex items-baseline gap-2">
-                      <span className="text-4xl font-black text-slate-900">{activeTest.configs[selectedLevel].mean}</span>
-                      <span className="text-slate-400 font-bold">{activeTest.unit}</span>
-                  </div>
-               </div>
-               <div className="bg-white p-7 rounded-3xl shadow-sm border border-slate-200">
-                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest block mb-4">2SD Range</span>
-                  <div className="text-xl font-bold text-slate-900">
-                      {(activeTest.configs[selectedLevel].mean - 2 * activeTest.configs[selectedLevel].sd).toFixed(2)} - {(activeTest.configs[selectedLevel].mean + 2 * activeTest.configs[selectedLevel].sd).toFixed(2)}
-                  </div>
-               </div>
-               <div className="bg-white p-7 rounded-3xl shadow-sm border border-slate-200">
-                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest block mb-4">Bias (%)</span>
-                  <span className="text-4xl font-black text-orange-600">
-                      {activeTest.configs[selectedLevel].bias}%
-                  </span>
-               </div>
-            </div>
-
-            <LeveyJenningsChart 
-              results={filteredResults} config={activeTest.configs[selectedLevel]} unit={activeTest.unit} title={`${activeTest.name} - ${selectedLevel}`} onHover={setHoveredResultData}
-            />
+            <LeveyJenningsChart results={filteredResults} config={activeTest.configs[selectedLevel]} unit={activeTest.unit} title={`${activeTest.name} - ${selectedLevel}`} onHover={setHoveredResultData} />
           </div>
         )}
 
@@ -602,68 +355,60 @@ const App = () => {
               {tests.map(test => (
                   <div key={test.id} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
                       <div className="flex items-center justify-between mb-8">
-                          <h4 className="text-xl font-black">{test.name}</h4>
-                          <div className="flex flex-col items-end">
-                             <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-xl text-[10px] font-bold uppercase mb-1">TEa: {test.tea}%</span>
-                             <input 
-                               type="number" 
-                               value={test.tea} 
-                               onChange={(e) => updateTea(test.id, e.target.value)} 
-                               className="w-16 bg-slate-50 text-right p-1 rounded font-bold text-xs" 
-                             />
-                          </div>
+                          <h4 className="text-xl font-black text-slate-900">{test.name}</h4>
+                          <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-xl text-[10px] font-bold uppercase">TEa: {test.tea}%</span>
                       </div>
+                      
+                      <div className="mb-6 p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                        <div className="flex items-center gap-2 mb-2">
+                           <i className="fas fa-calculator text-blue-600"></i>
+                           <span className="text-[10px] font-black text-blue-800 uppercase">Mẹo tính SD nhanh</span>
+                        </div>
+                        <p className="text-[10px] text-blue-600 leading-relaxed italic">
+                           Nếu NSX chỉ ghi khoảng +/- 2SD, hãy lấy: <br/> 
+                           <b>SD = (Giới hạn trên - Mean) / 2</b>
+                        </p>
+                      </div>
+
                       <div className="space-y-6">
-                          {Object.values(QCLevel).map(lvl => (
-                              <div key={lvl} className="p-5 rounded-2xl bg-slate-50 border border-slate-100">
-                                  <span className="text-[10px] font-black text-slate-400 uppercase block mb-4">Level {lvl}</span>
-                                  <div className="grid grid-cols-3 gap-4">
-                                      <div className="space-y-1">
-                                          <span className="text-[8px] font-bold text-slate-500 uppercase block">Mean</span>
-                                          <input type="number" step="0.01" value={test.configs[lvl].mean} onChange={(e) => updateTestConfig(test.id, lvl, 'mean', e.target.value)} className="w-full bg-white p-2 rounded-xl font-black text-slate-800 text-xs shadow-inner" />
-                                      </div>
-                                      <div className="space-y-1">
-                                          <span className="text-[8px] font-bold text-slate-500 uppercase block">SD</span>
-                                          <input type="number" step="0.01" value={test.configs[lvl].sd} onChange={(e) => updateTestConfig(test.id, lvl, 'sd', e.target.value)} className="w-full bg-white p-2 rounded-xl font-black text-slate-800 text-xs shadow-inner" />
-                                      </div>
-                                      <div className="space-y-1">
-                                          <span className="text-[8px] font-bold text-slate-500 uppercase block">Bias (%)</span>
-                                          <input type="number" step="0.01" value={test.configs[lvl].bias} onChange={(e) => updateTestConfig(test.id, lvl, 'bias', e.target.value)} className="w-full bg-white p-2 rounded-xl font-black text-orange-600 text-xs shadow-inner" />
-                                      </div>
-                                  </div>
-                              </div>
-                          ))}
+                          {Object.values(QCLevel).map(lvl => {
+                              const currentMean = test.configs[lvl].mean;
+                              const currentSD = test.configs[lvl].sd;
+                              return (
+                                <div key={lvl} className="p-5 rounded-2xl bg-slate-50 border border-slate-100">
+                                    <div className="flex justify-between items-center mb-4">
+                                       <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Mức {lvl}</div>
+                                       <div className="flex gap-2 text-[8px] font-bold">
+                                          <span className="bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded">2SD: {(currentSD * 2).toFixed(2)}</span>
+                                          <span className="bg-red-100 text-red-600 px-1.5 py-0.5 rounded">3SD: {(currentSD * 3).toFixed(2)}</span>
+                                       </div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[8px] font-bold text-slate-500 uppercase">Mean (Trung bình)</label>
+                                            <input type="number" step="0.01" value={test.configs[lvl].mean} onChange={(e) => handleUpdateConfig(test.id, lvl, 'mean', e.target.value)} className="w-full bg-white border border-slate-200 p-2.5 rounded-xl text-xs font-black shadow-inner outline-none focus:ring-2 focus:ring-blue-500" placeholder="Mean" />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[8px] font-bold text-slate-500 uppercase">SD (Độ lệch 1SD)</label>
+                                            <input type="number" step="0.01" value={test.configs[lvl].sd} onChange={(e) => handleUpdateConfig(test.id, lvl, 'sd', e.target.value)} className="w-full bg-white border border-slate-200 p-2.5 rounded-xl text-xs font-black shadow-inner outline-none focus:ring-2 focus:ring-blue-500" placeholder="SD" />
+                                            <p className="text-[8px] text-slate-400 italic">Nhập 1SD gốc</p>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[8px] font-bold text-slate-500 uppercase text-orange-600">Bias (% Độ chệch)</label>
+                                            <input type="number" step="0.01" value={test.configs[lvl].bias} onChange={(e) => handleUpdateConfig(test.id, lvl, 'bias', e.target.value)} className="w-full bg-white border border-slate-200 p-2.5 rounded-xl text-xs font-black text-orange-600 shadow-inner outline-none focus:ring-2 focus:ring-orange-500" placeholder="Bias%" />
+                                        </div>
+                                    </div>
+                                </div>
+                              );
+                          })}
                       </div>
-                      <button onClick={() => alert(`Đã lưu cấu hình Sigma cho ${test.name}!`)} className="mt-8 w-full bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-blue-600 transition-all">
-                        Lưu cấu hình Sigma
-                      </button>
+                      <button onClick={() => alert('Đã cập nhật cấu hình!')} className="mt-8 w-full bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-blue-600 transition-all text-sm shadow-lg">Lưu cấu hình</button>
                   </div>
               ))}
-              <div onClick={() => setIsAddModalOpen(true)} className="bg-dashed border-2 border-dashed border-slate-300 rounded-3xl flex flex-col items-center justify-center p-12 text-slate-400 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-500 cursor-pointer transition-all h-[400px]">
-                  <i className="fas fa-plus-circle text-4xl mb-4"></i>
-                  <span className="font-black uppercase text-sm">Thêm xét nghiệm mới</span>
-              </div>
           </div>
         )}
 
         {activeTab === 'advisor' && <RegulatoryAdvisor />}
-
-        {isAddModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-            <div className="bg-white rounded-[32px] w-full max-w-md p-8 shadow-2xl">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-black text-slate-900">Thêm xét nghiệm Sigma</h3>
-                <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-slate-600"><i className="fas fa-times text-xl"></i></button>
-              </div>
-              <div className="space-y-4">
-                <input type="text" placeholder="Tên xét nghiệm (VD: Creatinine)" value={newTestName} onChange={(e) => setNewTestName(e.target.value)} className="w-full bg-slate-50 p-4 rounded-2xl font-bold border-none" />
-                <input type="text" placeholder="Đơn vị tính (VD: µmol/L)" value={newTestUnit} onChange={(e) => setNewTestUnit(e.target.value)} className="w-full bg-slate-50 p-4 rounded-2xl font-bold border-none" />
-                <input type="number" placeholder="TEa cho phép (%)" value={newTestTea} onChange={(e) => setNewTestTea(e.target.value)} className="w-full bg-slate-50 p-4 rounded-2xl font-bold border-none" />
-                <button onClick={handleCreateNewTest} className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg mt-4">Tạo cấu hình Sigma</button>
-              </div>
-            </div>
-          </div>
-        )}
       </main>
     </div>
   );

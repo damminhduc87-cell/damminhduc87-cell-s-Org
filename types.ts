@@ -8,13 +8,16 @@ export enum QCLevel {
 export interface QCConfig {
   mean: number;
   sd: number;
-  unit: string;
+  /* Fix: Added bias property to QCConfig to resolve property missing errors */
+  bias: number;
 }
 
 export interface LabTest {
   id: string;
   name: string;
   unit: string;
+  /* Fix: Added tea property to LabTest interface */
+  tea: number;
   configs: Record<QCLevel, QCConfig>;
 }
 
