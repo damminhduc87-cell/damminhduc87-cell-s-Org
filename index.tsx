@@ -105,7 +105,7 @@ const RegulatoryAdvisor = () => {
         model: 'gemini-3-flash-preview',
         contents: userText,
         config: {
-          systemInstruction: `Bạn là chuyên gia QC Lab Việt Nam. Trả lời súc tích, chuyên nghiệp.`,
+          systemInstruction: `Bạn là chuyên gia QC Lab Việt Nam. Nếu người dùng hỏi về hành động khắc phục, hãy gợi ý các bước: Kiểm tra lại máy, kiểm tra thuốc thử, calibration lại, hoặc chạy mẫu QC mới. Trả lời súc tích.`,
           tools: [{ googleSearch: {} }]
         }
       });
@@ -153,14 +153,23 @@ const App = () => {
   const [selectedLevel, setSelectedLevel] = useState<QCLevel>(QCLevel.NORMAL);
   const [hoveredResultData, setHoveredResultData] = useState<any | null>(null);
 
+  // States for new entry
   const [newValue, setNewValue] = useState('');
+  const [newCorrectiveAction, setNewCorrectiveAction] = useState('');
   const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
 
+  // States for inline editing in log
+  const [editingResultId, setEditingResultId] = useState<string | null>(null);
+  const [editActionText, setEditActionText] = useState('');
+
+  const correctiveActionRef = useRef<HTMLTextAreaElement>(null);
+
   const activeTest = tests.find(t => t.id === selectedTestId) || tests[0];
+  const activeConfig = activeTest.configs[selectedLevel];
   const filteredResults = results.filter(r => r.testId === selectedTestId && r.level === selectedLevel);
   
   const sigmaMetrics = useMemo(() => {
-    const config = activeTest.configs[selectedLevel];
+    const config = activeConfig;
     const cv = config.mean !== 0 ? (config.sd / config.mean) * 100 : 0;
     const sigma = cv !== 0 ? (activeTest.tea - config.bias) / cv : 0;
     let status = "Kém";
@@ -169,19 +178,46 @@ const App = () => {
     else if (sigma >= 4) status = "Tốt";
     else if (sigma >= 3) status = "Tạm";
     return { sigma: sigma.toFixed(2), cv: cv.toFixed(2), status };
-  }, [activeTest, selectedLevel]);
+  }, [activeTest, selectedLevel, activeConfig]);
+
+  // Kiểm tra độ lệch SD ngay khi nhập
+  const currentSDDiff = useMemo(() => {
+    const val = parseFloat(newValue);
+    if (isNaN(val) || activeConfig.sd === 0) return 0;
+    return Math.abs((val - activeConfig.mean) / activeConfig.sd);
+  }, [newValue, activeConfig]);
+
+  // Tự động focus ô khắc phục khi phát hiện lỗi
+  useEffect(() => {
+    if (currentSDDiff > 2 && correctiveActionRef.current) {
+      correctiveActionRef.current.focus();
+    }
+  }, [currentSDDiff]);
 
   const handleAddResult = () => {
-    if (!newValue || isNaN(Number(newValue))) return;
+    if (!newValue || isNaN(Number(newValue))) {
+        alert("Vui lòng nhập giá trị đo hợp lệ.");
+        return;
+    }
+    const sdDiff = Math.abs((Number(newValue) - activeConfig.mean) / activeConfig.sd);
+    if (sdDiff > 2 && !newCorrectiveAction.trim()) {
+        alert("Kết quả vi phạm quy tắc Westgard. Vui lòng nhập hành động khắc phục.");
+        correctiveActionRef.current?.focus();
+        return;
+    }
+
     const res: QCResult = {
       id: Math.random().toString(36).substr(2, 9),
       testId: selectedTestId,
       level: selectedLevel,
       value: Number(newValue),
-      timestamp: new Date(newDate).getTime()
+      timestamp: new Date(newDate).getTime(),
+      correctiveAction: newCorrectiveAction.trim() || undefined
     };
-    setResults([...results, res]);
+    
+    setResults(prev => [...prev, res]);
     setNewValue('');
+    setNewCorrectiveAction('');
     setActiveTab('dashboard');
   };
 
@@ -196,6 +232,12 @@ const App = () => {
     }));
   };
 
+  const saveInlineAction = (id: string) => {
+    setResults(prev => prev.map(r => r.id === id ? { ...r, correctiveAction: editActionText } : r));
+    setEditingResultId(null);
+    setEditActionText('');
+  };
+
   const MenuItems = [
     { id: 'dashboard', label: 'Dashboard Sigma', icon: 'fa-chart-pie' },
     { id: 'entry', label: 'Nhập kết quả QC', icon: 'fa-edit' },
@@ -205,7 +247,6 @@ const App = () => {
 
   return (
     <div className="flex min-h-screen bg-slate-50 relative overflow-x-hidden">
-      {/* Overlay cho mobile khi mở sidebar */}
       {isSidebarOpen && (
         <div 
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden"
@@ -213,7 +254,6 @@ const App = () => {
         />
       )}
 
-      {/* Sidebar - Drawer cho mobile */}
       <aside className={`
         fixed inset-y-0 left-0 w-72 bg-slate-900 text-slate-300 z-50 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -241,9 +281,7 @@ const App = () => {
         </nav>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 w-full max-w-full overflow-x-hidden">
-        {/* Mobile Header */}
         <header className="lg:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-30">
           <button onClick={() => setIsSidebarOpen(true)} className="p-2 text-slate-600">
             <i className="fas fa-bars text-xl"></i>
@@ -252,11 +290,10 @@ const App = () => {
             <div className="bg-blue-600 w-8 h-8 rounded-lg flex items-center justify-center"><i className="fas fa-microscope text-white text-xs"></i></div>
             <span className="font-bold text-slate-800 text-sm">MinhDucLab</span>
           </div>
-          <div className="w-10"></div> {/* Spacer */}
+          <div className="w-10"></div>
         </header>
 
         <div className="p-4 md:p-10 max-w-7xl mx-auto">
-          {/* Section Header */}
           <div className="mb-6 md:mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h2 className="text-xl md:text-3xl font-black text-slate-900">
@@ -264,7 +301,6 @@ const App = () => {
               </h2>
             </div>
             
-            {/* Quick Filter Bar */}
             <div className="flex flex-wrap gap-2 p-1 bg-white rounded-xl shadow-sm border border-slate-200">
               <select value={selectedTestId} onChange={e => setSelectedTestId(e.target.value)} className="bg-slate-50 border-none px-3 py-2 rounded-lg font-bold text-xs outline-none">
                 {tests.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
@@ -304,13 +340,87 @@ const App = () => {
                   </div>
                 </div>
               </div>
-              <LeveyJenningsChart results={filteredResults} config={activeTest.configs[selectedLevel]} unit={activeTest.unit} title={`${activeTest.name} - ${selectedLevel}`} onHover={setHoveredResultData} />
+              
+              <LeveyJenningsChart results={filteredResults} config={activeConfig} unit={activeTest.unit} title={`${activeTest.name} - ${selectedLevel}`} onHover={setHoveredResultData} />
+
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mt-6">
+                <div className="p-4 border-b bg-slate-50 flex items-center justify-between">
+                  <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                    <i className="fas fa-exclamation-triangle text-orange-500"></i> Nhật ký Lỗi & Khắc phục
+                  </h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs md:text-sm">
+                    <thead>
+                      <tr className="bg-slate-50 text-slate-500 uppercase font-bold text-[10px]">
+                        <th className="p-4">Thời gian</th>
+                        <th className="p-4">Giá trị</th>
+                        <th className="p-4">Độ lệch (SD)</th>
+                        <th className="p-4">Hành động khắc phục (Click để sửa)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredResults.filter(r => Math.abs((r.value - activeConfig.mean) / activeConfig.sd) > 2).length === 0 ? (
+                        <tr><td colSpan={4} className="p-8 text-center text-slate-400 italic">Không có vi phạm nào trong kỳ kiểm soát này.</td></tr>
+                      ) : (
+                        filteredResults.filter(r => Math.abs((r.value - activeConfig.mean) / activeConfig.sd) > 2).slice().sort((a,b) => b.timestamp - a.timestamp).map(r => {
+                          const sdDiff = (r.value - activeConfig.mean) / activeConfig.sd;
+                          const isEditing = editingResultId === r.id;
+                          return (
+                            <tr key={r.id} className="hover:bg-slate-50 transition-colors">
+                              <td className="p-4 whitespace-nowrap">{new Date(r.timestamp).toLocaleString('vi-VN')}</td>
+                              <td className="p-4 font-bold">{r.value}</td>
+                              <td className={`p-4 font-bold ${Math.abs(sdDiff) > 3 ? 'text-red-600' : 'text-orange-600'}`}>
+                                {sdDiff > 0 ? '+' : ''}{sdDiff.toFixed(2)} SD
+                              </td>
+                              <td className="p-4">
+                                {isEditing ? (
+                                  <div className="flex gap-2 items-center">
+                                    <textarea 
+                                      autoFocus
+                                      className="flex-1 bg-white border border-blue-300 p-2 rounded text-xs outline-none"
+                                      value={editActionText}
+                                      onChange={e => setEditActionText(e.target.value)}
+                                    />
+                                    <button onClick={() => saveInlineAction(r.id)} className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700">
+                                      <i className="fas fa-check"></i>
+                                    </button>
+                                    <button onClick={() => setEditingResultId(null)} className="bg-slate-200 text-slate-600 p-2 rounded-lg">
+                                      <i className="fas fa-times"></i>
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div 
+                                    onClick={() => { setEditingResultId(r.id); setEditActionText(r.correctiveAction || ''); }}
+                                    className="cursor-pointer group relative"
+                                  >
+                                    {r.correctiveAction ? (
+                                      <span className="text-slate-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 block max-w-xs md:max-w-md">
+                                        {r.correctiveAction}
+                                        <i className="fas fa-pen ml-2 text-[10px] text-blue-300 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                                      </span>
+                                    ) : (
+                                      <span className="text-red-500 font-bold animate-pulse italic flex items-center gap-2 bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 w-fit">
+                                        <i className="fas fa-edit"></i> Chưa nhập xử lý! (Bấm để nhập)
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          )
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           )}
 
           {activeTab === 'entry' && (
             <div className="max-w-md mx-auto bg-white p-6 md:p-10 rounded-3xl shadow-xl border border-slate-100">
-              <h3 className="text-lg md:text-2xl font-black text-center mb-6">Nhập IQC</h3>
+              <h3 className="text-lg md:text-2xl font-black text-center mb-6">Nhập kết quả IQC</h3>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
@@ -324,9 +434,38 @@ const App = () => {
                 </div>
                 <div className="space-y-1 text-center">
                   <label className="text-[10px] font-black text-slate-400 uppercase block">Giá trị ({activeTest.unit})</label>
-                  <input type="number" step="0.01" className="w-full bg-slate-50 p-4 md:p-6 rounded-2xl font-black text-2xl md:text-4xl text-blue-600 border-none text-center" placeholder="0.00" value={newValue} onChange={e=>setNewValue(e.target.value)} />
+                  <input 
+                    type="number" 
+                    step="0.01" 
+                    className={`w-full bg-slate-50 p-4 md:p-6 rounded-2xl font-black text-2xl md:text-4xl border-none text-center outline-none ring-2 ${currentSDDiff > 3 ? 'text-red-600 ring-red-500' : currentSDDiff > 2 ? 'text-orange-600 ring-orange-500' : 'text-blue-600 ring-transparent'}`} 
+                    placeholder="0.00" 
+                    value={newValue} 
+                    onChange={e=>setNewValue(e.target.value)} 
+                  />
                 </div>
-                <button onClick={handleAddResult} className="w-full bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg mt-4">Lưu kết quả</button>
+
+                {currentSDDiff > 2 && (
+                  <div className={`p-4 rounded-xl border animate-in slide-in-from-top duration-300 ${currentSDDiff > 3 ? 'bg-red-50 border-red-200 shadow-sm shadow-red-100' : 'bg-orange-50 border-orange-200 shadow-sm shadow-orange-100'}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <i className={`fas ${currentSDDiff > 3 ? 'fa-times-circle text-red-600' : 'fa-exclamation-triangle text-orange-600'}`}></i>
+                      <span className="text-[10px] font-black uppercase text-slate-800">
+                        {currentSDDiff > 3 ? 'LỖI HỆ THỐNG (>3SD)' : 'CẢNH BÁO (>2SD)'} - CẦN XỬ LÝ
+                      </span>
+                    </div>
+                    <textarea 
+                      ref={correctiveActionRef}
+                      className="w-full bg-white border border-slate-200 rounded-lg p-3 text-xs outline-none focus:ring-2 focus:ring-blue-500 h-24 shadow-inner"
+                      placeholder="Nguyên nhân: chuẩn hỏng, thuốc thử hết hạn... | Khắc phục: Chuẩn lại, thay thuốc thử mới..."
+                      value={newCorrectiveAction}
+                      onChange={e => setNewCorrectiveAction(e.target.value)}
+                    ></textarea>
+                    <p className="text-[9px] text-slate-400 mt-1 italic">Vui lòng nhập chi tiết để tuân thủ tiêu chuẩn ISO 15189.</p>
+                  </div>
+                )}
+
+                <button onClick={handleAddResult} className="w-full bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg mt-4 flex items-center justify-center gap-2 hover:bg-blue-700 active:scale-95 transition-all">
+                  <i className="fas fa-save"></i> Lưu kết quả QC
+                </button>
               </div>
             </div>
           )}
