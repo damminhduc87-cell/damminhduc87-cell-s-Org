@@ -157,6 +157,7 @@ const App = () => {
   const [newValue, setNewValue] = useState('');
   const [newCorrectiveAction, setNewCorrectiveAction] = useState('');
   const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
+  const [currentSDDiff, setCurrentSDDiff] = useState(0); // Chỉ cập nhật khi blur hoặc bấm lưu
 
   // States for inline editing in log
   const [editingResultId, setEditingResultId] = useState<string | null>(null);
@@ -180,14 +181,19 @@ const App = () => {
     return { sigma: sigma.toFixed(2), cv: cv.toFixed(2), status };
   }, [activeTest, selectedLevel, activeConfig]);
 
-  // Kiểm tra độ lệch SD ngay khi nhập
-  const currentSDDiff = useMemo(() => {
-    const val = parseFloat(newValue);
-    if (isNaN(val) || activeConfig.sd === 0) return 0;
-    return Math.abs((val - activeConfig.mean) / activeConfig.sd);
-  }, [newValue, activeConfig]);
+  // Hàm kiểm tra vi phạm (Chỉ gọi khi Blur hoặc Lưu)
+  const validateViolation = (val: string) => {
+    const num = parseFloat(val);
+    if (isNaN(num) || activeConfig.sd === 0) {
+      setCurrentSDDiff(0);
+      return 0;
+    }
+    const diff = Math.abs((num - activeConfig.mean) / activeConfig.sd);
+    setCurrentSDDiff(diff);
+    return diff;
+  };
 
-  // Tự động focus ô khắc phục khi phát hiện lỗi
+  // Tự động focus ô khắc phục khi phát hiện lỗi (sau khi validate)
   useEffect(() => {
     if (currentSDDiff > 2 && correctiveActionRef.current) {
       correctiveActionRef.current.focus();
@@ -195,13 +201,16 @@ const App = () => {
   }, [currentSDDiff]);
 
   const handleAddResult = () => {
+    // Validate lại một lần nữa trước khi lưu
+    const diff = validateViolation(newValue);
+    
     if (!newValue || isNaN(Number(newValue))) {
         alert("Vui lòng nhập giá trị đo hợp lệ.");
         return;
     }
-    const sdDiff = Math.abs((Number(newValue) - activeConfig.mean) / activeConfig.sd);
-    if (sdDiff > 2 && !newCorrectiveAction.trim()) {
-        alert("Kết quả vi phạm quy tắc Westgard. Vui lòng nhập hành động khắc phục.");
+
+    if (diff > 2 && !newCorrectiveAction.trim()) {
+        alert("Kết quả vi phạm quy tắc Westgard. Vui lòng nhập hành động khắc phục trước khi lưu.");
         correctiveActionRef.current?.focus();
         return;
     }
@@ -218,6 +227,7 @@ const App = () => {
     setResults(prev => [...prev, res]);
     setNewValue('');
     setNewCorrectiveAction('');
+    setCurrentSDDiff(0); // Reset SD diff
     setActiveTab('dashboard');
   };
 
@@ -437,11 +447,13 @@ const App = () => {
                   <input 
                     type="number" 
                     step="0.01" 
-                    className={`w-full bg-slate-50 p-4 md:p-6 rounded-2xl font-black text-2xl md:text-4xl border-none text-center outline-none ring-2 ${currentSDDiff > 3 ? 'text-red-600 ring-red-500' : currentSDDiff > 2 ? 'text-orange-600 ring-orange-500' : 'text-blue-600 ring-transparent'}`} 
+                    className={`w-full bg-slate-50 p-4 md:p-6 rounded-2xl font-black text-2xl md:text-4xl border-none text-center outline-none ring-2 transition-all duration-300 ${currentSDDiff > 3 ? 'text-red-600 ring-red-500' : currentSDDiff > 2 ? 'text-orange-600 ring-orange-500' : 'text-blue-600 ring-transparent'}`} 
                     placeholder="0.00" 
                     value={newValue} 
-                    onChange={e=>setNewValue(e.target.value)} 
+                    onChange={e => setNewValue(e.target.value)}
+                    onBlur={e => validateViolation(e.target.value)} // Kiểm tra khi rời khỏi ô nhập
                   />
+                  <p className="text-[9px] text-slate-400 mt-1 italic">Nhấp chuột ra ngoài hoặc bấm Lưu để kiểm tra lỗi QC.</p>
                 </div>
 
                 {currentSDDiff > 2 && (
