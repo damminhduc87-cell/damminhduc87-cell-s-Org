@@ -15,6 +15,7 @@ interface QCConfig {
   sd: number; 
   bias: number; // Độ chệch (%)
 }
+
 interface LabTest {
   id: string;
   name: string;
@@ -22,6 +23,7 @@ interface LabTest {
   tea: number; // Sai số cho phép (%)
   configs: Record<QCLevel, QCConfig>;
 }
+
 interface QCResult {
   id: string;
   testId: string;
@@ -29,14 +31,16 @@ interface QCResult {
   value: number;
   timestamp: number;
 }
+
 interface ChatMessage { role: 'user' | 'model'; text: string; }
 
+// Danh mục xét nghiệm mở rộng
 const INITIAL_TESTS: LabTest[] = [
   {
     id: 'glucose',
     name: 'Glucose (Máu)',
     unit: 'mmol/L',
-    tea: 10, // CLIA tiêu chuẩn cho Glucose là 10%
+    tea: 10,
     configs: {
       [QCLevel.LOW]: { mean: 3.5, sd: 0.12, bias: 1.5 },
       [QCLevel.NORMAL]: { mean: 5.6, sd: 0.18, bias: 1.2 },
@@ -44,14 +48,91 @@ const INITIAL_TESTS: LabTest[] = [
     }
   },
   {
-    id: 'hba1c',
-    name: 'HbA1c',
-    unit: '%',
-    tea: 6, // HbA1c yêu cầu khắt khe hơn ~6%
+    id: 'ast',
+    name: 'AST (GOT)',
+    unit: 'U/L',
+    tea: 15,
     configs: {
-      [QCLevel.LOW]: { mean: 4.8, sd: 0.1, bias: 0.8 },
-      [QCLevel.NORMAL]: { mean: 5.7, sd: 0.15, bias: 1.0 },
-      [QCLevel.HIGH]: { mean: 9.5, sd: 0.3, bias: 1.5 },
+      [QCLevel.LOW]: { mean: 25, sd: 1.2, bias: 2.5 },
+      [QCLevel.NORMAL]: { mean: 45, sd: 2.1, bias: 2.0 },
+      [QCLevel.HIGH]: { mean: 180, sd: 8.5, bias: 3.2 },
+    }
+  },
+  {
+    id: 'alt',
+    name: 'ALT (GPT)',
+    unit: 'U/L',
+    tea: 15,
+    configs: {
+      [QCLevel.LOW]: { mean: 22, sd: 1.1, bias: 2.2 },
+      [QCLevel.NORMAL]: { mean: 40, sd: 2.0, bias: 1.8 },
+      [QCLevel.HIGH]: { mean: 165, sd: 7.8, bias: 2.9 },
+    }
+  },
+  {
+    id: 'creatinine',
+    name: 'Creatinine',
+    unit: 'µmol/L',
+    tea: 12,
+    configs: {
+      [QCLevel.LOW]: { mean: 55, sd: 2.5, bias: 1.0 },
+      [QCLevel.NORMAL]: { mean: 90, sd: 4.2, bias: 1.5 },
+      [QCLevel.HIGH]: { mean: 450, sd: 18.0, bias: 2.5 },
+    }
+  },
+  {
+    id: 'urea',
+    name: 'Urea',
+    unit: 'mmol/L',
+    tea: 9,
+    configs: {
+      [QCLevel.LOW]: { mean: 3.2, sd: 0.15, bias: 1.2 },
+      [QCLevel.NORMAL]: { mean: 7.5, sd: 0.35, bias: 1.4 },
+      [QCLevel.HIGH]: { mean: 25.0, sd: 1.10, bias: 2.1 },
+    }
+  },
+  {
+    id: 'cholesterol',
+    name: 'Cholesterol TP',
+    unit: 'mmol/L',
+    tea: 10,
+    configs: {
+      [QCLevel.LOW]: { mean: 3.1, sd: 0.14, bias: 1.1 },
+      [QCLevel.NORMAL]: { mean: 5.2, sd: 0.22, bias: 1.3 },
+      [QCLevel.HIGH]: { mean: 8.5, sd: 0.38, bias: 1.9 },
+    }
+  },
+  {
+    id: 'triglycerides',
+    name: 'Triglycerides',
+    unit: 'mmol/L',
+    tea: 15,
+    configs: {
+      [QCLevel.LOW]: { mean: 0.9, sd: 0.05, bias: 2.0 },
+      [QCLevel.NORMAL]: { mean: 1.8, sd: 0.09, bias: 2.2 },
+      [QCLevel.HIGH]: { mean: 5.5, sd: 0.25, bias: 3.1 },
+    }
+  },
+  {
+    id: 'sodium',
+    name: 'Natri (Na+)',
+    unit: 'mmol/L',
+    tea: 4,
+    configs: {
+      [QCLevel.LOW]: { mean: 125, sd: 1.5, bias: 0.5 },
+      [QCLevel.NORMAL]: { mean: 140, sd: 1.8, bias: 0.4 },
+      [QCLevel.HIGH]: { mean: 160, sd: 2.1, bias: 0.6 },
+    }
+  },
+  {
+    id: 'potassium',
+    name: 'Kali (K+)',
+    unit: 'mmol/L',
+    tea: 5.8,
+    configs: {
+      [QCLevel.LOW]: { mean: 2.8, sd: 0.08, bias: 0.9 },
+      [QCLevel.NORMAL]: { mean: 4.5, sd: 0.12, bias: 0.8 },
+      [QCLevel.HIGH]: { mean: 7.2, sd: 0.22, bias: 1.1 },
     }
   }
 ];
@@ -378,10 +459,10 @@ const App = () => {
         </div>
       </aside>
 
-      <main className="flex-1 p-6 lg:p-10 max-w-7xl mx-auto w-full">
+      <main className="flex-1 p-6 lg:p-10 max-w-7xl mx-auto w-full overflow-y-auto h-screen">
         <header className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
           <div>
-            <h2 className="text-3xl font-extrabold text-slate-900">
+            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
                 {activeTab === 'dashboard' && 'Năng lực Xét nghiệm Six Sigma'}
                 {activeTab === 'entry' && 'Cập nhật Dữ liệu QC'}
                 {activeTab === 'config' && 'Tham số Sigma & Mean/SD'}
@@ -408,7 +489,6 @@ const App = () => {
 
         {activeTab === 'dashboard' && (
           <div className="grid grid-cols-1 gap-8">
-            {/* Sigma Result Panel */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                <div className="lg:col-span-2 bg-gradient-to-br from-indigo-700 to-blue-900 p-8 rounded-[40px] shadow-2xl text-white relative overflow-hidden">
                   <div className="relative z-10">
@@ -459,7 +539,6 @@ const App = () => {
                         </div>
                      ))}
                   </div>
-                  <p className="mt-8 text-[10px] text-slate-400 italic leading-relaxed font-medium">Sigma càng cao, xác suất lỗi càng thấp. Mục tiêu tối thiểu 3σ cho Lab lâm sàng.</p>
                </div>
             </div>
 
@@ -519,7 +598,7 @@ const App = () => {
         )}
 
         {activeTab === 'config' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-10">
               {tests.map(test => (
                   <div key={test.id} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
                       <div className="flex items-center justify-between mb-8">
@@ -555,12 +634,12 @@ const App = () => {
                               </div>
                           ))}
                       </div>
-                      <button onClick={() => alert("Đã lưu cấu hình Sigma!")} className="mt-8 w-full bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-blue-600 transition-all">
+                      <button onClick={() => alert(`Đã lưu cấu hình Sigma cho ${test.name}!`)} className="mt-8 w-full bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-blue-600 transition-all">
                         Lưu cấu hình Sigma
                       </button>
                   </div>
               ))}
-              <div onClick={() => setIsAddModalOpen(true)} className="bg-dashed border-2 border-dashed border-slate-300 rounded-3xl flex flex-col items-center justify-center p-12 text-slate-400 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-500 cursor-pointer transition-all">
+              <div onClick={() => setIsAddModalOpen(true)} className="bg-dashed border-2 border-dashed border-slate-300 rounded-3xl flex flex-col items-center justify-center p-12 text-slate-400 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-500 cursor-pointer transition-all h-[400px]">
                   <i className="fas fa-plus-circle text-4xl mb-4"></i>
                   <span className="font-black uppercase text-sm">Thêm xét nghiệm mới</span>
               </div>
@@ -569,7 +648,6 @@ const App = () => {
 
         {activeTab === 'advisor' && <RegulatoryAdvisor />}
 
-        {/* Modal Thêm Xét nghiệm Mới */}
         {isAddModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
             <div className="bg-white rounded-[32px] w-full max-w-md p-8 shadow-2xl">
