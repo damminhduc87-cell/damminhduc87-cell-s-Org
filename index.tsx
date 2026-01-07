@@ -10,11 +10,16 @@ import {
 // --- Types & Constants ---
 enum QCLevel { LOW = 'Low', NORMAL = 'Normal', HIGH = 'High' }
 
-interface QCConfig { mean: number; sd: number; }
+interface QCConfig { 
+  mean: number; 
+  sd: number; 
+  bias: number; // Độ chệch (%)
+}
 interface LabTest {
   id: string;
   name: string;
   unit: string;
+  tea: number; // Sai số cho phép (%)
   configs: Record<QCLevel, QCConfig>;
 }
 interface QCResult {
@@ -31,20 +36,22 @@ const INITIAL_TESTS: LabTest[] = [
     id: 'glucose',
     name: 'Glucose (Máu)',
     unit: 'mmol/L',
+    tea: 10, // CLIA tiêu chuẩn cho Glucose là 10%
     configs: {
-      [QCLevel.LOW]: { mean: 3.5, sd: 0.12 },
-      [QCLevel.NORMAL]: { mean: 5.6, sd: 0.18 },
-      [QCLevel.HIGH]: { mean: 15.2, sd: 0.45 },
+      [QCLevel.LOW]: { mean: 3.5, sd: 0.12, bias: 1.5 },
+      [QCLevel.NORMAL]: { mean: 5.6, sd: 0.18, bias: 1.2 },
+      [QCLevel.HIGH]: { mean: 15.2, sd: 0.45, bias: 2.0 },
     }
   },
   {
     id: 'hba1c',
     name: 'HbA1c',
     unit: '%',
+    tea: 6, // HbA1c yêu cầu khắt khe hơn ~6%
     configs: {
-      [QCLevel.LOW]: { mean: 4.8, sd: 0.1 },
-      [QCLevel.NORMAL]: { mean: 5.7, sd: 0.15 },
-      [QCLevel.HIGH]: { mean: 9.5, sd: 0.3 },
+      [QCLevel.LOW]: { mean: 4.8, sd: 0.1, bias: 0.8 },
+      [QCLevel.NORMAL]: { mean: 5.7, sd: 0.15, bias: 1.0 },
+      [QCLevel.HIGH]: { mean: 9.5, sd: 0.3, bias: 1.5 },
     }
   }
 ];
@@ -136,7 +143,7 @@ const LeveyJenningsChart = ({
 
 const RegulatoryAdvisor = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'model', text: 'Chào bạn! Tôi là trợ lý AI chuyên trách quản lý chất lượng Lab. Tôi có thể giúp bạn tra cứu Quyết định 2429, Thông tư 37 hoặc hướng dẫn an toàn sinh học. Bạn muốn hỏi gì?' }
+    { role: 'model', text: 'Chào bạn! Tôi là trợ lý AI chuyên trách quản lý chất lượng Lab. Tôi có thể giúp bạn tra cứu Quyết định 2429, Thông tư 37 hoặc tư vấn về Six Sigma. Bạn cần hỗ trợ gì?' }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -156,10 +163,10 @@ const RegulatoryAdvisor = () => {
         contents: userText,
         config: {
           systemInstruction: `Bạn là một chuyên gia tư vấn QC Lab tại Việt Nam. Trả lời dựa trên: 
-          1. Quyết định 2429/QĐ-BYT (Tiêu chí chất lượng Lab).
-          2. Thông tư 37/2017/TT-BYT.
-          3. Westgard Rules.
-          Trả lời chuyên nghiệp bằng Markdown.`,
+          1. Quyết định 2429/QĐ-BYT.
+          2. Westgard Rules và Six Sigma trong Lab.
+          3. Công thức Sigma = (TEa - Bias) / CV.
+          Trả lời chuyên nghiệp, cấu trúc bảng biểu bằng Markdown.`,
           tools: [{ googleSearch: {} }]
         }
       });
@@ -205,7 +212,7 @@ const RegulatoryAdvisor = () => {
         <div className="flex gap-2">
           <input 
             className="flex-1 bg-slate-100 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="VD: Cần bao nhiêu điểm QC để tính Mean?"
+            placeholder="Hỏi về cách tính Sigma hoặc quy tắc Westgard..."
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyPress={e => e.key === 'Enter' && sendMessage()}
@@ -235,6 +242,7 @@ const App = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newTestName, setNewTestName] = useState('');
   const [newTestUnit, setNewTestUnit] = useState('');
+  const [newTestTea, setNewTestTea] = useState('10');
 
   const activeTest = tests.find(t => t.id === selectedTestId) || tests[0];
   const filteredResults = results.filter(r => r.testId === selectedTestId && r.level === selectedLevel);
@@ -247,6 +255,24 @@ const App = () => {
   const zScore = displayResult 
     ? (displayResult.value - activeTest.configs[selectedLevel].mean) / activeTest.configs[selectedLevel].sd 
     : 0;
+
+  // Sigma Calculation
+  const sigmaMetrics = useMemo(() => {
+    const config = activeTest.configs[selectedLevel];
+    const cv = config.mean !== 0 ? (config.sd / config.mean) * 100 : 0;
+    const sigma = cv !== 0 ? (activeTest.tea - config.bias) / cv : 0;
+    
+    let status = "Kém";
+    let color = "text-red-500";
+    let bg = "bg-red-50";
+    
+    if (sigma >= 6) { status = "Đẳng cấp Thế giới"; color = "text-blue-600"; bg = "bg-blue-50"; }
+    else if (sigma >= 5) { status = "Rất tốt"; color = "text-emerald-600"; bg = "bg-emerald-50"; }
+    else if (sigma >= 4) { status = "Tốt"; color = "text-green-600"; bg = "bg-green-50"; }
+    else if (sigma >= 3) { status = "Tạm được"; color = "text-orange-500"; bg = "bg-orange-50"; }
+    
+    return { sigma: sigma.toFixed(2), cv: cv.toFixed(2), status, color, bg };
+  }, [activeTest, selectedLevel]);
 
   const handleAddResult = () => {
     if (!newValue || isNaN(Number(newValue))) return;
@@ -262,7 +288,7 @@ const App = () => {
     setActiveTab('dashboard');
   };
 
-  const updateTestConfig = (testId: string, level: QCLevel, field: 'mean' | 'sd', val: string) => {
+  const updateTestConfig = (testId: string, level: QCLevel, field: keyof QCConfig, val: string) => {
     const num = parseFloat(val);
     if (isNaN(num)) return;
     setTests(prev => prev.map(t => {
@@ -279,6 +305,12 @@ const App = () => {
     }));
   };
 
+  const updateTea = (testId: string, val: string) => {
+    const num = parseFloat(val);
+    if (isNaN(num)) return;
+    setTests(prev => prev.map(t => t.id === testId ? { ...t, tea: num } : t));
+  };
+
   const handleCreateNewTest = () => {
     if (!newTestName || !newTestUnit) {
       alert("Vui lòng nhập đầy đủ tên và đơn vị!");
@@ -288,10 +320,11 @@ const App = () => {
       id: newTestName.toLowerCase().replace(/\s+/g, '-'),
       name: newTestName,
       unit: newTestUnit,
+      tea: parseFloat(newTestTea) || 10,
       configs: {
-        [QCLevel.LOW]: { mean: 0, sd: 0.1 },
-        [QCLevel.NORMAL]: { mean: 0, sd: 0.1 },
-        [QCLevel.HIGH]: { mean: 0, sd: 0.1 },
+        [QCLevel.LOW]: { mean: 0, sd: 0.1, bias: 0 },
+        [QCLevel.NORMAL]: { mean: 0, sd: 0.1, bias: 0 },
+        [QCLevel.HIGH]: { mean: 0, sd: 0.1, bias: 0 },
       }
     };
     setTests([...tests, newTest]);
@@ -306,18 +339,18 @@ const App = () => {
       <aside className="w-72 bg-slate-900 text-slate-300 hidden lg:flex flex-col border-r border-slate-800 shrink-0">
         <div className="p-8 border-b border-slate-800">
           <div className="flex items-center gap-3 mb-2">
-            <div className="bg-gradient-to-tr from-blue-600 to-blue-400 p-2.5 rounded-xl">
+            <div className="bg-gradient-to-tr from-blue-600 to-blue-400 p-2.5 rounded-xl shadow-lg shadow-blue-900/40">
               <i className="fas fa-microscope text-white text-xl"></i>
             </div>
-            <h1 className="text-white font-bold text-xl tracking-tight">BioQC <span className="text-blue-500 text-sm font-normal">v2.0</span></h1>
+            <h1 className="text-white font-bold text-xl tracking-tight">BioQC <span className="text-blue-500 text-sm font-normal">v2.1</span></h1>
           </div>
-          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Medical Lab Management</p>
+          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Six Sigma Lab Management</p>
         </div>
         <nav className="flex-1 py-6 px-4 space-y-2">
           {[
-            { id: 'dashboard', label: 'Dashboard', icon: 'fa-chart-pie' },
+            { id: 'dashboard', label: 'Dashboard Sigma', icon: 'fa-chart-pie' },
             { id: 'entry', label: 'Nhập kết quả QC', icon: 'fa-edit' },
-            { id: 'config', label: 'Cấu hình Mean/SD', icon: 'fa-sliders-h' },
+            { id: 'config', label: 'Cấu hình Sigma/QC', icon: 'fa-sliders-h' },
             { id: 'advisor', label: 'Cố vấn AI 2429', icon: 'fa-user-md' },
           ].map(item => (
             <button
@@ -336,11 +369,11 @@ const App = () => {
         </nav>
         <div className="p-6 bg-slate-800/40 m-4 rounded-3xl border border-slate-700/50">
             <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold text-slate-100 uppercase tracking-tighter">QĐ 2429/QĐ-BYT</span>
-                <span className="text-xs font-black text-blue-400">Mức 3/5</span>
+                <span className="text-xs font-bold text-slate-100 uppercase tracking-tighter">Chất lượng Sigma</span>
+                <span className="text-xs font-black text-blue-400">Target 6σ</span>
             </div>
             <div className="h-2 w-full bg-slate-700 rounded-full overflow-hidden">
-                <div className="h-full bg-blue-500 w-[60%] rounded-full"></div>
+                <div className="h-full bg-blue-500 w-[85%] rounded-full"></div>
             </div>
         </div>
       </aside>
@@ -349,12 +382,12 @@ const App = () => {
         <header className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
           <div>
             <h2 className="text-3xl font-extrabold text-slate-900">
-                {activeTab === 'dashboard' && 'Giám sát Nội kiểm (IQC)'}
-                {activeTab === 'entry' && 'Cập nhật Dữ liệu'}
-                {activeTab === 'config' && 'Tham số Kỹ thuật'}
-                {activeTab === 'advisor' && 'Trợ lý AI Thông minh'}
+                {activeTab === 'dashboard' && 'Năng lực Xét nghiệm Six Sigma'}
+                {activeTab === 'entry' && 'Cập nhật Dữ liệu QC'}
+                {activeTab === 'config' && 'Tham số Sigma & Mean/SD'}
+                {activeTab === 'advisor' && 'Trợ lý AI Phân tích Sigma'}
             </h2>
-            <p className="text-slate-500 mt-1 font-medium italic">Tiêu chuẩn ISO 15189 & QĐ 2429</p>
+            <p className="text-slate-500 mt-1 font-medium italic">Tối ưu hóa quy trình theo tiêu chuẩn quốc tế</p>
           </div>
           
           {activeTab === 'dashboard' && (
@@ -375,40 +408,58 @@ const App = () => {
 
         {activeTab === 'dashboard' && (
           <div className="grid grid-cols-1 gap-8">
-            {/* Dynamic Result Panel */}
-            <div className="bg-gradient-to-br from-blue-700 to-blue-900 p-8 rounded-[40px] shadow-2xl text-white relative overflow-hidden">
-               <div className="relative z-10">
-                  <div className="flex items-center gap-3 mb-6">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200">
-                      {hoveredResultData ? 'Dữ liệu tại điểm chọn' : 'Kết quả nội kiểm gần nhất'}
-                    </span>
+            {/* Sigma Result Panel */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+               <div className="lg:col-span-2 bg-gradient-to-br from-indigo-700 to-blue-900 p-8 rounded-[40px] shadow-2xl text-white relative overflow-hidden">
+                  <div className="relative z-10">
+                     <div className="flex items-center gap-3 mb-6">
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200">Phân tích năng lực (Sigma Metric)</span>
+                     </div>
+                     <div className="flex flex-col md:flex-row md:items-end gap-10">
+                        <div className="flex-1">
+                           <div className="text-sm text-blue-200 font-bold mb-1 italic">Chỉ số Sigma đạt được:</div>
+                           <h4 className="text-7xl font-black mb-4 flex items-baseline gap-3">
+                              {sigmaMetrics.sigma} <span className="text-2xl font-medium text-blue-300">σ</span>
+                           </h4>
+                           <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20`}>
+                              <div className={`w-3 h-3 rounded-full ${sigmaMetrics.sigma >= 4 ? 'bg-emerald-400' : 'bg-red-400'} animate-pulse`}></div>
+                              <span className="text-lg font-black uppercase tracking-tight">{sigmaMetrics.status}</span>
+                           </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-8 border-l border-white/20 pl-8">
+                           <div>
+                              <p className="text-[10px] font-black text-blue-300 uppercase mb-2">Hệ số biến thiên (CV)</p>
+                              <div className="text-2xl font-black text-white">{sigmaMetrics.cv}%</div>
+                           </div>
+                           <div>
+                              <p className="text-[10px] font-black text-blue-300 uppercase mb-2">TEa Cho phép</p>
+                              <div className="text-2xl font-black text-white">{activeTest.tea}%</div>
+                           </div>
+                        </div>
+                     </div>
                   </div>
-                  {displayResult ? (
-                    <div className="flex flex-col md:flex-row md:items-end gap-10">
-                       <div className="flex-1">
-                          <h4 className="text-5xl font-black mb-2 flex items-baseline gap-3">
-                             {displayResult.value} <span className="text-xl font-medium text-blue-300">{activeTest.unit}</span>
-                          </h4>
-                          <p className="text-blue-100/70 font-bold text-sm">
-                            <i className="far fa-clock mr-2"></i> {new Date(displayResult.timestamp).toLocaleString('vi-VN')}
-                          </p>
-                       </div>
-                       <div className="grid grid-cols-2 gap-8 border-l border-white/20 pl-8">
-                          <div>
-                             <p className="text-[10px] font-black text-blue-300 uppercase mb-2">Z-Score</p>
-                             <div className={`text-2xl font-black ${Math.abs(zScore) > 3 ? 'text-red-400' : Math.abs(zScore) > 2 ? 'text-orange-400' : 'text-emerald-400'}`}>
-                                {zScore > 0 ? '+' : ''}{zScore.toFixed(2)} SD
-                             </div>
-                          </div>
-                          <div>
-                             <p className="text-[10px] font-black text-blue-300 uppercase mb-2">Trạng thái</p>
-                             <span className="text-lg font-black uppercase tracking-tight">
-                                {Math.abs(zScore) > 3 ? 'Lỗi hệ thống' : Math.abs(zScore) > 2 ? 'Cảnh báo' : 'Ổn định'}
-                             </span>
-                          </div>
-                       </div>
-                    </div>
-                  ) : <div className="py-10 text-blue-300 italic">Chưa có dữ liệu QC cho mức này.</div>}
+               </div>
+
+               <div className="bg-white p-8 rounded-[40px] border border-slate-200 shadow-sm flex flex-col justify-center">
+                  <h5 className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-6">Diễn giải Sigma</h5>
+                  <div className="space-y-4">
+                     {[
+                        { label: 'World Class', val: '6σ+', color: 'bg-blue-500' },
+                        { label: 'Excellent', val: '5σ', color: 'bg-emerald-500' },
+                        { label: 'Good', val: '4σ', color: 'bg-green-500' },
+                        { label: 'Marginal', val: '3σ', color: 'bg-orange-500' },
+                        { label: 'Poor', val: '<3σ', color: 'bg-red-500' },
+                     ].map(item => (
+                        <div key={item.label} className="flex items-center justify-between group">
+                           <div className="flex items-center gap-3">
+                              <div className={`w-2 h-2 rounded-full ${item.color}`}></div>
+                              <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors">{item.label}</span>
+                           </div>
+                           <span className="text-xs font-black text-slate-400">{item.val}</span>
+                        </div>
+                     ))}
+                  </div>
+                  <p className="mt-8 text-[10px] text-slate-400 italic leading-relaxed font-medium">Sigma càng cao, xác suất lỗi càng thấp. Mục tiêu tối thiểu 3σ cho Lab lâm sàng.</p>
                </div>
             </div>
 
@@ -427,9 +478,9 @@ const App = () => {
                   </div>
                </div>
                <div className="bg-white p-7 rounded-3xl shadow-sm border border-slate-200">
-                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest block mb-4">CV (%)</span>
-                  <span className="text-4xl font-black text-emerald-600">
-                      {activeTest.configs[selectedLevel].mean !== 0 ? ((activeTest.configs[selectedLevel].sd / activeTest.configs[selectedLevel].mean) * 100).toFixed(2) : '0'}%
+                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest block mb-4">Bias (%)</span>
+                  <span className="text-4xl font-black text-orange-600">
+                      {activeTest.configs[selectedLevel].bias}%
                   </span>
                </div>
             </div>
@@ -437,42 +488,12 @@ const App = () => {
             <LeveyJenningsChart 
               results={filteredResults} config={activeTest.configs[selectedLevel]} unit={activeTest.unit} title={`${activeTest.name} - ${selectedLevel}`} onHover={setHoveredResultData}
             />
-
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between">
-                    <h4 className="font-black text-slate-800 uppercase text-sm">Lịch sử kết quả</h4>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-slate-50 text-slate-400 font-bold text-[10px] uppercase">
-                            <tr><th className="px-8 py-4">Thời gian</th><th className="px-8 py-4">Giá trị đo</th><th className="px-8 py-4">Độ lệch (SD)</th><th className="px-8 py-4">Trạng thái</th></tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50">
-                            {filteredResults.sort((a,b)=>b.timestamp-a.timestamp).map(r => {
-                                const curZ = (r.value - activeTest.configs[selectedLevel].mean) / activeTest.configs[selectedLevel].sd;
-                                return (
-                                    <tr key={r.id} className="hover:bg-blue-50 cursor-pointer" onMouseEnter={() => setHoveredResultData({ raw: r })} onMouseLeave={() => setHoveredResultData(null)}>
-                                        <td className="px-8 py-5 text-slate-600">{new Date(r.timestamp).toLocaleString('vi-VN')}</td>
-                                        <td className="px-8 py-5 font-black">{r.value}</td>
-                                        <td className={`px-8 py-5 font-bold ${Math.abs(curZ) > 3 ? 'text-red-600' : Math.abs(curZ) > 2 ? 'text-orange-600' : 'text-emerald-600'}`}>{curZ.toFixed(2)} SD</td>
-                                        <td className="px-8 py-5">
-                                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${Math.abs(curZ) > 3 ? 'bg-red-100 text-red-700' : Math.abs(curZ) > 2 ? 'bg-orange-100 text-orange-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                                                {Math.abs(curZ) > 3 ? 'Lỗi' : Math.abs(curZ) > 2 ? 'Cảnh báo' : 'Đạt'}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
           </div>
         )}
 
         {activeTab === 'entry' && (
           <div className="max-w-xl mx-auto bg-white p-10 rounded-[40px] shadow-2xl border border-slate-100">
-            <h3 className="text-2xl font-black text-slate-900 text-center mb-8">Nhập dữ liệu QC</h3>
+            <h3 className="text-2xl font-black text-slate-900 text-center mb-8">Nhập kết quả IQC</h3>
             <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -489,11 +510,7 @@ const App = () => {
                     </div>
                 </div>
                 <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase">Ngày thực hiện</label>
-                    <input type="date" className="w-full bg-slate-50 p-4 rounded-2xl font-bold border-none" value={newDate} onChange={e=>setNewDate(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase">Giá trị kết quả ({activeTest.unit})</label>
+                    <label className="text-[10px] font-black text-slate-400 uppercase">Giá trị đo ({activeTest.unit})</label>
                     <input type="number" step="0.01" className="w-full bg-slate-50 p-6 rounded-2xl font-black text-3xl text-blue-600 border-none text-center" placeholder="0.00" value={newValue} onChange={e=>setNewValue(e.target.value)} />
                 </div>
                 <button onClick={handleAddResult} className="w-full bg-blue-600 text-white font-black py-5 rounded-2xl hover:bg-blue-700 transition-all text-lg shadow-lg">Lưu kết quả QC</button>
@@ -507,27 +524,39 @@ const App = () => {
                   <div key={test.id} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
                       <div className="flex items-center justify-between mb-8">
                           <h4 className="text-xl font-black">{test.name}</h4>
-                          <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-xl text-xs font-bold">{test.unit}</span>
+                          <div className="flex flex-col items-end">
+                             <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-xl text-[10px] font-bold uppercase mb-1">TEa: {test.tea}%</span>
+                             <input 
+                               type="number" 
+                               value={test.tea} 
+                               onChange={(e) => updateTea(test.id, e.target.value)} 
+                               className="w-16 bg-slate-50 text-right p-1 rounded font-bold text-xs" 
+                             />
+                          </div>
                       </div>
                       <div className="space-y-6">
                           {Object.values(QCLevel).map(lvl => (
                               <div key={lvl} className="p-5 rounded-2xl bg-slate-50 border border-slate-100">
                                   <span className="text-[10px] font-black text-slate-400 uppercase block mb-4">Level {lvl}</span>
-                                  <div className="grid grid-cols-2 gap-6">
-                                      <div className="space-y-2">
-                                          <span className="text-[9px] font-bold text-slate-500 block">TARGET MEAN</span>
-                                          <input type="number" step="0.01" value={test.configs[lvl].mean} onChange={(e) => updateTestConfig(test.id, lvl, 'mean', e.target.value)} className="w-full bg-white p-3 rounded-xl font-black text-slate-800 shadow-inner border-none focus:ring-2 focus:ring-blue-500" />
+                                  <div className="grid grid-cols-3 gap-4">
+                                      <div className="space-y-1">
+                                          <span className="text-[8px] font-bold text-slate-500 uppercase block">Mean</span>
+                                          <input type="number" step="0.01" value={test.configs[lvl].mean} onChange={(e) => updateTestConfig(test.id, lvl, 'mean', e.target.value)} className="w-full bg-white p-2 rounded-xl font-black text-slate-800 text-xs shadow-inner" />
                                       </div>
-                                      <div className="space-y-2">
-                                          <span className="text-[9px] font-bold text-slate-500 block">STD. DEV (SD)</span>
-                                          <input type="number" step="0.01" value={test.configs[lvl].sd} onChange={(e) => updateTestConfig(test.id, lvl, 'sd', e.target.value)} className="w-full bg-white p-3 rounded-xl font-black text-slate-800 shadow-inner border-none focus:ring-2 focus:ring-blue-500" />
+                                      <div className="space-y-1">
+                                          <span className="text-[8px] font-bold text-slate-500 uppercase block">SD</span>
+                                          <input type="number" step="0.01" value={test.configs[lvl].sd} onChange={(e) => updateTestConfig(test.id, lvl, 'sd', e.target.value)} className="w-full bg-white p-2 rounded-xl font-black text-slate-800 text-xs shadow-inner" />
+                                      </div>
+                                      <div className="space-y-1">
+                                          <span className="text-[8px] font-bold text-slate-500 uppercase block">Bias (%)</span>
+                                          <input type="number" step="0.01" value={test.configs[lvl].bias} onChange={(e) => updateTestConfig(test.id, lvl, 'bias', e.target.value)} className="w-full bg-white p-2 rounded-xl font-black text-orange-600 text-xs shadow-inner" />
                                       </div>
                                   </div>
                               </div>
                           ))}
                       </div>
-                      <button onClick={() => alert("Đã lưu cấu hình!")} className="mt-8 w-full bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-blue-600 transition-all">
-                        Lưu cấu hình
+                      <button onClick={() => alert("Đã lưu cấu hình Sigma!")} className="mt-8 w-full bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-blue-600 transition-all">
+                        Lưu cấu hình Sigma
                       </button>
                   </div>
               ))}
@@ -545,13 +574,14 @@ const App = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
             <div className="bg-white rounded-[32px] w-full max-w-md p-8 shadow-2xl">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-black text-slate-900">Thêm xét nghiệm mới</h3>
+                <h3 className="text-xl font-black text-slate-900">Thêm xét nghiệm Sigma</h3>
                 <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-slate-600"><i className="fas fa-times text-xl"></i></button>
               </div>
               <div className="space-y-4">
-                <input type="text" placeholder="Tên xét nghiệm (VD: AST)" value={newTestName} onChange={(e) => setNewTestName(e.target.value)} className="w-full bg-slate-50 p-4 rounded-2xl font-bold border-none focus:ring-2 focus:ring-blue-500" />
-                <input type="text" placeholder="Đơn vị tính (VD: U/L)" value={newTestUnit} onChange={(e) => setNewTestUnit(e.target.value)} className="w-full bg-slate-50 p-4 rounded-2xl font-bold border-none focus:ring-2 focus:ring-blue-500" />
-                <button onClick={handleCreateNewTest} className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg mt-4">Xác nhận</button>
+                <input type="text" placeholder="Tên xét nghiệm (VD: Creatinine)" value={newTestName} onChange={(e) => setNewTestName(e.target.value)} className="w-full bg-slate-50 p-4 rounded-2xl font-bold border-none" />
+                <input type="text" placeholder="Đơn vị tính (VD: µmol/L)" value={newTestUnit} onChange={(e) => setNewTestUnit(e.target.value)} className="w-full bg-slate-50 p-4 rounded-2xl font-bold border-none" />
+                <input type="number" placeholder="TEa cho phép (%)" value={newTestTea} onChange={(e) => setNewTestTea(e.target.value)} className="w-full bg-slate-50 p-4 rounded-2xl font-bold border-none" />
+                <button onClick={handleCreateNewTest} className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg mt-4">Tạo cấu hình Sigma</button>
               </div>
             </div>
           </div>
