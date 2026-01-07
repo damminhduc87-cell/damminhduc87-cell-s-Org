@@ -1,11 +1,10 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-/* Fix: Always initialize GoogleGenAI with named parameter apiKey using process.env.API_KEY directly */
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 export const getRegulatoryAdvice = async (userPrompt: string) => {
   try {
+    // Fix: Create a new GoogleGenAI instance right before making an API call to ensure it always uses the most up-to-date API key
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: userPrompt,
