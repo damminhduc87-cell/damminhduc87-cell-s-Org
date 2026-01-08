@@ -3,49 +3,45 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { GoogleGenAI } from "@google/genai";
 import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine 
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine 
 } from 'recharts';
 import { INITIAL_TESTS, MOCK_RESULTS } from './constants';
 import { QCLevel, LabTest, QCResult, QCConfig } from './types';
 
 // --- Components ---
 
-const LeveyJenningsChart = ({ 
-  data, 
-  config, 
-  unit, 
-  title 
-}: { 
+const LeveyJenningsChart: React.FC<{ 
   data: QCResult[], 
   config: QCConfig, 
   unit: string, 
   title: string
-}) => {
+}> = ({ data, config, unit, title }) => {
   const { mean, sd } = config;
-  // zoomLevel đại diện cho số lượng SD hiển thị trên trục Y. Mặc định là 4 (±4SD).
   const [zoomLevel, setZoomLevel] = useState(4);
 
   const chartData = useMemo(() => {
-    return [...data].sort((a, b) => a.timestamp - b.timestamp).map(r => ({
-      date: new Date(r.timestamp).toLocaleDateString('vi-VN'),
-      value: r.value,
-    }));
+    return [...data]
+      .sort((a, b) => a.timestamp - b.timestamp)
+      .map(r => ({
+        timestamp: r.timestamp,
+        fullLabel: new Date(r.timestamp).toLocaleString('vi-VN'), 
+        value: r.value,
+      }));
   }, [data]);
 
-  // Tính toán miền giá trị Y dựa trên zoomLevel
   const yDomain = useMemo(() => [
     Number((mean - zoomLevel * sd).toFixed(2)),
     Number((mean + zoomLevel * sd).toFixed(2))
   ], [mean, sd, zoomLevel]);
 
-  const handleZoomIn = () => setZoomLevel(prev => Math.max(1, prev - 0.5));
-  const handleZoomOut = () => setZoomLevel(prev => Math.min(10, prev + 0.5));
-  const handleReset = () => setZoomLevel(4);
+  // Helper to format reference labels with values
+  const formatRefLabel = (label: string, value: number) => {
+    return `${value.toFixed(2)} (${label})`;
+  };
 
   return (
     <div className="bg-white p-6 rounded-[2.5rem] shadow-xl border border-slate-100 w-full h-[500px] relative overflow-hidden group">
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50/20 to-transparent pointer-events-none"></div>
-      
       <div className="flex justify-between items-center mb-6 relative z-10">
         <h3 className="text-lg font-black text-slate-800 flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200">
@@ -53,115 +49,49 @@ const LeveyJenningsChart = ({
           </div>
           <div className="flex flex-col">
             <span>{title}</span>
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Levey-Jennings Chart</span>
+            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Levey-Jennings Chart (±SD Values)</span>
           </div>
         </h3>
-
-        {/* Zoom Controls Area */}
         <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100 shadow-inner">
-          <button 
-            onClick={handleZoomIn}
-            className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-white text-slate-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm flex items-center justify-center active:scale-95 group/btn"
-            title="Phóng to (Thu hẹp SD)"
-          >
-            <i className="fas fa-search-plus text-xs md:text-sm"></i>
-          </button>
-          <button 
-            onClick={handleZoomOut}
-            className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-white text-slate-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm flex items-center justify-center active:scale-95 group/btn"
-            title="Thu nhỏ (Mở rộng SD)"
-          >
-            <i className="fas fa-search-minus text-xs md:text-sm"></i>
-          </button>
+          <button onClick={() => setZoomLevel(prev => Math.max(1, prev - 0.5))} className="w-8 h-8 rounded-xl bg-white text-slate-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm flex items-center justify-center"><i className="fas fa-search-plus text-xs"></i></button>
+          <button onClick={() => setZoomLevel(prev => Math.min(10, prev + 0.5))} className="w-8 h-8 rounded-xl bg-white text-slate-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm flex items-center justify-center"><i className="fas fa-search-minus text-xs"></i></button>
           <div className="w-px h-6 bg-slate-200 mx-1"></div>
-          <button 
-            onClick={handleReset}
-            className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-white text-slate-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm flex items-center justify-center active:scale-95 group/btn"
-            title="Đặt lại vùng nhìn (±4SD)"
-          >
-            <i className="fas fa-expand-arrows-alt text-xs md:text-sm"></i>
-          </button>
-          <div className="hidden sm:block px-3 border-l border-slate-200 ml-1">
-             <span className="text-[10px] font-black text-blue-600 tabular-nums">±{zoomLevel.toFixed(1)} SD</span>
-          </div>
+          <button onClick={() => setZoomLevel(4)} className="w-8 h-8 rounded-xl bg-white text-slate-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm flex items-center justify-center"><i className="fas fa-expand-arrows-alt text-xs"></i></button>
         </div>
       </div>
-
-      <div className="h-[300px] w-full relative z-10">
+      <div className="h-[340px] w-full relative z-10">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 10, right: 60, left: 10, bottom: 5 }}>
+          <LineChart data={chartData} margin={{ top: 10, right: 80, left: 10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-            <XAxis 
-              dataKey="date" 
-              tick={{fontSize: 10, fill: '#94a3b8', fontWeight: 'bold'}} 
-              axisLine={false} 
-              tickLine={false} 
-            />
-            <YAxis 
-              domain={yDomain} 
-              tick={{fontSize: 10, fill: '#94a3b8', fontWeight: 'bold'}} 
-              axisLine={false} 
-              tickLine={false} 
-              label={{ value: unit, angle: -90, position: 'insideLeft', style: { fill: '#cbd5e1', fontSize: '10px', fontWeight: 'bold' } }}
-            />
-            <Tooltip 
-              contentStyle={{borderRadius: '1.25rem', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', padding: '12px'}}
-              itemStyle={{fontWeight: '900', fontSize: '12px'}}
-            />
+            <XAxis dataKey="fullLabel" tickFormatter={(tick) => tick.split(' ')[0]} tick={{fontSize: 10, fill: '#94a3b8', fontWeight: 'bold'}} axisLine={false} tickLine={false} />
+            <YAxis domain={yDomain} tick={{fontSize: 10, fill: '#94a3b8', fontWeight: 'bold'}} axisLine={false} tickLine={false} />
+            <Tooltip labelStyle={{ fontWeight: 'bold' }} contentStyle={{borderRadius: '1.25rem', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)'}} />
             
-            <ReferenceLine y={mean} stroke="#0f172a" strokeWidth={2.5} label={{ position: 'right', value: 'Mean', fontSize: 11, fill: '#0f172a', fontWeight: '900', offset: 15 }} />
+            {/* Mean */}
+            <ReferenceLine y={mean} stroke="#0f172a" strokeWidth={2.5} label={{ position: 'right', value: formatRefLabel('Mean', mean), fontSize: 9, fill: '#0f172a', fontWeight: '900' }} />
             
-            {/* Chỉ hiển thị các đường SD nằm trong zoomLevel */}
-            {zoomLevel >= 1 && (
-              <>
-                <ReferenceLine y={mean + sd} stroke="#94a3b8" strokeDasharray="3 3" strokeOpacity={0.5} label={{ position: 'right', value: '+1SD', fontSize: 9, fill: '#94a3b8', fontWeight: '700', offset: 10 }} />
-                <ReferenceLine y={mean - sd} stroke="#94a3b8" strokeDasharray="3 3" strokeOpacity={0.5} label={{ position: 'right', value: '-1SD', fontSize: 9, fill: '#94a3b8', fontWeight: '700', offset: 10 }} />
-              </>
-            )}
-
-            {zoomLevel >= 2 && (
-              <>
-                <ReferenceLine y={mean + 2 * sd} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={1.5} label={{ position: 'right', value: '+2SD', fontSize: 10, fill: '#f59e0b', fontWeight: '800', offset: 10 }} />
-                <ReferenceLine y={mean - 2 * sd} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={1.5} label={{ position: 'right', value: '-2SD', fontSize: 10, fill: '#f59e0b', fontWeight: '800', offset: 10 }} />
-              </>
-            )}
-
-            {zoomLevel >= 3 && (
-              <>
-                <ReferenceLine y={mean + 3 * sd} stroke="#ef4444" strokeWidth={2} label={{ position: 'right', value: '+3SD', fontSize: 10, fill: '#ef4444', fontWeight: '900', offset: 10 }} />
-                <ReferenceLine y={mean - 3 * sd} stroke="#ef4444" strokeWidth={2} label={{ position: 'right', value: '-3SD', fontSize: 10, fill: '#ef4444', fontWeight: '900', offset: 10 }} />
-              </>
-            )}
-
-            <Line 
-              type="monotone" 
-              dataKey="value" 
-              stroke="#2563eb" 
-              strokeWidth={4} 
-              dot={{ r: 7, fill: '#2563eb', strokeWidth: 2, stroke: '#fff' }}
-              activeDot={{ r: 10, fill: '#1d4ed8', strokeWidth: 3, stroke: '#fff' }}
-              animationDuration={1500}
-            />
+            {/* ±1SD */}
+            <ReferenceLine y={mean + sd} stroke="#94a3b8" strokeDasharray="5 5" strokeWidth={1} label={{ position: 'right', value: formatRefLabel('+1SD', mean + sd), fontSize: 8, fill: '#94a3b8', fontWeight: 'bold' }} />
+            <ReferenceLine y={mean - sd} stroke="#94a3b8" strokeDasharray="5 5" strokeWidth={1} label={{ position: 'right', value: formatRefLabel('-1SD', mean - sd), fontSize: 8, fill: '#94a3b8', fontWeight: 'bold' }} />
+            
+            {/* ±2SD */}
+            <ReferenceLine y={mean + 2*sd} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={1.5} label={{ position: 'right', value: formatRefLabel('+2SD', mean + 2*sd), fontSize: 9, fill: '#f59e0b', fontWeight: 'bold' }} />
+            <ReferenceLine y={mean - 2*sd} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={1.5} label={{ position: 'right', value: formatRefLabel('-2SD', mean - 2*sd), fontSize: 9, fill: '#f59e0b', fontWeight: 'bold' }} />
+            
+            {/* ±3SD */}
+            <ReferenceLine y={mean + 3*sd} stroke="#ef4444" strokeWidth={2} label={{ position: 'right', value: formatRefLabel('+3SD', mean + 3*sd), fontSize: 9, fill: '#ef4444', fontWeight: 'bold' }} />
+            <ReferenceLine y={mean - 3*sd} stroke="#ef4444" strokeWidth={2} label={{ position: 'right', value: formatRefLabel('-3SD', mean - 3*sd), fontSize: 9, fill: '#ef4444', fontWeight: 'bold' }} />
+            
+            <Line type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={4} dot={{ r: 7, fill: '#2563eb', strokeWidth: 2, stroke: '#fff' }} animationDuration={500} />
           </LineChart>
         </ResponsiveContainer>
-      </div>
-      
-      <div className="mt-4 flex flex-wrap gap-4 text-[10px] font-black uppercase tracking-widest text-slate-400 border-t border-slate-50 pt-4">
-        <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 bg-red-500 rounded-full"></div>
-          <span>Lỗi (±3SD)</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 bg-orange-500 rounded-full"></div>
-          <span>Cảnh báo (±2SD)</span>
-        </div>
       </div>
     </div>
   );
 };
 
 const RegulatoryAdvisor = () => {
-  const [messages, setMessages] = useState<{ role: 'user' | 'model'; text: string; sources?: any[] }[]>([
+  const [messages, setMessages] = useState<{ role: 'user' | 'model'; text: string }[]>([
     { role: 'model', text: 'Chào bạn! Tôi là trợ lý AI chuyên về quy định xét nghiệm. Bạn cần hỗ trợ gì về tiêu chuẩn 2429/QĐ-BYT hay các quy tắc Westgard không?' }
   ]);
   const [input, setInput] = useState('');
@@ -174,58 +104,33 @@ const RegulatoryAdvisor = () => {
     setInput('');
     setMessages(prev => [...prev, { role: 'user', text: userText }]);
     setLoading(true);
-
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: [{ role: 'user', parts: [{ text: userText }] }],
-        config: {
-          systemInstruction: "Bạn là chuyên gia về quản lý chất lượng phòng xét nghiệm y học tại Việt Nam. Trả lời súc tích, chuyên nghiệp dựa trên 2429/QĐ-BYT.",
-          tools: [{ googleSearch: {} }]
-        }
+        config: { systemInstruction: "Bạn là chuyên gia về quản lý chất lượng phòng xét nghiệm y học tại Việt Nam. Trả lời súc tích, chuyên nghiệp dựa trên 2429/QĐ-BYT.", tools: [{ googleSearch: {} }] }
       });
-      setMessages(prev => [...prev, { 
-        role: 'model', 
-        text: response.text || "Tôi không thể xử lý thông tin này.", 
-        sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || []
-      }]);
-    } catch (err) {
-      setMessages(prev => [...prev, { role: 'model', text: "Lỗi kết nối AI." }]);
-    } finally {
-      setLoading(false);
-    }
+      setMessages(prev => [...prev, { role: 'model', text: response.text || "Tôi không thể xử lý thông tin này." }]);
+    } catch (err) { setMessages(prev => [...prev, { role: 'model', text: "Lỗi kết nối AI." }]); } finally { setLoading(false); }
   };
 
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' }); }, [messages]);
 
   return (
     <div className="flex flex-col h-full bg-white rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden">
-      <div className="bg-slate-900 p-6 text-white flex justify-between items-center">
-        <h3 className="font-black text-sm flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white"><i className="fas fa-robot text-xs"></i></div>
-          Cố vấn Quy định AI
-        </h3>
-        <span className="text-[10px] font-black uppercase tracking-widest bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full border border-blue-500/30">Hỗ trợ 2429</span>
-      </div>
+      <div className="bg-slate-900 p-6 text-white flex justify-between items-center"><h3 className="font-black text-sm flex items-center gap-3"><div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white"><i className="fas fa-robot text-xs"></i></div>Cố vấn AI</h3></div>
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/50 custom-scrollbar">
         {messages.map((m, i) => (
-          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2`}>
-            <div className={`max-w-[85%] p-4 rounded-2xl shadow-sm ${m.role === 'user' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white text-slate-800 rounded-tl-none border border-slate-100'}`}>
-              <div className="text-sm leading-relaxed whitespace-pre-wrap">{m.text}</div>
-            </div>
+          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`max-w-[85%] p-4 rounded-2xl shadow-sm ${m.role === 'user' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white text-slate-800 rounded-tl-none border border-slate-100'}`}><div className="text-sm leading-relaxed whitespace-pre-wrap">{m.text}</div></div>
           </div>
         ))}
       </div>
-      <div className="p-4 bg-white border-t flex gap-3">
-        <input className="flex-1 bg-slate-100 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" placeholder="Hỏi về Westgard, 2429..." value={input} onChange={e => setInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && sendMessage()} />
-        <button onClick={sendMessage} className="bg-blue-600 text-white w-10 h-10 rounded-xl flex items-center justify-center hover:bg-blue-700 transition-all"><i className="fas fa-paper-plane text-xs"></i></button>
-      </div>
+      <div className="p-4 bg-white border-t flex gap-3"><input className="flex-1 bg-slate-100 rounded-xl px-4 py-2 text-sm outline-none" placeholder="Hỏi về Westgard..." value={input} onChange={e => setInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && sendMessage()} /><button onClick={sendMessage} className="bg-blue-600 text-white w-10 h-10 rounded-xl flex items-center justify-center hover:bg-blue-700"><i className="fas fa-paper-plane text-xs"></i></button></div>
     </div>
   );
 };
-
-// --- Main App ---
 
 const App = () => {
   const [tests, setTests] = useState<LabTest[]>(() => {
@@ -237,23 +142,25 @@ const App = () => {
     return saved ? JSON.parse(saved) : MOCK_RESULTS;
   });
   const [activeTab, setActiveTab] = useState<'dashboard' | 'config' | 'entry' | 'advisor'>('dashboard');
-  const [selectedTestId, setSelectedTestId] = useState(INITIAL_TESTS[0].id);
+  const [selectedTestId, setSelectedTestId] = useState(tests[0]?.id || INITIAL_TESTS[0].id);
   const [selectedLevel, setSelectedLevel] = useState<QCLevel>(QCLevel.NORMAL);
-  const [savingTestId, setSavingTestId] = useState<string | null>(null);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isActionModalOpen, setIsActionModalOpen] = useState(false);
+  const [selectedResultForAction, setSelectedResultForAction] = useState<QCResult | null>(null);
+  const [actionComment, setActionComment] = useState('');
+  const [savingTestId, setSavingTestId] = useState<string | null>(null);
 
-  // Form for adding new test
-  const [newTestForm, setNewTestForm] = useState({
-    name: '',
-    unit: '',
-    tea: '10',
-    low: { mean: '', sd: '', bias: '' },
-    normal: { mean: '', sd: '', bias: '' },
-    high: { mean: '', sd: '', bias: '' }
+  // Draft state for adding new test
+  const [newTest, setNewTest] = useState<LabTest>({
+    id: '', name: '', unit: '', tea: 10,
+    configs: {
+      [QCLevel.LOW]: { mean: 0, sd: 0, bias: 0 },
+      [QCLevel.NORMAL]: { mean: 0, sd: 0, bias: 0 },
+      [QCLevel.HIGH]: { mean: 0, sd: 0, bias: 0 },
+    }
   });
 
-  // New Result Form State
   const [formValue, setFormValue] = useState<string>('');
   const [formDate, setFormDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
@@ -262,380 +169,307 @@ const App = () => {
 
   const activeTest = useMemo(() => tests.find(t => t.id === selectedTestId) || tests[0], [tests, selectedTestId]);
   const activeLevelConfig = activeTest?.configs?.[selectedLevel] || { mean: 0, sd: 0, bias: 0 };
-  const activeResults = results.filter(r => r.testId === selectedTestId && r.level === selectedLevel);
+  const activeResults = useMemo(() => results.filter(r => r.testId === selectedTestId && r.level === selectedLevel), [results, selectedTestId, selectedLevel]);
 
   const addQCResult = () => {
-    if (!formValue || isNaN(Number(formValue))) return alert('Vui lòng nhập giá trị số hợp lệ');
-    setResults(prev => [...prev, { id: Math.random().toString(36).substr(2, 9), testId: selectedTestId, level: selectedLevel, value: Number(formValue), timestamp: new Date(formDate).getTime() }]);
+    if (!formValue || isNaN(Number(formValue))) return alert('Vui lòng nhập số hợp lệ');
+    const now = new Date();
+    const dateToUse = new Date(formDate);
+    dateToUse.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+    const newRes: QCResult = { id: Math.random().toString(36).substr(2, 9), testId: selectedTestId, level: selectedLevel, value: Number(formValue), timestamp: dateToUse.getTime() };
+    setResults(prev => [...prev, newRes]);
     setFormValue('');
     setActiveTab('dashboard');
   };
 
-  const handleUpdateConfig = (testId: string, level: QCLevel, field: keyof QCConfig, value: string) => {
-    const numValue = parseFloat(value);
-    setTests(prev => prev.map(test => test.id === testId ? { ...test, configs: { ...test.configs, [level]: { ...test.configs[level], [field]: isNaN(numValue) ? 0 : numValue } } } : test));
-  };
-
-  const handleSaveTestConfig = (testId: string) => {
-    setSavingTestId(testId);
-    setTimeout(() => {
-      setSavingTestId(null);
-      alert(`Đã lưu thành công cấu hình cho xét nghiệm: ${tests.find(t => t.id === testId)?.name}`);
-    }, 600);
-  };
-
-  const handleDeleteTest = (testId: string) => {
-    if (confirm('Bạn có chắc chắn muốn xoá xét nghiệm này? Toàn bộ dữ liệu kết quả liên quan cũng sẽ bị mất.')) {
-      setTests(prev => prev.filter(t => t.id !== testId));
-      setResults(prev => prev.filter(r => r.testId !== testId));
-      if (selectedTestId === testId) {
-        setSelectedTestId(tests.find(t => t.id !== testId)?.id || '');
+  const handleDeleteTest = (id: string) => {
+    if (confirm('Bạn có chắc chắn muốn xoá xét nghiệm này và toàn bộ dữ liệu QC của nó?')) {
+      setTests(prev => prev.filter(t => t.id !== id));
+      setResults(prev => prev.filter(r => r.testId !== id));
+      if (selectedTestId === id) {
+        const remaining = tests.filter(t => t.id !== id);
+        setSelectedTestId(remaining.length > 0 ? remaining[0].id : '');
       }
     }
+  };
+
+  const handleSaveConfig = (id: string) => {
+    setSavingTestId(id);
+    setTimeout(() => {
+      setSavingTestId(null);
+    }, 1000);
   };
 
   const handleAddNewTest = () => {
-    if (!newTestForm.name || !newTestForm.unit) {
-      return alert('Vui lòng nhập tên và đơn vị xét nghiệm.');
-    }
-
-    const newTest: LabTest = {
-      id: newTestForm.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '') + '-' + Date.now(),
-      name: newTestForm.name,
-      unit: newTestForm.unit,
-      tea: parseFloat(newTestForm.tea) || 10,
-      configs: {
-        [QCLevel.LOW]: { 
-          mean: parseFloat(newTestForm.low.mean) || 0, 
-          sd: parseFloat(newTestForm.low.sd) || 0, 
-          bias: parseFloat(newTestForm.low.bias) || 0 
-        },
-        [QCLevel.NORMAL]: { 
-          mean: parseFloat(newTestForm.normal.mean) || 0, 
-          sd: parseFloat(newTestForm.normal.sd) || 0, 
-          bias: parseFloat(newTestForm.normal.bias) || 0 
-        },
-        [QCLevel.HIGH]: { 
-          mean: parseFloat(newTestForm.high.mean) || 0, 
-          sd: parseFloat(newTestForm.high.sd) || 0, 
-          bias: parseFloat(newTestForm.high.bias) || 0 
-        }
-      }
-    };
-
-    setTests(prev => [...prev, newTest]);
+    if (!newTest.name || !newTest.unit) return alert('Vui lòng nhập tên và đơn vị');
+    const id = newTest.name.toLowerCase().replace(/\s/g, '-') + '-' + Date.now();
+    setTests(prev => [...prev, { ...newTest, id }]);
     setIsAddModalOpen(false);
-    setNewTestForm({
-      name: '',
-      unit: '',
-      tea: '10',
-      low: { mean: '', sd: '', bias: '' },
-      normal: { mean: '', sd: '', bias: '' },
-      high: { mean: '', sd: '', bias: '' }
-    });
-    alert('Đã thêm xét nghiệm mới thành công!');
+    setNewTest({ id: '', name: '', unit: '', tea: 10, configs: { [QCLevel.LOW]: { mean: 0, sd: 0, bias: 0 }, [QCLevel.NORMAL]: { mean: 0, sd: 0, bias: 0 }, [QCLevel.HIGH]: { mean: 0, sd: 0, bias: 0 } } });
   };
 
-  // Logic xuất file Excel (CSV format with UTF-8 BOM)
-  const exportToExcel = () => {
-    if (activeResults.length === 0) {
-      alert("Không có dữ liệu để xuất file!");
-      return;
+  const openActionModal = (res: QCResult) => {
+    const test = tests.find(t => t.id === res.testId);
+    if (!test) return;
+    const config = test.configs[res.level];
+    const sdDiff = Math.abs((res.value - config.mean) / config.sd);
+    if (sdDiff >= 2) {
+      setSelectedResultForAction(res);
+      setActionComment(res.correctiveAction || '');
+      setIsActionModalOpen(true);
     }
-
-    const headers = ["Ngày giờ", "Giá trị", "Chỉ số SD", "Trạng thái"];
-    const rows = activeResults.slice().reverse().map(r => {
-      const sdDiff = activeLevelConfig.sd !== 0 ? (r.value - activeLevelConfig.mean) / activeLevelConfig.sd : 0;
-      const status = Math.abs(sdDiff) >= 3 ? "Lỗi hệ thống" : Math.abs(sdDiff) >= 2 ? "Cảnh báo" : "Hợp lệ";
-      return [
-        new Date(r.timestamp).toLocaleString('vi-VN'),
-        r.value,
-        sdDiff.toFixed(2),
-        status
-      ];
-    });
-
-    // Tạo nội dung CSV
-    const csvContent = [
-      headers.join(","),
-      ...rows.map(row => row.join(","))
-    ].join("\n");
-
-    // Thêm BOM (Byte Order Mark) để Excel nhận diện đúng tiếng Việt (UTF-8)
-    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    
-    const fileName = `QC_Log_${activeTest.name}_${selectedLevel}_${new Date().toISOString().split('T')[0]}.csv`;
-    
-    link.setAttribute("href", url);
-    link.setAttribute("download", fileName);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
-  const navItems = [
-    { id: 'dashboard', label: 'Bảng điều khiển', icon: 'fa-chart-line' },
-    { id: 'entry', label: 'Nhập dữ liệu QC', icon: 'fa-plus-circle' },
-    { id: 'config', label: 'Cấu hình Mean/SD', icon: 'fa-sliders-h' },
-    { id: 'advisor', label: 'Cố vấn Quy định AI', icon: 'fa-robot' },
-  ];
+  const saveAction = () => {
+    if (selectedResultForAction) {
+      setResults(prev => prev.map(r => r.id === selectedResultForAction.id ? { ...r, correctiveAction: actionComment } : r));
+      setIsActionModalOpen(false);
+    }
+  };
+
+  const analyzeWestgard = (res: QCResult) => {
+    const test = tests.find(t => t.id === res.testId);
+    if (!test) return { rule: '', action: '' };
+    const config = test.configs[res.level];
+    const sdDiff = (res.value - config.mean) / config.sd;
+    const absSD = Math.abs(sdDiff);
+
+    if (absSD >= 3) {
+      return { rule: 'Vi phạm 1-3s', action: 'Lỗi ngẫu nhiên hoặc hệ thống nặng. Dừng xét nghiệm, kiểm tra máy/thuốc thử.' };
+    }
+    if (absSD >= 2) {
+      return { rule: 'Cảnh báo 1-2s', action: 'Cần xem xét các quy tắc tích lũy (2-2s, R-4s, 10x). Thận trọng khi duyệt kết quả.' };
+    }
+    return { rule: 'Hợp lệ', action: '' };
+  };
 
   return (
     <div className="flex min-h-screen bg-slate-50 text-slate-900 overflow-x-hidden">
-      {/* Mobile Backdrop */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] lg:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        ></div>
-      )}
-
-      {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 w-72 bg-slate-900 text-slate-300 z-[70] transition-transform duration-300 transform lg:relative lg:translate-x-0 flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      {isSidebarOpen && <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] lg:hidden" onClick={() => setIsSidebarOpen(false)}></div>}
+      <aside className={`fixed inset-y-0 left-0 w-72 bg-slate-900 text-slate-300 z-[70] transition-transform duration-300 lg:relative lg:translate-x-0 flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-8 flex items-center gap-4 border-b border-white/5">
-          <div className="bg-blue-600 w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-900/40"><i className="fas fa-microscope text-white text-xl"></i></div>
-          <div><h1 className="text-white font-black text-xl tracking-tighter leading-none">MinhDucLab</h1><p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1">QC Management System</p></div>
+          <div className="bg-blue-600 w-12 h-12 rounded-2xl flex items-center justify-center text-white"><i className="fas fa-microscope text-xl"></i></div>
+          <h1 className="text-white font-black text-xl">MinhDucLab</h1>
         </div>
         <nav className="flex-1 p-4 space-y-2">
-          {navItems.map(item => (
-            <button 
-              key={item.id} 
-              onClick={() => {
-                setActiveTab(item.id as any);
-                setIsSidebarOpen(false);
-              }} 
-              className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all ${activeTab === item.id ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/30 font-black' : 'hover:bg-white/5 font-bold'}`}
-            >
-              <i className={`fas ${item.icon} w-5`}></i><span className="text-sm">{item.label}</span>
+          {[{ id: 'dashboard', label: 'Bảng điều khiển', icon: 'fa-chart-line' }, { id: 'entry', label: 'Nhập dữ liệu QC', icon: 'fa-plus-circle' }, { id: 'config', label: 'Cấu hình Mean/SD', icon: 'fa-sliders-h' }, { id: 'advisor', label: 'Cố vấn AI', icon: 'fa-robot' }].map(item => (
+            <button key={item.id} onClick={() => { setActiveTab(item.id as any); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all ${activeTab === item.id ? 'bg-blue-600 text-white shadow-xl' : 'hover:bg-white/5 font-bold'}`}>
+              <i className={`fas ${item.icon} w-5`}></i>
+              <span className="text-sm">{item.label}</span>
             </button>
           ))}
         </nav>
-        <div className="p-6 bg-white/5 m-4 rounded-[2rem] border border-white/5">
-           <div className="flex justify-between items-center mb-2"><span className="text-[10px] font-black uppercase text-slate-500">Tiêu chuẩn 2429</span><span className="text-blue-400 font-black text-xs">Mức 3</span></div>
-           <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden"><div className="h-full bg-blue-600 w-3/5"></div></div>
-        </div>
       </aside>
 
-      {/* Mobile Top Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-20 bg-white border-b border-slate-100 z-50 flex items-center justify-between px-6 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="bg-blue-600 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-blue-100 text-white">
-            <i className="fas fa-microscope text-sm"></i>
-          </div>
-          <span className="font-black text-slate-900 text-lg tracking-tighter">MinhDucLab</span>
-        </div>
-        <button 
-          onClick={() => setIsSidebarOpen(true)}
-          className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center hover:bg-slate-200 active:scale-95 transition-all"
-        >
-          <i className="fas fa-bars text-xl"></i>
-        </button>
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-20 bg-white border-b z-50 flex items-center justify-between px-6">
+        <span className="font-black text-lg">MinhDucLab</span>
+        <button onClick={() => setIsSidebarOpen(true)} className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center"><i className="fas fa-bars text-xl"></i></button>
       </div>
 
-      {/* Main Content */}
-      <main className="flex-1 w-full p-6 md:p-10 lg:p-14 mt-20 lg:mt-0 overflow-y-auto max-w-7xl mx-auto transition-all">
+      <main className="flex-1 w-full p-6 md:p-10 lg:p-14 mt-20 lg:mt-0 max-w-7xl mx-auto">
         <header className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter uppercase leading-tight">
-              {activeTab === 'dashboard' && 'Giám sát Nội kiểm IQC'}
-              {activeTab === 'entry' && 'Cập nhật Kết quả'}
-              {activeTab === 'config' && 'Cấu hình Thông số'}
-              {activeTab === 'advisor' && 'Trợ lý Quy định'}
-            </h2>
-            <p className="text-slate-400 font-bold italic text-xs md:text-sm mt-1">Hệ thống quản lý chất lượng theo tiêu chuẩn ISO 15189 & 2429/QĐ-BYT</p>
-          </div>
-          {activeTab === 'dashboard' && (
-            <div className="flex flex-col sm:flex-row gap-4 p-2 bg-white rounded-3xl shadow-sm border border-slate-100">
-              <select value={selectedTestId} onChange={e => setSelectedTestId(e.target.value)} className="bg-slate-50 border-none px-6 py-2 rounded-2xl font-black text-xs outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer">{tests.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select>
-              <div className="flex gap-1 justify-center sm:justify-start">
+          <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">
+            {activeTab === 'dashboard' ? 'Giám sát IQC' : activeTab === 'entry' ? 'Nhập kết quả' : activeTab === 'config' ? 'Cấu hình' : 'Cố vấn AI'}
+          </h2>
+          {activeTab === 'dashboard' && tests.length > 0 && (
+            <div className="flex flex-col sm:flex-row gap-4 p-2 bg-white rounded-3xl shadow-sm border">
+              <select value={selectedTestId} onChange={e => setSelectedTestId(e.target.value)} className="bg-slate-50 px-6 py-2 rounded-2xl font-black text-xs outline-none border-none">
+                {tests.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+              <div className="flex gap-1">
                 {Object.values(QCLevel).map(lvl => (
-                  <button 
-                    key={lvl} 
-                    onClick={() => setSelectedLevel(lvl)} 
-                    className={`flex-1 sm:flex-none px-4 md:px-5 py-2 rounded-2xl text-[10px] font-black uppercase transition-all ${selectedLevel === lvl ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}
-                  >
-                    {lvl}
-                  </button>
+                  <button key={lvl} onClick={() => setSelectedLevel(lvl)} className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase transition-all ${selectedLevel === lvl ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400'}`}>{lvl}</button>
                 ))}
               </div>
             </div>
           )}
         </header>
 
-        {activeTab === 'dashboard' && (
-          <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-              <div className="bg-white p-6 md:p-8 rounded-[2.5rem] md:rounded-[3rem] shadow-sm border border-slate-100 relative overflow-hidden group">
-                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-full blur-3xl -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-1000"></div>
-                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Mean (Giá trị đích)</p>
-                 <div className="flex items-baseline gap-2"><span className="text-4xl md:text-5xl font-black text-slate-900 tabular-nums">{activeLevelConfig.mean}</span><span className="text-slate-400 font-bold text-xs uppercase">{activeTest?.unit}</span></div>
-              </div>
-              <div className="bg-white p-6 md:p-8 rounded-[2.5rem] md:rounded-[3rem] shadow-sm border border-slate-100">
-                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">SD (Độ lệch chuẩn)</p>
-                 <span className="text-4xl md:text-5xl font-black text-slate-900 tabular-nums">{activeLevelConfig.sd}</span>
-              </div>
-              <div className="bg-white p-6 md:p-8 rounded-[2.5rem] md:rounded-[3rem] shadow-sm border border-slate-100 sm:col-span-2 lg:col-span-1">
-                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">CV (Hệ số biến thiên)</p>
-                 <span className="text-4xl md:text-5xl font-black text-blue-600 tabular-nums">{(activeLevelConfig.mean !== 0 ? (activeLevelConfig.sd / activeLevelConfig.mean) * 100 : 0).toFixed(2)}%</span>
-              </div>
+        {activeTab === 'dashboard' && activeTest && (
+          <div className="space-y-10 animate-in fade-in duration-500">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 border-b-4 border-b-blue-600"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Mean (Đích)</p><span className="text-4xl font-black text-slate-900">{activeLevelConfig.mean}</span></div>
+              <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 border-b-4 border-b-slate-400"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">SD (Lệch chuẩn)</p><span className="text-4xl font-black text-slate-900">{activeLevelConfig.sd}</span></div>
+              <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 border-b-4 border-b-emerald-600"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">CV (%)</p><span className="text-4xl font-black text-blue-600">{((activeLevelConfig.sd / activeLevelConfig.mean) * 100 || 0).toFixed(2)}%</span></div>
             </div>
-            {activeTest && <LeveyJenningsChart data={activeResults} config={activeLevelConfig} unit={activeTest.unit} title={`${activeTest.name} - Mức ${selectedLevel}`} />}
-            <div className="bg-white rounded-[2.5rem] md:rounded-[3rem] shadow-sm border border-slate-100 overflow-hidden">
-               <div className="p-6 md:p-8 border-b border-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <LeveyJenningsChart key={`${selectedTestId}-${selectedLevel}-${activeResults.length}`} data={activeResults} config={activeLevelConfig} unit={activeTest.unit} title={`${activeTest.name} - Mức ${selectedLevel}`} />
+            
+            <div className="bg-white rounded-[2.5rem] shadow-sm border overflow-hidden">
+               <div className="p-6 border-b flex justify-between items-center bg-slate-50/50">
                  <h3 className="font-black text-slate-800 text-sm flex items-center gap-3"><i className="fas fa-history text-blue-500"></i> NHẬT KÝ NỘI KIỂM</h3>
-                 <button 
-                  onClick={exportToExcel}
-                  className="w-full sm:w-auto bg-slate-900 text-white px-5 py-3 sm:py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all flex items-center justify-center gap-2"
-                 >
-                   <i className="fas fa-file-excel"></i> Xuất File Excel
-                 </button>
+                 <span className="text-[10px] font-bold text-slate-400 italic">Nhấn vào hàng vi phạm để xử lý lỗi</span>
                </div>
-               <div className="overflow-x-auto"><table className="w-full text-left"><thead className="bg-slate-50/50 text-[10px] font-black uppercase text-slate-400"><tr><th className="px-6 md:px-8 py-5">Ngày giờ</th><th className="px-6 md:px-8 py-5">Giá trị</th><th className="px-6 md:px-8 py-5">Chỉ số SD</th><th className="px-6 md:px-8 py-5">Kết quả</th></tr></thead><tbody className="divide-y divide-slate-50">
-                  {activeResults.length === 0 ? (<tr><td colSpan={4} className="p-20 text-center text-slate-300 italic font-bold">Chưa có kết quả QC cho mục này.</td></tr>) : 
-                    activeResults.slice().reverse().map(r => {
-                      const sdDiff = activeLevelConfig.sd !== 0 ? (r.value - activeLevelConfig.mean) / activeLevelConfig.sd : 0;
-                      const isError = Math.abs(sdDiff) >= 3;
-                      const isWarning = Math.abs(sdDiff) >= 2;
-                      return (<tr key={r.id} className="hover:bg-slate-50/50 transition-colors"><td className="px-6 md:px-8 py-6 text-slate-500 font-bold text-xs">{new Date(r.timestamp).toLocaleString('vi-VN')}</td><td className="px-6 md:px-8 py-6 font-black text-slate-900">{r.value}</td><td className={`px-6 md:px-8 py-6 font-black ${isError ? 'text-red-500' : isWarning ? 'text-orange-500' : 'text-emerald-500'}`}>{sdDiff > 0 ? '+' : ''}{sdDiff.toFixed(2)} SD</td><td className="px-6 md:px-8 py-6"><span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase ${isError ? 'bg-red-50 text-red-600 border border-red-100' : isWarning ? 'bg-orange-50 text-orange-700 border border-orange-100' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'}`}>{isError ? 'Lỗi' : isWarning ? 'Cảnh báo' : 'Đạt'}</span></td></tr>);
-                    })
-                  }
-               </tbody></table></div>
+               <div className="overflow-x-auto">
+                 <table className="w-full text-left">
+                   <thead className="bg-slate-50/50 text-[10px] font-black uppercase text-slate-400">
+                     <tr><th className="px-6 py-5">Ngày giờ</th><th className="px-6 py-5">Giá trị</th><th className="px-6 py-5">SD Index</th><th className="px-6 py-5">Kết quả</th><th className="px-6 py-5">Hành động</th></tr>
+                   </thead>
+                   <tbody className="divide-y text-sm">
+                    {activeResults.length === 0 ? (
+                      <tr><td colSpan={5} className="p-20 text-center text-slate-300 font-bold italic">Chưa có kết quả.</td></tr>
+                    ) : 
+                      activeResults.slice().sort((a,b) => b.timestamp - a.timestamp).map(r => {
+                        const sdDiff = activeLevelConfig.sd !== 0 ? (r.value - activeLevelConfig.mean) / activeLevelConfig.sd : 0;
+                        const isViolated = Math.abs(sdDiff) >= 2;
+                        return (
+                          <tr key={r.id} onClick={() => openActionModal(r)} className={`transition-all ${isViolated ? 'cursor-pointer hover:bg-red-50' : 'hover:bg-slate-50'}`}>
+                            <td className="px-6 py-6 text-slate-500">{new Date(r.timestamp).toLocaleString('vi-VN')}</td>
+                            <td className="px-6 py-6 font-black">{r.value}</td>
+                            <td className={`px-6 py-6 font-black ${Math.abs(sdDiff) >= 3 ? 'text-red-600' : Math.abs(sdDiff) >= 2 ? 'text-orange-500' : 'text-emerald-500'}`}>
+                              {sdDiff > 0 ? '+' : ''}{sdDiff.toFixed(2)} SD
+                            </td>
+                            <td className="px-6 py-6">
+                              <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase ${Math.abs(sdDiff) >= 3 ? 'bg-red-50 text-red-600 border border-red-100' : Math.abs(sdDiff) >= 2 ? 'bg-orange-50 text-orange-700 border border-orange-100' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'}`}>
+                                {Math.abs(sdDiff) >= 3 ? 'Vi phạm' : Math.abs(sdDiff) >= 2 ? 'Cảnh báo' : 'Hợp lệ'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-6 text-[10px] font-bold text-slate-400 italic">
+                              {r.correctiveAction ? <span className="text-emerald-600"><i className="fas fa-check-circle mr-1"></i> Đã xử lý</span> : isViolated ? <span className="text-blue-600 animate-pulse">Cần xử lý</span> : '---'}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    }
+                   </tbody>
+                 </table>
+               </div>
             </div>
           </div>
         )}
 
         {activeTab === 'entry' && (
-          <div className="max-w-2xl mx-auto bg-white p-8 md:p-12 rounded-[3rem] md:rounded-[4rem] shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-500">
-            <div className="text-center mb-10"><div className="w-20 h-20 md:w-24 md:h-24 bg-blue-600 rounded-[2rem] flex items-center justify-center text-white mx-auto mb-8 shadow-2xl shadow-blue-200"><i className="fas fa-plus text-3xl md:text-4xl"></i></div><h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Cập nhật Kết quả QC</h3><p className="text-slate-400 font-bold mt-2 italic text-sm">Dữ liệu sẽ được lưu trữ và vẽ biểu đồ ngay lập tức</p></div>
-            <div className="space-y-6 md:space-y-8">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-                <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase ml-2">Xét nghiệm</label><select value={selectedTestId} onChange={e => setSelectedTestId(e.target.value)} className="w-full bg-slate-50 p-4 md:p-5 rounded-2xl md:rounded-3xl font-black border-none outline-none focus:ring-4 focus:ring-blue-500/10 transition-all text-sm md:text-base">{tests.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
-                <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase ml-2">Mức QC</label><select value={selectedLevel} onChange={e => setSelectedLevel(e.target.value as QCLevel)} className="w-full bg-slate-50 p-4 md:p-5 rounded-2xl md:rounded-3xl font-black border-none outline-none focus:ring-4 focus:ring-blue-500/10 transition-all text-sm md:text-base">{Object.values(QCLevel).map(lvl => <option key={lvl} value={lvl}>{lvl}</option>)}</select></div>
+          <div className="max-w-2xl mx-auto bg-white p-8 md:p-12 rounded-[3rem] shadow-2xl border animate-in zoom-in-95 duration-500">
+            <div className="text-center mb-10"><div className="w-20 h-20 bg-blue-600 rounded-[2rem] flex items-center justify-center text-white mx-auto mb-8 shadow-2xl shadow-blue-200"><i className="fas fa-plus text-3xl"></i></div><h3 className="text-2xl font-black text-slate-900 tracking-tight">Nhập Kết quả QC</h3></div>
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase ml-2">Xét nghiệm</label><select value={selectedTestId} onChange={e => setSelectedTestId(e.target.value)} className="w-full bg-slate-50 p-4 rounded-2xl font-black border-none outline-none">{tests.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
+                <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase ml-2">Mức QC</label><select value={selectedLevel} onChange={e => setSelectedLevel(e.target.value as QCLevel)} className="w-full bg-slate-50 p-4 rounded-2xl font-black border-none outline-none">{Object.values(QCLevel).map(lvl => <option key={lvl} value={lvl}>{lvl}</option>)}</select></div>
               </div>
-              <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase ml-2">Ngày thực hiện</label><input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} className="w-full bg-slate-50 p-4 md:p-5 rounded-2xl md:rounded-3xl font-black border-none outline-none focus:ring-4 focus:ring-blue-500/10 transition-all text-sm md:text-base" /></div>
-              <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase ml-2">Giá trị đo ({activeTest?.unit})</label><input type="number" step="0.01" value={formValue} onChange={e => setFormValue(e.target.value)} placeholder="Nhập kết quả..." className="w-full bg-slate-50 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] font-black text-3xl md:text-5xl text-blue-600 border-none outline-none focus:ring-8 focus:ring-blue-500/5 transition-all text-center shadow-inner" /></div>
-              <button onClick={addQCResult} className="w-full bg-slate-900 text-white font-black py-5 md:py-6 rounded-3xl shadow-2xl shadow-slate-200 hover:bg-blue-600 hover:scale-[1.02] active:scale-95 transition-all text-lg md:text-xl tracking-tight flex items-center justify-center gap-4"><i className="fas fa-save text-sm"></i> LƯU KẾT QUẢ QC</button>
+              <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase ml-2">Ngày thực hiện</label><input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} className="w-full bg-slate-50 p-4 rounded-2xl font-black border-none outline-none" /></div>
+              <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase ml-2">Giá trị đo ({activeTest?.unit})</label><input type="number" step="0.01" value={formValue} onChange={e => setFormValue(e.target.value)} placeholder="Nhập kết quả..." className="w-full bg-slate-50 p-8 rounded-[2rem] font-black text-5xl text-blue-600 border-none outline-none text-center shadow-inner" /></div>
+              <button onClick={addQCResult} className="w-full bg-slate-900 text-white font-black py-5 rounded-3xl shadow-xl hover:bg-blue-600 transition-all text-lg tracking-tight">LƯU KẾT QUẢ QC</button>
             </div>
           </div>
         )}
 
         {activeTab === 'config' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 animate-in fade-in slide-in-from-bottom-6 duration-700">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in duration-700 pb-10">
             {tests.map(test => (
-              <div key={test.id} className="bg-white p-8 md:p-10 rounded-[3rem] md:rounded-[3.5rem] shadow-sm border border-slate-100 hover:shadow-xl transition-all duration-500 group relative">
-                <div className="flex items-center justify-between mb-8 md:mb-10">
-                  <div className="flex items-center gap-4 md:gap-5">
-                    <div className="bg-slate-50 w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500"><i className="fas fa-flask text-lg md:text-xl"></i></div>
-                    <div><h4 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter group-hover:text-blue-600 transition-colors">{test.name}</h4><p className="text-[9px] md:text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Đơn vị đo: {test.unit}</p></div>
+              <div key={test.id} className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-200 relative group flex flex-col min-h-[500px]">
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-slate-50 w-12 h-12 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all"><i className="fas fa-flask text-lg"></i></div>
+                    <div><h4 className="text-xl font-black text-slate-900">{test.name}</h4><p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{test.unit}</p></div>
                   </div>
-                  <button onClick={() => handleDeleteTest(test.id)} className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all md:opacity-0 group-hover:opacity-100 shadow-sm"><i className="fas fa-trash-alt text-xs"></i></button>
+                  <button onClick={() => handleDeleteTest(test.id)} className="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><i className="fas fa-trash-alt text-xs"></i></button>
                 </div>
                 
-                <div className="space-y-5 md:space-y-6 mb-8 md:mb-10">
+                <div className="space-y-4 flex-1">
                   {Object.values(QCLevel).map(lvl => (
-                    <div key={lvl} className="p-5 md:p-6 rounded-[2rem] md:rounded-[2.5rem] bg-slate-50/50 border border-slate-50 hover:bg-white hover:border-blue-100 hover:shadow-lg hover:shadow-blue-500/5 transition-all duration-300">
-                      <div className="flex items-center justify-between mb-4"><span className="text-[10px] md:text-[11px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-2"><div className={`w-2 h-2 rounded-full ${lvl === 'Low' ? 'bg-blue-400' : lvl === 'Normal' ? 'bg-emerald-400' : 'bg-orange-400'}`}></div> Mức {lvl}</span></div>
-                      <div className="grid grid-cols-3 gap-3 md:gap-4">
-                        <div className="space-y-1.5"><label className="text-[8px] md:text-[9px] font-black text-slate-400 block uppercase ml-2">Mean</label><input type="number" step="0.01" value={test.configs[lvl].mean} onChange={(e) => handleUpdateConfig(test.id, lvl, 'mean', e.target.value)} className="w-full bg-white/50 border border-slate-100 p-3 md:p-4 rounded-xl md:rounded-2xl font-black text-slate-900 shadow-inner outline-none focus:ring-4 focus:ring-blue-500/10 transition-all text-xs md:text-sm" /></div>
-                        <div className="space-y-1.5"><label className="text-[8px] md:text-[9px] font-black text-slate-400 block uppercase ml-2">SD</label><input type="number" step="0.01" value={test.configs[lvl].sd} onChange={(e) => handleUpdateConfig(test.id, lvl, 'sd', e.target.value)} className="w-full bg-white/50 border border-slate-100 p-3 md:p-4 rounded-xl md:rounded-2xl font-black text-slate-900 shadow-inner outline-none focus:ring-4 focus:ring-blue-500/10 transition-all text-xs md:text-sm" /></div>
-                        <div className="space-y-1.5"><label className="text-[8px] md:text-[9px] font-black text-slate-400 block uppercase ml-2">Bias</label><input type="number" step="0.01" value={test.configs[lvl].bias} onChange={(e) => handleUpdateConfig(test.id, lvl, 'bias', e.target.value)} className="w-full bg-white/50 border border-slate-100 p-3 md:p-4 rounded-xl md:rounded-2xl font-black text-slate-900 shadow-inner outline-none focus:ring-4 focus:ring-blue-500/10 transition-all text-xs md:text-sm" /></div>
+                    <div key={lvl} className="p-5 rounded-3xl bg-slate-50/50 border border-slate-100 hover:bg-white transition-all">
+                      <p className="text-[10px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-2 mb-4">Mức {lvl}</p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1"><label className="text-[8px] font-black text-slate-400 block ml-2 uppercase">Mean</label><input type="number" step="0.01" value={test.configs[lvl].mean} onChange={(e) => setTests(prev => prev.map(t => t.id === test.id ? { ...t, configs: { ...t.configs, [lvl]: { ...t.configs[lvl], mean: Number(e.target.value) } } } : t))} className="w-full bg-white border border-slate-200 p-3 rounded-xl font-black text-sm outline-none focus:ring-2 focus:ring-blue-100" /></div>
+                        <div className="space-y-1"><label className="text-[8px] font-black text-slate-400 block ml-2 uppercase">SD</label><input type="number" step="0.01" value={test.configs[lvl].sd} onChange={(e) => setTests(prev => prev.map(t => t.id === test.id ? { ...t, configs: { ...t.configs, [lvl]: { ...t.configs[lvl], sd: Number(e.target.value) } } } : t))} className="w-full bg-white border border-slate-200 p-3 rounded-xl font-black text-sm outline-none focus:ring-2 focus:ring-blue-100" /></div>
                       </div>
                     </div>
                   ))}
                 </div>
-                
+
                 <button 
-                  onClick={() => handleSaveTestConfig(test.id)}
-                  disabled={savingTestId === test.id}
-                  className={`w-full py-4 md:py-5 rounded-[2rem] font-black text-[10px] md:text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-3 active:scale-95 shadow-xl shadow-slate-200 ${savingTestId === test.id ? 'bg-emerald-500 text-white shadow-emerald-200' : 'bg-slate-900 text-white hover:bg-blue-600 hover:shadow-blue-200'}`}
+                  onClick={() => handleSaveConfig(test.id)} 
+                  className={`w-full mt-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-3 ${savingTestId === test.id ? 'bg-emerald-500 text-white' : 'bg-slate-900 text-white hover:bg-blue-600'}`}
                 >
-                  {savingTestId === test.id ? (
-                    <><i className="fas fa-circle-notch animate-spin"></i> ĐANG LƯU...</>
-                  ) : (
-                    <><i className="fas fa-check-double text-sm"></i> LƯU THAY ĐỔI</>
-                  )}
+                  {savingTestId === test.id ? <><i className="fas fa-check"></i> ĐÃ LƯU</> : <><i className="fas fa-save"></i> LƯU CẤU HÌNH</>}
                 </button>
               </div>
             ))}
-            
-            <div 
-              onClick={() => setIsAddModalOpen(true)}
-              className="bg-slate-50 border-4 border-dashed border-slate-200 rounded-[3rem] md:rounded-[3.5rem] flex flex-col items-center justify-center p-10 md:p-14 text-slate-400 hover:border-blue-300 hover:bg-blue-50/20 cursor-pointer transition-all group min-h-[350px]"
-            >
-              <div className="w-16 h-16 md:w-20 md:h-20 rounded-[1.5rem] md:rounded-[2rem] bg-white shadow-sm flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500"><i className="fas fa-plus text-2xl md:text-3xl"></i></div>
-              <span className="font-black uppercase tracking-widest text-xs md:text-sm">Thêm xét nghiệm mới</span>
-              <p className="text-[10px] md:text-xs mt-3 text-center font-bold opacity-60 px-4">Thêm danh mục quản lý nội kiểm mới vào hệ thống</p>
-            </div>
+
+            <button onClick={() => setIsAddModalOpen(true)} className="bg-slate-50 border-4 border-dashed border-slate-200 rounded-[3rem] flex flex-col items-center justify-center p-14 text-slate-400 hover:border-blue-400 hover:bg-blue-50/50 cursor-pointer transition-all min-h-[500px]">
+              <div className="w-16 h-16 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center mb-6"><i className="fas fa-plus text-2xl"></i></div>
+              <span className="font-black uppercase tracking-widest text-sm">Thêm xét nghiệm mới</span>
+              <p className="text-[10px] mt-2 font-bold opacity-60">Nhấn để mở trình cài đặt</p>
+            </button>
           </div>
         )}
 
-        {activeTab === 'advisor' && (
-          <div className="h-[600px] md:h-[700px] animate-in fade-in zoom-in duration-500">
-            <RegulatoryAdvisor />
-          </div>
-        )}
+        {activeTab === 'advisor' && <div className="h-[600px] md:h-[700px] animate-in fade-in duration-500"><RegulatoryAdvisor /></div>}
       </main>
 
-      {/* Add New Test Modal */}
+      {/* MODAL: THÊM XÉT NGHIỆM */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsAddModalOpen(false)}></div>
-          <div className="relative bg-white w-full max-w-2xl rounded-[2.5rem] md:rounded-[3rem] shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-300 max-h-[90vh] flex flex-col">
-            <div className="p-6 md:p-8 bg-slate-900 text-white flex justify-between items-center">
-              <h3 className="text-lg md:text-xl font-black tracking-tight flex items-center gap-3"><i className="fas fa-flask text-blue-400"></i> THÊM XÉT NGHIỆM</h3>
-              <button onClick={() => setIsAddModalOpen(false)} className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all"><i className="fas fa-times"></i></button>
+          <div className="relative bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl p-8 overflow-y-auto max-h-[90vh]">
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="text-2xl font-black text-slate-900">THIẾT LẬP XÉT NGHIỆM</h3>
+              <button onClick={() => setIsAddModalOpen(false)} className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center"><i className="fas fa-times"></i></button>
+            </div>
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1"><label className="text-[10px] font-black text-slate-500 uppercase ml-2">Tên xét nghiệm</label><input placeholder="VD: Glucose" className="w-full bg-slate-50 p-4 rounded-2xl font-bold border-none outline-none" onChange={e => setNewTest({...newTest, name: e.target.value})} /></div>
+                <div className="space-y-1"><label className="text-[10px] font-black text-slate-500 uppercase ml-2">Đơn vị</label><input placeholder="VD: mmol/L" className="w-full bg-slate-50 p-4 rounded-2xl font-bold border-none outline-none" onChange={e => setNewTest({...newTest, unit: e.target.value})} /></div>
+              </div>
+              {Object.values(QCLevel).map(lvl => (
+                <div key={lvl} className="p-4 bg-slate-50 rounded-2xl space-y-3 border border-slate-100">
+                  <p className="font-black text-[10px] uppercase tracking-widest text-slate-500">Mức {lvl}</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <input type="number" step="0.01" placeholder="Mean Target" className="w-full p-3 rounded-xl border bg-white font-bold" onChange={e => setNewTest({...newTest, configs: {...newTest.configs, [lvl]: {...newTest.configs[lvl], mean: Number(e.target.value)}}})} />
+                    <input type="number" step="0.01" placeholder="SD Spec" className="w-full p-3 rounded-xl border bg-white font-bold" onChange={e => setNewTest({...newTest, configs: {...newTest.configs, [lvl]: {...newTest.configs[lvl], sd: Number(e.target.value)}}})} />
+                  </div>
+                </div>
+              ))}
+              <div className="flex gap-4 pt-4">
+                <button onClick={() => setIsAddModalOpen(false)} className="flex-1 py-4 font-black uppercase tracking-widest text-slate-400 text-xs">Huỷ bỏ</button>
+                <button onClick={handleAddNewTest} className="flex-2 bg-blue-600 text-white px-10 py-5 rounded-2xl font-black shadow-lg uppercase tracking-widest text-xs">Tạo xét nghiệm</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: HÀNH ĐỘNG KHẮC PHỤC (ACTION MODAL) */}
+      {isActionModalOpen && selectedResultForAction && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsActionModalOpen(false)}></div>
+          <div className="relative bg-white w-full max-w-xl rounded-[3rem] shadow-2xl p-10">
+            <div className="flex items-center gap-5 mb-8">
+              <div className="w-14 h-14 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center text-2xl shadow-inner shadow-red-50"><i className="fas fa-exclamation-triangle"></i></div>
+              <div>
+                <h3 className="text-2xl font-black text-slate-900 leading-none mb-2">XỬ LÝ LỖI QC</h3>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest italic">Hành động khắc phục Westgard</p>
+              </div>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 md:space-y-8 custom-scrollbar">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Tên xét nghiệm</label>
-                  <input type="text" placeholder="Ví dụ: Glucose" value={newTestForm.name} onChange={e => setNewTestForm({...newTestForm, name: e.target.value})} className="w-full bg-slate-50 p-4 rounded-xl md:rounded-2xl font-bold outline-none focus:ring-4 focus:ring-blue-500/10 border border-slate-100 shadow-inner" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Đơn vị đo</label>
-                  <input type="text" placeholder="Ví dụ: mmol/L" value={newTestForm.unit} onChange={e => setNewTestForm({...newTestForm, unit: e.target.value})} className="w-full bg-slate-50 p-4 rounded-xl md:rounded-2xl font-bold outline-none focus:ring-4 focus:ring-blue-500/10 border border-slate-100 shadow-inner" />
-                </div>
+            <div className="space-y-6 mb-10">
+              <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">Phân tích vi phạm</p>
+                <p className="font-black text-slate-800 text-sm leading-relaxed">
+                  {analyzeWestgard(selectedResultForAction).rule}: 
+                  <span className="font-medium text-slate-600 ml-2 italic">{analyzeWestgard(selectedResultForAction).action}</span>
+                </p>
               </div>
               
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">TEa mục tiêu (%)</label>
-                <input type="number" value={newTestForm.tea} onChange={e => setNewTestForm({...newTestForm, tea: e.target.value})} className="w-full bg-slate-50 p-4 rounded-xl md:rounded-2xl font-bold outline-none focus:ring-4 focus:ring-blue-500/10 border border-slate-100 shadow-inner" />
+                <label className="text-[10px] font-black text-slate-500 uppercase ml-2">Nội dung khắc phục chi tiết</label>
+                <textarea 
+                  value={actionComment} 
+                  onChange={e => setActionComment(e.target.value)} 
+                  placeholder="Mô tả các bước xử lý (VD: Calib lại máy, thay lô thuốc thử mới...)" 
+                  className="w-full bg-slate-50 p-6 rounded-[2rem] border-2 border-transparent focus:border-blue-400 focus:bg-white outline-none h-36 text-sm font-medium transition-all" 
+                />
               </div>
 
-              <div className="space-y-4 md:space-y-6">
-                <p className="text-[10px] md:text-[11px] font-black text-slate-900 uppercase tracking-[0.2em] border-b pb-2">Cấu hình Spec (Mean & SD)</p>
-                {([QCLevel.LOW, QCLevel.NORMAL, QCLevel.HIGH]).map((lvl) => {
-                  const key = lvl.toLowerCase() as 'low' | 'normal' | 'high';
-                  return (
-                    <div key={lvl} className="p-4 md:p-5 rounded-2xl bg-slate-50 border border-slate-100 space-y-3 md:space-y-4">
-                      <p className="text-[10px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">Mức {lvl}</p>
-                      <div className="grid grid-cols-3 gap-3 md:gap-4">
-                        <div className="space-y-1">
-                          <label className="text-[8px] md:text-[9px] font-black text-slate-400 block uppercase ml-2">Mean</label>
-                          <input type="number" placeholder="0.00" value={newTestForm[key].mean} onChange={e => setNewTestForm({...newTestForm, [key]: {...newTestForm[key], mean: e.target.value}})} className="w-full bg-white p-2.5 md:p-3 rounded-lg md:rounded-xl font-black text-xs md:text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm border border-slate-100" />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[8px] md:text-[9px] font-black text-slate-400 block uppercase ml-2">SD</label>
-                          <input type="number" placeholder="0.00" value={newTestForm[key].sd} onChange={e => setNewTestForm({...newTestForm, [key]: {...newTestForm[key], sd: e.target.value}})} className="w-full bg-white p-2.5 md:p-3 rounded-lg md:rounded-xl font-black text-xs md:text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm border border-slate-100" />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[8px] md:text-[9px] font-black text-slate-400 block uppercase ml-2">Bias</label>
-                          <input type="number" placeholder="0.00" value={newTestForm[key].bias} onChange={e => setNewTestForm({...newTestForm, [key]: {...newTestForm[key], bias: e.target.value}})} className="w-full bg-white p-2.5 md:p-3 rounded-lg md:rounded-xl font-black text-xs md:text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm border border-slate-100" />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="flex flex-wrap gap-2">
+                {['Chạy lại mẫu QC mới', 'Hiệu chuẩn (Calibration)', 'Thay lô thuốc thử', 'Bảo trì kim hút', 'Kiểm tra đường ống'].map(txt => (
+                  <button key={txt} onClick={() => setActionComment(txt)} className="text-[10px] font-black px-4 py-2 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-xl transition-all">{txt}</button>
+                ))}
               </div>
             </div>
-            
-            <div className="p-6 md:p-8 bg-slate-50 border-t flex gap-4">
-              <button onClick={() => setIsAddModalOpen(false)} className="flex-1 py-4 rounded-2xl bg-white border border-slate-200 font-black text-[10px] uppercase tracking-widest text-slate-500 hover:bg-slate-100 transition-all">Huỷ bỏ</button>
-              <button onClick={handleAddNewTest} className="flex-[2] py-4 rounded-2xl bg-blue-600 text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all flex items-center justify-center gap-3"><i className="fas fa-check text-xs"></i> Xác nhận</button>
+
+            <div className="flex gap-4">
+              <button onClick={() => setIsActionModalOpen(false)} className="flex-1 py-4 font-black text-slate-400 uppercase tracking-widest text-[10px]">Đóng</button>
+              <button onClick={saveAction} className="flex-2 bg-slate-900 text-white px-10 py-5 rounded-3xl font-black shadow-2xl hover:bg-blue-600 transition-all uppercase tracking-widest text-[10px]">Xác nhận xử lý</button>
             </div>
           </div>
         </div>
