@@ -193,6 +193,13 @@ const App = () => {
     }
   };
 
+  const handleDeleteQCResult = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation(); // Ngăn chặn sự kiện click hàng (mở modal)
+    if (confirm('Bạn có chắc chắn muốn xoá kết quả QC này?')) {
+      setResults(prev => prev.filter(r => r.id !== id));
+    }
+  };
+
   const handleSaveConfig = (id: string) => {
     setSavingTestId(id);
     setTimeout(() => {
@@ -302,11 +309,11 @@ const App = () => {
                <div className="overflow-x-auto">
                  <table className="w-full text-left">
                    <thead className="bg-slate-50/50 text-[10px] font-black uppercase text-slate-400">
-                     <tr><th className="px-6 py-5">Ngày giờ</th><th className="px-6 py-5">Giá trị</th><th className="px-6 py-5">SD Index</th><th className="px-6 py-5">Kết quả</th><th className="px-6 py-5">Hành động</th></tr>
+                     <tr><th className="px-6 py-5">Ngày giờ</th><th className="px-6 py-5">Giá trị</th><th className="px-6 py-5">SD Index</th><th className="px-6 py-5">Kết quả</th><th className="px-6 py-5">Hành động</th><th className="px-6 py-5 text-center">Thao tác</th></tr>
                    </thead>
                    <tbody className="divide-y text-sm">
                     {activeResults.length === 0 ? (
-                      <tr><td colSpan={5} className="p-20 text-center text-slate-300 font-bold italic">Chưa có kết quả.</td></tr>
+                      <tr><td colSpan={6} className="p-20 text-center text-slate-300 font-bold italic">Chưa có kết quả.</td></tr>
                     ) : 
                       activeResults.slice().sort((a,b) => b.timestamp - a.timestamp).map(r => {
                         const sdDiff = activeLevelConfig.sd !== 0 ? (r.value - activeLevelConfig.mean) / activeLevelConfig.sd : 0;
@@ -325,6 +332,15 @@ const App = () => {
                             </td>
                             <td className="px-6 py-6 text-[10px] font-bold text-slate-400 italic">
                               {r.correctiveAction ? <span className="text-emerald-600"><i className="fas fa-check-circle mr-1"></i> Đã xử lý</span> : isViolated ? <span className="text-blue-600 animate-pulse">Cần xử lý</span> : '---'}
+                            </td>
+                            <td className="px-6 py-6 text-center">
+                              <button 
+                                onClick={(e) => handleDeleteQCResult(e, r.id)}
+                                className="w-8 h-8 rounded-lg bg-red-50 text-red-400 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center mx-auto shadow-sm"
+                                title="Xoá kết quả này"
+                              >
+                                <i className="fas fa-trash-alt text-xs"></i>
+                              </button>
                             </td>
                           </tr>
                         );
@@ -461,7 +477,7 @@ const App = () => {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {['Chạy lại mẫu QC mới', 'Hiệu chuẩn (Calibration)', 'Thay lô thuốc thử', 'Bảo trì kim hút', 'Kiểm tra đường ống'].map(txt => (
+                {['Chạy lại mẫu QC mới', 'Hiệu chuẩn (Calibration)', 'Thay thuốc thử', 'Bảo trì kim hút', 'Kiểm tra đường ống'].map(txt => (
                   <button key={txt} onClick={() => setActionComment(txt)} className="text-[10px] font-black px-4 py-2 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-xl transition-all">{txt}</button>
                 ))}
               </div>
