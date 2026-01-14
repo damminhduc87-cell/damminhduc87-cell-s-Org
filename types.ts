@@ -8,14 +8,16 @@ export enum QCLevel {
 export interface QCConfig {
   mean: number;
   sd: number;
-  bias: number;
+  bias: number; // Sai số hệ thống (%)
+  eqaTarget?: number; // Giá trị mục tiêu EQA
+  eqaResult?: number; // Kết quả Lab đo được EQA
 }
 
 export interface LabTest {
   id: string;
   name: string;
   unit: string;
-  tea: number;
+  tea: number; // TEa theo CLIA 2024 (%)
   configs: Record<QCLevel, QCConfig>;
 }
 

@@ -81,6 +81,80 @@ const LeveyJenningsChart: React.FC<{
   );
 };
 
+// --- Sigma Analysis Component ---
+const SigmaAnalysis: React.FC<{ test: LabTest, config: QCConfig }> = ({ test, config }) => {
+  const { mean, sd, bias, eqaTarget, eqaResult } = config;
+  
+  // Tính Bias% thực tế từ Ngoại kiểm (nếu có dữ liệu)
+  const actualBias = (eqaTarget && eqaResult) 
+    ? (Math.abs(eqaResult - eqaTarget) / eqaTarget) * 100 
+    : bias;
+
+  const cv = mean !== 0 ? (sd / mean) * 100 : 0;
+  const tea = test.tea;
+  
+  // TE Actual = |Bias%| + 2*CV%
+  const teActual = Math.abs(actualBias) + 2 * cv;
+  
+  // Sigma = (TEa - |Bias%|) / CV%
+  const sigma = cv !== 0 ? (tea - Math.abs(actualBias)) / cv : 0;
+
+  const getStatus = (s: number) => {
+    if (s >= 6) return { label: 'Đẳng cấp Thế giới', color: 'text-emerald-600', bg: 'bg-emerald-50', advice: 'Máy vận hành cực kỳ ổn định. Có thể giảm tần suất chạy QC.' };
+    if (s >= 5) return { label: 'Xuất sắc', color: 'text-blue-600', bg: 'bg-blue-50', advice: 'Quy trình kiểm soát chất lượng rất tốt. Duy trì vận hành.' };
+    if (s >= 4) return { label: 'Khá', color: 'text-indigo-600', bg: 'bg-indigo-50', advice: 'Mức khá, máy vận hành ổn định.' };
+    if (s >= 3) return { label: 'Trung bình', color: 'text-amber-600', bg: 'bg-amber-50', advice: 'Cần giám sát chặt chẽ các quy tắc Westgard. Cân nhắc hiệu chuẩn máy.' };
+    return { label: 'Kém', color: 'text-red-600', bg: 'bg-red-50', advice: 'Cần cải tiến quy trình hoặc bảo trì máy ngay lập tức. Sai số thực tế quá lớn.' };
+  };
+
+  const status = getStatus(sigma);
+
+  return (
+    <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 flex flex-col gap-6 animate-in slide-in-from-right duration-500">
+      <div className="flex justify-between items-center">
+        <h3 className="font-black text-slate-800 text-sm tracking-widest uppercase flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white"><i className="fas fa-microchip text-xs"></i></div>
+          Phân tích Sigma & TE (CLIA 2024)
+        </h3>
+        <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase ${status.bg} ${status.color}`}>
+          {status.label}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="p-4 bg-slate-50 rounded-2xl">
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">TEa (CLIA)</p>
+          <p className="text-xl font-black text-slate-800">{tea}%</p>
+        </div>
+        <div className="p-4 bg-slate-50 rounded-2xl">
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Bias (%) {eqaTarget ? '(EQA)' : '(Manual)'}</p>
+          <p className="text-xl font-black text-slate-800">{actualBias.toFixed(2)}%</p>
+        </div>
+        <div className="p-4 bg-slate-50 rounded-2xl">
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">TE thực tế</p>
+          <p className={`text-xl font-black ${teActual > tea ? 'text-red-600' : 'text-slate-800'}`}>
+            {teActual.toFixed(2)}%
+          </p>
+        </div>
+        <div className={`p-4 rounded-2xl flex flex-col justify-center ${status.bg}`}>
+          <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${status.color}`}>Chỉ số Sigma</p>
+          <p className={`text-3xl font-black ${status.color}`}>{sigma.toFixed(2)}</p>
+        </div>
+      </div>
+
+      <div className={`p-5 rounded-2xl border-l-4 ${status.bg} border-l-current space-y-2`}>
+        <p className={`text-xs font-bold leading-relaxed ${status.color}`}>
+          <i className="fas fa-lightbulb mr-2"></i>
+          {status.advice}
+        </p>
+        <p className="text-[10px] text-slate-400 italic">
+          Công thức: Sigma = (TEa - |Bias%|) / CV% | TE_thct = |Bias%| + 2*CV%
+        </p>
+      </div>
+    </div>
+  );
+};
+
 // --- Predictive Analytics Component ---
 const PredictiveInsights: React.FC<{ results: QCResult[], config: QCConfig }> = ({ results, config }) => {
   const { mean, sd } = config;
@@ -165,7 +239,6 @@ const RegulatoryAdvisor = () => {
     setMessages(prev => [...prev, { role: 'user', text: userText }]);
     setLoading(true);
     try {
-      // Create a fresh GoogleGenAI instance right before the call
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
@@ -176,7 +249,6 @@ const RegulatoryAdvisor = () => {
         }
       });
       
-      // Extract and format grounding search results as links
       let modelText = response.text || "Tôi không thể xử lý thông tin này.";
       const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
       if (groundingChunks && groundingChunks.length > 0) {
@@ -235,7 +307,6 @@ const App = () => {
   const [formValue, setFormValue] = useState<string>('');
   const [formDate, setFormDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
-  // Fix: Added missing newTest state to resolve "Cannot find name 'newTest'" errors
   const [newTest, setNewTest] = useState<LabTest>({
     id: '', name: '', unit: '', tea: 10,
     configs: {
@@ -311,7 +382,6 @@ const App = () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "NhatKyQC");
     
-    // Tạo file name theo ngày và tên xét nghiệm
     const fileName = `QC_Log_${activeTest.name}_${selectedLevel}_${new Date().toISOString().split('T')[0]}.xlsx`;
     XLSX.writeFile(wb, fileName);
   };
@@ -368,7 +438,7 @@ const App = () => {
           <h1 className="text-white font-black text-xl tracking-tighter">MinhDucLab</h1>
         </div>
         <nav className="flex-1 p-4 space-y-2">
-          {[{ id: 'dashboard', label: 'Bảng điều khiển', icon: 'fa-chart-line' }, { id: 'entry', label: 'Nhập dữ liệu QC', icon: 'fa-plus-circle' }, { id: 'config', label: 'Cấu hình Mean/SD', icon: 'fa-sliders-h' }, { id: 'advisor', label: 'Cố vấn AI', icon: 'fa-robot' }].map(item => (
+          {[{ id: 'dashboard', label: 'Bảng điều khiển', icon: 'fa-chart-line' }, { id: 'entry', label: 'Nhập dữ liệu QC', icon: 'fa-plus-circle' }, { id: 'config', label: 'Cấu hình & Ngoại kiểm', icon: 'fa-sliders-h' }, { id: 'advisor', label: 'Cố vấn AI', icon: 'fa-robot' }].map(item => (
             <button key={item.id} onClick={() => { setActiveTab(item.id as any); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all ${activeTab === item.id ? 'bg-blue-600 text-white shadow-xl' : 'hover:bg-white/5 font-bold'}`}>
               <i className={`fas ${item.icon} w-5`}></i>
               <span className="text-sm">{item.label}</span>
@@ -385,7 +455,7 @@ const App = () => {
       <main className="flex-1 w-full p-6 md:p-10 lg:p-14 mt-20 lg:mt-0 max-w-7xl mx-auto">
         <header className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">
-            {activeTab === 'dashboard' ? 'Giám sát IQC' : activeTab === 'entry' ? 'Nhập kết quả' : activeTab === 'config' ? 'Cấu hình' : 'Cố vấn AI'}
+            {activeTab === 'dashboard' ? 'Giám sát IQC' : activeTab === 'entry' ? 'Nhập kết quả' : activeTab === 'config' ? 'Cấu hình & Ngoại kiểm' : 'Cố vấn AI'}
           </h2>
           {activeTab === 'dashboard' && tests.length > 0 && (
             <div className="flex flex-col sm:flex-row gap-4 p-2 bg-white rounded-3xl shadow-sm border">
@@ -403,13 +473,18 @@ const App = () => {
 
         {activeTab === 'dashboard' && activeTest && (
           <div className="space-y-10 animate-in fade-in duration-500">
-            {/* Predictive Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                 <div className="w-1.5 h-6 bg-blue-600 rounded-full"></div>
-                 <h3 className="font-black text-slate-900 text-sm tracking-widest uppercase">Dự báo & Phân tích Xu hướng AI</h3>
+            {/* Sigma & Predictive Section */}
+            <div className="grid grid-cols-1 gap-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-6 bg-blue-600 rounded-full"></div>
+                  <h3 className="font-black text-slate-900 text-sm tracking-widest uppercase">Phân tích chuyên sâu AI</h3>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <PredictiveInsights results={activeResults} config={activeLevelConfig} />
+                  <SigmaAnalysis test={activeTest} config={activeLevelConfig} />
+                </div>
               </div>
-              <PredictiveInsights results={activeResults} config={activeLevelConfig} />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
@@ -498,7 +573,7 @@ const App = () => {
         {activeTab === 'config' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in duration-700 pb-10">
             {tests.map(test => (
-              <div key={test.id} className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-200 relative group flex flex-col min-h-[500px]">
+              <div key={test.id} className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-200 relative group flex flex-col min-h-[600px]">
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-4">
                     <div className="bg-slate-50 w-12 h-12 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all"><i className="fas fa-flask text-lg"></i></div>
@@ -507,13 +582,22 @@ const App = () => {
                   <button onClick={() => handleDeleteTest(test.id)} className="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><i className="fas fa-trash-alt text-xs"></i></button>
                 </div>
                 
-                <div className="space-y-4 flex-1">
+                <div className="space-y-6 flex-1">
+                  <div className="px-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">TEa Cho phép (%) - CLIA 2024</label><input type="number" step="0.1" value={test.tea} onChange={(e) => setTests(prev => prev.map(t => t.id === test.id ? { ...t, tea: Number(e.target.value) } : t))} className="w-full bg-slate-50 p-3 rounded-xl font-black text-blue-600 mt-1" /></div>
+                  
                   {Object.values(QCLevel).map(lvl => (
                     <div key={lvl} className="p-5 rounded-3xl bg-slate-50/50 border border-slate-100 hover:bg-white transition-all">
-                      <p className="text-[10px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-2 mb-4">Mức {lvl}</p>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1"><label className="text-[8px] font-black text-slate-400 block ml-2 uppercase">Mean</label><input type="number" step="0.01" value={test.configs[lvl].mean} onChange={(e) => setTests(prev => prev.map(t => t.id === test.id ? { ...t, configs: { ...t.configs, [lvl]: { ...t.configs[lvl], mean: Number(e.target.value) } } } : t))} className="w-full bg-white border border-slate-200 p-3 rounded-xl font-black text-sm outline-none focus:ring-2 focus:ring-blue-100" /></div>
-                        <div className="space-y-1"><label className="text-[8px] font-black text-slate-400 block ml-2 uppercase">SD</label><input type="number" step="0.01" value={test.configs[lvl].sd} onChange={(e) => setTests(prev => prev.map(t => t.id === test.id ? { ...t, configs: { ...t.configs, [lvl]: { ...t.configs[lvl], sd: Number(e.target.value) } } } : t))} className="w-full bg-white border border-slate-200 p-3 rounded-xl font-black text-sm outline-none focus:ring-2 focus:ring-blue-100" /></div>
+                      <p className="text-[10px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-2 mb-4">Cấu hình IQC & EQA - Mức {lvl}</p>
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="space-y-1"><label className="text-[8px] font-black text-slate-400 block ml-2 uppercase">Mean (Nội kiểm)</label><input type="number" step="0.01" value={test.configs[lvl].mean} onChange={(e) => setTests(prev => prev.map(t => t.id === test.id ? { ...t, configs: { ...t.configs, [lvl]: { ...t.configs[lvl], mean: Number(e.target.value) } } } : t))} className="w-full bg-white border border-slate-200 p-2.5 rounded-xl font-black text-xs outline-none focus:ring-2 focus:ring-blue-100" /></div>
+                        <div className="space-y-1"><label className="text-[8px] font-black text-slate-400 block ml-2 uppercase">SD (Nội kiểm)</label><input type="number" step="0.01" value={test.configs[lvl].sd} onChange={(e) => setTests(prev => prev.map(t => t.id === test.id ? { ...t, configs: { ...t.configs, [lvl]: { ...t.configs[lvl], sd: Number(e.target.value) } } } : t))} className="w-full bg-white border border-slate-200 p-2.5 rounded-xl font-black text-xs outline-none focus:ring-2 focus:ring-blue-100" /></div>
+                      </div>
+                      <div className="p-3 bg-blue-50/50 rounded-2xl border border-blue-100 space-y-3">
+                        <p className="text-[8px] font-black text-blue-600 uppercase tracking-widest text-center">Nhập dữ liệu Ngoại kiểm (EQA) để tính Bias%</p>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1"><label className="text-[8px] font-black text-slate-400 block ml-1 uppercase">Giá trị mục tiêu EQA</label><input type="number" step="0.01" value={test.configs[lvl].eqaTarget || ''} placeholder="0.00" onChange={(e) => setTests(prev => prev.map(t => t.id === test.id ? { ...t, configs: { ...t.configs, [lvl]: { ...t.configs[lvl], eqaTarget: Number(e.target.value) } } } : t))} className="w-full bg-white border border-slate-200 p-2.5 rounded-xl font-black text-xs outline-none" /></div>
+                          <div className="space-y-1"><label className="text-[8px] font-black text-slate-400 block ml-1 uppercase">Kết quả Lab đo được</label><input type="number" step="0.01" value={test.configs[lvl].eqaResult || ''} placeholder="0.00" onChange={(e) => setTests(prev => prev.map(t => t.id === test.id ? { ...t, configs: { ...t.configs, [lvl]: { ...t.configs[lvl], eqaResult: Number(e.target.value) } } } : t))} className="w-full bg-white border border-slate-200 p-2.5 rounded-xl font-black text-xs outline-none" /></div>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -523,7 +607,7 @@ const App = () => {
                   onClick={() => handleSaveConfig(test.id)} 
                   className={`w-full mt-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-3 ${savingTestId === test.id ? 'bg-emerald-500 text-white' : 'bg-slate-900 text-white hover:bg-blue-600'}`}
                 >
-                  {savingTestId === test.id ? <><i className="fas fa-check"></i> ĐÃ LƯU</> : <><i className="fas fa-save"></i> LƯU CẤU HÌNH</>}
+                  {savingTestId === test.id ? <><i className="fas fa-check"></i> ĐÃ LƯU</> : <><i className="fas fa-save"></i> LƯU THÔNG SỐ</>}
                 </button>
               </div>
             ))}
@@ -531,7 +615,7 @@ const App = () => {
             <button onClick={() => setIsAddModalOpen(true)} className="bg-slate-50 border-4 border-dashed border-slate-200 rounded-[3rem] flex flex-col items-center justify-center p-14 text-slate-400 hover:border-blue-400 hover:bg-blue-50/50 cursor-pointer transition-all min-h-[500px]">
               <div className="w-16 h-16 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center mb-6"><i className="fas fa-plus text-2xl"></i></div>
               <span className="font-black uppercase tracking-widest text-sm">Thêm xét nghiệm mới</span>
-              <p className="text-[10px] mt-2 font-bold opacity-60">Nhấn để mở trình cài đặt</p>
+              <p className="text-[10px] mt-2 font-bold opacity-60">Theo chuẩn CLIA 2024</p>
             </button>
           </div>
         )}
@@ -545,7 +629,7 @@ const App = () => {
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsAddModalOpen(false)}></div>
           <div className="relative bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl p-8 overflow-y-auto max-h-[90vh]">
             <div className="flex justify-between items-center mb-8">
-              <h3 className="text-2xl font-black text-slate-900">THIẾT LẬP XÉT NGHIỆM</h3>
+              <h3 className="text-2xl font-black text-slate-900">THIẾT LẬP XÉT NGHIỆM MỚI</h3>
               <button onClick={() => setIsAddModalOpen(false)} className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center"><i className="fas fa-times"></i></button>
             </div>
             <div className="space-y-6">
@@ -553,6 +637,7 @@ const App = () => {
                 <div className="space-y-1"><label className="text-[10px] font-black text-slate-500 uppercase ml-2">Tên xét nghiệm</label><input placeholder="VD: Glucose" className="w-full bg-slate-50 p-4 rounded-2xl font-bold border-none outline-none" onChange={e => setNewTest({...newTest, name: e.target.value})} /></div>
                 <div className="space-y-1"><label className="text-[10px] font-black text-slate-500 uppercase ml-2">Đơn vị</label><input placeholder="VD: mmol/L" className="w-full bg-slate-50 p-4 rounded-2xl font-bold border-none outline-none" onChange={e => setNewTest({...newTest, unit: e.target.value})} /></div>
               </div>
+              <div className="space-y-1"><label className="text-[10px] font-black text-slate-500 uppercase ml-2">TEa CLIA 2024 (%)</label><input type="number" placeholder="VD: 8" className="w-full bg-slate-50 p-4 rounded-2xl font-bold border-none outline-none" onChange={e => setNewTest({...newTest, tea: Number(e.target.value)})} /></div>
               {Object.values(QCLevel).map(lvl => (
                 <div key={lvl} className="p-4 bg-slate-50 rounded-2xl space-y-3 border border-slate-100">
                   <p className="font-black text-[10px] uppercase tracking-widest text-slate-500">Mức {lvl}</p>
