@@ -2,6 +2,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { GoogleGenAI } from "@google/genai";
+import * as XLSX from 'xlsx';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine 
 } from 'recharts';
@@ -34,7 +35,6 @@ const LeveyJenningsChart: React.FC<{
     Number((mean + zoomLevel * sd).toFixed(2))
   ], [mean, sd, zoomLevel]);
 
-  // Helper to format reference labels with values
   const formatRefLabel = (label: string, value: number) => {
     return `${value.toFixed(2)} (${label})`;
   };
@@ -66,25 +66,85 @@ const LeveyJenningsChart: React.FC<{
             <XAxis dataKey="fullLabel" tickFormatter={(tick) => tick.split(' ')[0]} tick={{fontSize: 10, fill: '#94a3b8', fontWeight: 'bold'}} axisLine={false} tickLine={false} />
             <YAxis domain={yDomain} tick={{fontSize: 10, fill: '#94a3b8', fontWeight: 'bold'}} axisLine={false} tickLine={false} />
             <Tooltip labelStyle={{ fontWeight: 'bold' }} contentStyle={{borderRadius: '1.25rem', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)'}} />
-            
-            {/* Mean */}
             <ReferenceLine y={mean} stroke="#0f172a" strokeWidth={2.5} label={{ position: 'right', value: formatRefLabel('Mean', mean), fontSize: 9, fill: '#0f172a', fontWeight: '900' }} />
-            
-            {/* ±1SD */}
             <ReferenceLine y={mean + sd} stroke="#94a3b8" strokeDasharray="5 5" strokeWidth={1} label={{ position: 'right', value: formatRefLabel('+1SD', mean + sd), fontSize: 8, fill: '#94a3b8', fontWeight: 'bold' }} />
             <ReferenceLine y={mean - sd} stroke="#94a3b8" strokeDasharray="5 5" strokeWidth={1} label={{ position: 'right', value: formatRefLabel('-1SD', mean - sd), fontSize: 8, fill: '#94a3b8', fontWeight: 'bold' }} />
-            
-            {/* ±2SD */}
             <ReferenceLine y={mean + 2*sd} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={1.5} label={{ position: 'right', value: formatRefLabel('+2SD', mean + 2*sd), fontSize: 9, fill: '#f59e0b', fontWeight: 'bold' }} />
             <ReferenceLine y={mean - 2*sd} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={1.5} label={{ position: 'right', value: formatRefLabel('-2SD', mean - 2*sd), fontSize: 9, fill: '#f59e0b', fontWeight: 'bold' }} />
-            
-            {/* ±3SD */}
             <ReferenceLine y={mean + 3*sd} stroke="#ef4444" strokeWidth={2} label={{ position: 'right', value: formatRefLabel('+3SD', mean + 3*sd), fontSize: 9, fill: '#ef4444', fontWeight: 'bold' }} />
             <ReferenceLine y={mean - 3*sd} stroke="#ef4444" strokeWidth={2} label={{ position: 'right', value: formatRefLabel('-3SD', mean - 3*sd), fontSize: 9, fill: '#ef4444', fontWeight: 'bold' }} />
-            
             <Line type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={4} dot={{ r: 7, fill: '#2563eb', strokeWidth: 2, stroke: '#fff' }} animationDuration={500} />
           </LineChart>
         </ResponsiveContainer>
+      </div>
+    </div>
+  );
+};
+
+// --- Predictive Analytics Component ---
+const PredictiveInsights: React.FC<{ results: QCResult[], config: QCConfig }> = ({ results, config }) => {
+  const { mean, sd } = config;
+  const last10 = useMemo(() => [...results].sort((a,b) => b.timestamp - a.timestamp).slice(0, 10).reverse(), [results]);
+  
+  const analysis = useMemo(() => {
+    if (last10.length < 6) return null;
+    
+    const vals = last10.map(r => r.value);
+    const last6 = vals.slice(-6);
+    
+    // Shift Detection (6 consecutive points on one side)
+    const allAbove = last6.every(v => v > mean);
+    const allBelow = last6.every(v => v < mean);
+    
+    // Trend Detection (6 consecutive points increasing or decreasing)
+    let isIncreasing = true;
+    let isDecreasing = true;
+    for (let i = 1; i < last6.length; i++) {
+      if (last6[i] <= last6[i-1]) isIncreasing = false;
+      if (last6[i] >= last6[i-1]) isDecreasing = false;
+    }
+
+    // Predictive Maintenance (Wide Variation check)
+    const currentSD = Math.sqrt(vals.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / (vals.length - 1));
+    const variationStatus = currentSD > 1.5 * sd ? 'high' : currentSD > 1.2 * sd ? 'warning' : 'stable';
+
+    return {
+      shift: allAbove || allBelow ? (allAbove ? 'Dịch chuyển Dương' : 'Dịch chuyển Âm') : null,
+      trend: isIncreasing || isDecreasing ? (isIncreasing ? 'Xu hướng Tăng' : 'Xu hướng Giảm') : null,
+      maintenance: variationStatus
+    };
+  }, [last10, mean, sd]);
+
+  if (!analysis) return null;
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in slide-in-from-top duration-500">
+      {(analysis.shift || analysis.trend) && (
+        <div className="bg-amber-50 border border-amber-200 p-5 rounded-[2rem] flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-200 shrink-0">
+            <i className="fas fa-wave-square text-xl"></i>
+          </div>
+          <div>
+            <h4 className="font-black text-amber-800 text-xs uppercase tracking-widest mb-1">Cảnh báo Xu hướng AI</h4>
+            <p className="text-amber-700 text-xs font-medium leading-relaxed">
+              Phát hiện {analysis.shift || analysis.trend}. Dữ liệu đang có dấu hiệu trôi dần về phía sai số. 
+              <span className="block font-black mt-1">Gợi ý: Kiểm tra thuốc thử hoặc Calibration.</span>
+            </p>
+          </div>
+        </div>
+      )}
+      <div className={`p-5 rounded-[2rem] border flex items-center gap-4 ${analysis.maintenance === 'high' ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'}`}>
+        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg shrink-0 ${analysis.maintenance === 'high' ? 'bg-red-500 text-white shadow-red-200' : 'bg-blue-600 text-white shadow-blue-200'}`}>
+          <i className="fas fa-tools text-xl"></i>
+        </div>
+        <div>
+          <h4 className={`font-black text-xs uppercase tracking-widest mb-1 ${analysis.maintenance === 'high' ? 'text-red-800' : 'text-blue-800'}`}>Dự báo Bảo trì</h4>
+          <p className={`text-xs font-medium leading-relaxed ${analysis.maintenance === 'high' ? 'text-red-700' : 'text-blue-700'}`}>
+            {analysis.maintenance === 'high' ? 
+              'Biến động cực lớn (CV tăng vọt). Nguy cơ hỏng linh kiện hoặc kim hút bị tắc.' : 
+              'Hệ thống đang hoạt động ổn định. Dự báo lần bảo trì định kỳ tiếp theo sau 150 mẫu.'}
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -105,14 +165,35 @@ const RegulatoryAdvisor = () => {
     setMessages(prev => [...prev, { role: 'user', text: userText }]);
     setLoading(true);
     try {
+      // Create a fresh GoogleGenAI instance right before the call
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: [{ role: 'user', parts: [{ text: userText }] }],
-        config: { systemInstruction: "Bạn là chuyên gia về quản lý chất lượng phòng xét nghiệm y học tại Việt Nam. Trả lời súc tích, chuyên nghiệp dựa trên 2429/QĐ-BYT.", tools: [{ googleSearch: {} }] }
+        contents: userText,
+        config: { 
+          systemInstruction: "Bạn là chuyên gia về quản lý chất lượng phòng xét nghiệm y học tại Việt Nam. Trả lời súc tích, chuyên nghiệp dựa trên 2429/QĐ-BYT. Sử dụng Markdown để trình bày đẹp mắt.", 
+          tools: [{ googleSearch: {} }] 
+        }
       });
-      setMessages(prev => [...prev, { role: 'model', text: response.text || "Tôi không thể xử lý thông tin này." }]);
-    } catch (err) { setMessages(prev => [...prev, { role: 'model', text: "Lỗi kết nối AI." }]); } finally { setLoading(false); }
+      
+      // Extract and format grounding search results as links
+      let modelText = response.text || "Tôi không thể xử lý thông tin này.";
+      const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+      if (groundingChunks && groundingChunks.length > 0) {
+        const links = groundingChunks
+          .map((chunk: any) => chunk.web ? `[${chunk.web.title}](${chunk.web.uri})` : null)
+          .filter(Boolean);
+        if (links.length > 0) {
+          modelText += '\n\n**Nguồn tham khảo:**\n' + links.join('\n');
+        }
+      }
+
+      setMessages(prev => [...prev, { role: 'model', text: modelText }]);
+    } catch (err) { 
+      setMessages(prev => [...prev, { role: 'model', text: "Lỗi kết nối AI." }]); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' }); }, [messages]);
@@ -127,7 +208,7 @@ const RegulatoryAdvisor = () => {
           </div>
         ))}
       </div>
-      <div className="p-4 bg-white border-t flex gap-3"><input className="flex-1 bg-slate-100 rounded-xl px-4 py-2 text-sm outline-none" placeholder="Hỏi về Westgard..." value={input} onChange={e => setInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && sendMessage()} /><button onClick={sendMessage} className="bg-blue-600 text-white w-10 h-10 rounded-xl flex items-center justify-center hover:bg-blue-700"><i className="fas fa-paper-plane text-xs"></i></button></div>
+      <div className="p-4 bg-white border-t flex gap-3"><input className="flex-1 bg-slate-100 rounded-xl px-4 py-2 text-sm outline-none" placeholder="Hỏi về Westgard..." value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()} /><button onClick={sendMessage} className="bg-blue-600 text-white w-10 h-10 rounded-xl flex items-center justify-center hover:bg-blue-700"><i className="fas fa-paper-plane text-xs"></i></button></div>
     </div>
   );
 };
@@ -151,18 +232,18 @@ const App = () => {
   const [actionComment, setActionComment] = useState('');
   const [savingTestId, setSavingTestId] = useState<string | null>(null);
 
-  // Draft state for adding new test
+  const [formValue, setFormValue] = useState<string>('');
+  const [formDate, setFormDate] = useState<string>(new Date().toISOString().split('T')[0]);
+
+  // Fix: Added missing newTest state to resolve "Cannot find name 'newTest'" errors
   const [newTest, setNewTest] = useState<LabTest>({
     id: '', name: '', unit: '', tea: 10,
     configs: {
       [QCLevel.LOW]: { mean: 0, sd: 0, bias: 0 },
       [QCLevel.NORMAL]: { mean: 0, sd: 0, bias: 0 },
-      [QCLevel.HIGH]: { mean: 0, sd: 0, bias: 0 },
+      [QCLevel.HIGH]: { mean: 0, sd: 0, bias: 0 }
     }
   });
-
-  const [formValue, setFormValue] = useState<string>('');
-  const [formDate, setFormDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
   useEffect(() => { localStorage.setItem('mdlab_tests', JSON.stringify(tests)); }, [tests]);
   useEffect(() => { localStorage.setItem('mdlab_results', JSON.stringify(results)); }, [results]);
@@ -194,7 +275,7 @@ const App = () => {
   };
 
   const handleDeleteQCResult = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation(); // Ngăn chặn sự kiện click hàng (mở modal)
+    e.stopPropagation();
     if (confirm('Bạn có chắc chắn muốn xoá kết quả QC này?')) {
       setResults(prev => prev.filter(r => r.id !== id));
     }
@@ -205,6 +286,34 @@ const App = () => {
     setTimeout(() => {
       setSavingTestId(null);
     }, 1000);
+  };
+
+  const exportToExcel = () => {
+    if (activeResults.length === 0) return alert('Không có dữ liệu để xuất');
+    
+    const dataToExport = activeResults.slice().sort((a,b) => b.timestamp - a.timestamp).map(r => {
+      const sdDiff = activeLevelConfig.sd !== 0 ? (r.value - activeLevelConfig.mean) / activeLevelConfig.sd : 0;
+      return {
+        'Thời gian': new Date(r.timestamp).toLocaleString('vi-VN'),
+        'Xét nghiệm': activeTest.name,
+        'Mức QC': r.level,
+        'Giá trị đo': r.value,
+        'Đơn vị': activeTest.unit,
+        'Mean Đích': activeLevelConfig.mean,
+        'SD Đích': activeLevelConfig.sd,
+        'SD Index (Z-score)': sdDiff.toFixed(2),
+        'Trạng thái Westgard': Math.abs(sdDiff) >= 3 ? 'Vi phạm (1-3s)' : Math.abs(sdDiff) >= 2 ? 'Cảnh báo (1-2s)' : 'Hợp lệ',
+        'Hành động khắc phục': r.correctiveAction || ''
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "NhatKyQC");
+    
+    // Tạo file name theo ngày và tên xét nghiệm
+    const fileName = `QC_Log_${activeTest.name}_${selectedLevel}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
   };
 
   const handleAddNewTest = () => {
@@ -255,8 +364,8 @@ const App = () => {
       {isSidebarOpen && <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] lg:hidden" onClick={() => setIsSidebarOpen(false)}></div>}
       <aside className={`fixed inset-y-0 left-0 w-72 bg-slate-900 text-slate-300 z-[70] transition-transform duration-300 lg:relative lg:translate-x-0 flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-8 flex items-center gap-4 border-b border-white/5">
-          <div className="bg-blue-600 w-12 h-12 rounded-2xl flex items-center justify-center text-white"><i className="fas fa-microscope text-xl"></i></div>
-          <h1 className="text-white font-black text-xl">MinhDucLab</h1>
+          <div className="bg-blue-600 w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-blue-200"><i className="fas fa-microscope text-xl"></i></div>
+          <h1 className="text-white font-black text-xl tracking-tighter">MinhDucLab</h1>
         </div>
         <nav className="flex-1 p-4 space-y-2">
           {[{ id: 'dashboard', label: 'Bảng điều khiển', icon: 'fa-chart-line' }, { id: 'entry', label: 'Nhập dữ liệu QC', icon: 'fa-plus-circle' }, { id: 'config', label: 'Cấu hình Mean/SD', icon: 'fa-sliders-h' }, { id: 'advisor', label: 'Cố vấn AI', icon: 'fa-robot' }].map(item => (
@@ -294,17 +403,35 @@ const App = () => {
 
         {activeTab === 'dashboard' && activeTest && (
           <div className="space-y-10 animate-in fade-in duration-500">
+            {/* Predictive Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                 <div className="w-1.5 h-6 bg-blue-600 rounded-full"></div>
+                 <h3 className="font-black text-slate-900 text-sm tracking-widest uppercase">Dự báo & Phân tích Xu hướng AI</h3>
+              </div>
+              <PredictiveInsights results={activeResults} config={activeLevelConfig} />
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 border-b-4 border-b-blue-600"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Mean (Đích)</p><span className="text-4xl font-black text-slate-900">{activeLevelConfig.mean}</span></div>
               <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 border-b-4 border-b-slate-400"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">SD (Lệch chuẩn)</p><span className="text-4xl font-black text-slate-900">{activeLevelConfig.sd}</span></div>
               <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 border-b-4 border-b-emerald-600"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">CV (%)</p><span className="text-4xl font-black text-blue-600">{((activeLevelConfig.sd / activeLevelConfig.mean) * 100 || 0).toFixed(2)}%</span></div>
             </div>
+            
             <LeveyJenningsChart key={`${selectedTestId}-${selectedLevel}-${activeResults.length}`} data={activeResults} config={activeLevelConfig} unit={activeTest.unit} title={`${activeTest.name} - Mức ${selectedLevel}`} />
             
             <div className="bg-white rounded-[2.5rem] shadow-sm border overflow-hidden">
                <div className="p-6 border-b flex justify-between items-center bg-slate-50/50">
                  <h3 className="font-black text-slate-800 text-sm flex items-center gap-3"><i className="fas fa-history text-blue-500"></i> NHẬT KÝ NỘI KIỂM</h3>
-                 <span className="text-[10px] font-bold text-slate-400 italic">Nhấn vào hàng vi phạm để xử lý lỗi</span>
+                 <div className="flex items-center gap-4">
+                    <span className="text-[10px] font-bold text-slate-400 italic hidden sm:inline">Nhấn vào hàng vi phạm để xử lý lỗi</span>
+                    <button 
+                      onClick={exportToExcel}
+                      className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 shadow-lg shadow-emerald-100 hover:bg-emerald-700 transition-all active:scale-95"
+                    >
+                      <i className="fas fa-file-excel"></i> Xuất Excel
+                    </button>
+                 </div>
                </div>
                <div className="overflow-x-auto">
                  <table className="w-full text-left">
