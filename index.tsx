@@ -40,7 +40,7 @@ const LeveyJenningsChart: React.FC<{
   };
 
   return (
-    <div className="bg-white p-6 rounded-[2.5rem] shadow-xl border border-slate-100 w-full h-[500px] relative overflow-hidden group">
+    <div className="bg-white/90 backdrop-blur-md p-6 rounded-[2.5rem] shadow-xl border border-slate-100 w-full h-[500px] relative overflow-hidden group">
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50/20 to-transparent pointer-events-none"></div>
       <div className="flex justify-between items-center mb-6 relative z-10">
         <h3 className="text-lg font-black text-slate-800 flex items-center gap-3">
@@ -52,7 +52,7 @@ const LeveyJenningsChart: React.FC<{
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Levey-Jennings Chart (±SD Values)</span>
           </div>
         </h3>
-        <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100 shadow-inner">
+        <div className="flex items-center gap-2 bg-slate-50/50 p-1.5 rounded-2xl border border-slate-100 shadow-inner">
           <button onClick={() => setZoomLevel(prev => Math.max(1, prev - 0.5))} className="w-8 h-8 rounded-xl bg-white text-slate-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm flex items-center justify-center"><i className="fas fa-search-plus text-xs"></i></button>
           <button onClick={() => setZoomLevel(prev => Math.min(10, prev + 0.5))} className="w-8 h-8 rounded-xl bg-white text-slate-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm flex items-center justify-center"><i className="fas fa-search-minus text-xs"></i></button>
           <div className="w-px h-6 bg-slate-200 mx-1"></div>
@@ -110,7 +110,7 @@ const SigmaAnalysis: React.FC<{ test: LabTest, config: QCConfig }> = ({ test, co
   const status = getStatus(sigma);
 
   return (
-    <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 flex flex-col gap-6 animate-in slide-in-from-right duration-500">
+    <div className="bg-white/90 backdrop-blur-md p-8 rounded-[2.5rem] shadow-xl border border-slate-100 flex flex-col gap-6 animate-in slide-in-from-right duration-500">
       <div className="flex justify-between items-center">
         <h3 className="font-black text-slate-800 text-sm tracking-widest uppercase flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white"><i className="fas fa-microchip text-xs"></i></div>
@@ -122,15 +122,15 @@ const SigmaAnalysis: React.FC<{ test: LabTest, config: QCConfig }> = ({ test, co
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-4 bg-slate-50 rounded-2xl">
+        <div className="p-4 bg-slate-50/50 rounded-2xl">
           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">TEa (CLIA)</p>
           <p className="text-xl font-black text-slate-800">{tea}%</p>
         </div>
-        <div className="p-4 bg-slate-50 rounded-2xl">
+        <div className="p-4 bg-slate-50/50 rounded-2xl">
           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Bias (%) {eqaTarget ? '(EQA)' : '(Manual)'}</p>
           <p className="text-xl font-black text-slate-800">{actualBias.toFixed(2)}%</p>
         </div>
-        <div className="p-4 bg-slate-50 rounded-2xl">
+        <div className="p-4 bg-slate-50/50 rounded-2xl">
           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">TE thực tế</p>
           <p className={`text-xl font-black ${teActual > tea ? 'text-red-600' : 'text-slate-800'}`}>
             {teActual.toFixed(2)}%
@@ -194,7 +194,7 @@ const PredictiveInsights: React.FC<{ results: QCResult[], config: QCConfig }> = 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in slide-in-from-top duration-500">
       {(analysis.shift || analysis.trend) && (
-        <div className="bg-amber-50 border border-amber-200 p-5 rounded-[2rem] flex items-center gap-4">
+        <div className="bg-amber-50/80 backdrop-blur-sm border border-amber-200 p-5 rounded-[2rem] flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-200 shrink-0">
             <i className="fas fa-wave-square text-xl"></i>
           </div>
@@ -207,7 +207,7 @@ const PredictiveInsights: React.FC<{ results: QCResult[], config: QCConfig }> = 
           </div>
         </div>
       )}
-      <div className={`p-5 rounded-[2rem] border flex items-center gap-4 ${analysis.maintenance === 'high' ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'}`}>
+      <div className={`p-5 rounded-[2rem] border flex items-center gap-4 ${analysis.maintenance === 'high' ? 'bg-red-50/80 backdrop-blur-sm border-red-200' : 'bg-blue-50/80 backdrop-blur-sm border-blue-200'}`}>
         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg shrink-0 ${analysis.maintenance === 'high' ? 'bg-red-500 text-white shadow-red-200' : 'bg-blue-600 text-white shadow-blue-200'}`}>
           <i className="fas fa-tools text-xl"></i>
         </div>
@@ -271,16 +271,16 @@ const RegulatoryAdvisor = () => {
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' }); }, [messages]);
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden">
+    <div className="flex flex-col h-full bg-white/90 backdrop-blur-md rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden">
       <div className="bg-slate-900 p-6 text-white flex justify-between items-center"><h3 className="font-black text-sm flex items-center gap-3"><div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white"><i className="fas fa-robot text-xs"></i></div>Cố vấn AI</h3></div>
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/50 custom-scrollbar">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/30 custom-scrollbar">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] p-4 rounded-2xl shadow-sm ${m.role === 'user' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white text-slate-800 rounded-tl-none border border-slate-100'}`}><div className="text-sm leading-relaxed whitespace-pre-wrap">{m.text}</div></div>
+            <div className={`max-w-[85%] p-4 rounded-2xl shadow-sm ${m.role === 'user' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white/90 text-slate-800 rounded-tl-none border border-slate-100'}`}><div className="text-sm leading-relaxed whitespace-pre-wrap">{m.text}</div></div>
           </div>
         ))}
       </div>
-      <div className="p-4 bg-white border-t flex gap-3"><input className="flex-1 bg-slate-100 rounded-xl px-4 py-2 text-sm outline-none" placeholder="Hỏi về Westgard..." value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()} /><button onClick={sendMessage} className="bg-blue-600 text-white w-10 h-10 rounded-xl flex items-center justify-center hover:bg-blue-700"><i className="fas fa-paper-plane text-xs"></i></button></div>
+      <div className="p-4 bg-white/80 border-t flex gap-3"><input className="flex-1 bg-slate-100/50 rounded-xl px-4 py-2 text-sm outline-none" placeholder="Hỏi về Westgard..." value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()} /><button onClick={sendMessage} className="bg-blue-600 text-white w-10 h-10 rounded-xl flex items-center justify-center hover:bg-blue-700"><i className="fas fa-paper-plane text-xs"></i></button></div>
     </div>
   );
 };
@@ -430,16 +430,16 @@ const App = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 text-slate-900 overflow-x-hidden">
+    <div className="flex min-h-screen bg-transparent text-slate-900 overflow-x-hidden">
       {isSidebarOpen && <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] lg:hidden" onClick={() => setIsSidebarOpen(false)}></div>}
-      <aside className={`fixed inset-y-0 left-0 w-72 bg-slate-900 text-slate-300 z-[70] transition-transform duration-300 lg:relative lg:translate-x-0 flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed inset-y-0 left-0 w-72 bg-slate-900/95 backdrop-blur-md text-slate-300 z-[70] transition-transform duration-300 lg:relative lg:translate-x-0 flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-8 flex items-center gap-4 border-b border-white/5">
           <div className="bg-blue-600 w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-blue-200"><i className="fas fa-microscope text-xl"></i></div>
           <h1 className="text-white font-black text-xl tracking-tighter">MinhDucLab</h1>
         </div>
         <nav className="flex-1 p-4 space-y-2">
           {[{ id: 'dashboard', label: 'Bảng điều khiển', icon: 'fa-chart-line' }, { id: 'entry', label: 'Nhập dữ liệu QC', icon: 'fa-plus-circle' }, { id: 'config', label: 'Cấu hình & Ngoại kiểm', icon: 'fa-sliders-h' }, { id: 'advisor', label: 'Cố vấn AI', icon: 'fa-robot' }].map(item => (
-            <button key={item.id} onClick={() => { setActiveTab(item.id as any); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all ${activeTab === item.id ? 'bg-blue-600 text-white shadow-xl' : 'hover:bg-white/5 font-bold'}`}>
+            <button key={item.id} onClick={() => { setActiveTab(item.id as any); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all ${activeTab === item.id ? 'bg-blue-600 text-white shadow-xl' : 'hover:bg-white/10 font-bold'}`}>
               <i className={`fas ${item.icon} w-5`}></i>
               <span className="text-sm">{item.label}</span>
             </button>
@@ -447,9 +447,9 @@ const App = () => {
         </nav>
       </aside>
 
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-20 bg-white border-b z-50 flex items-center justify-between px-6">
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-20 bg-white/90 backdrop-blur-md border-b z-50 flex items-center justify-between px-6">
         <span className="font-black text-lg">MinhDucLab</span>
-        <button onClick={() => setIsSidebarOpen(true)} className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center"><i className="fas fa-bars text-xl"></i></button>
+        <button onClick={() => setIsSidebarOpen(true)} className="w-12 h-12 rounded-2xl bg-slate-100/50 flex items-center justify-center"><i className="fas fa-bars text-xl"></i></button>
       </div>
 
       <main className="flex-1 w-full p-6 md:p-10 lg:p-14 mt-20 lg:mt-0 max-w-7xl mx-auto">
@@ -458,13 +458,13 @@ const App = () => {
             {activeTab === 'dashboard' ? 'Giám sát IQC' : activeTab === 'entry' ? 'Nhập kết quả' : activeTab === 'config' ? 'Cấu hình & Ngoại kiểm' : 'Cố vấn AI'}
           </h2>
           {activeTab === 'dashboard' && tests.length > 0 && (
-            <div className="flex flex-col sm:flex-row gap-4 p-2 bg-white rounded-3xl shadow-sm border">
-              <select value={selectedTestId} onChange={e => setSelectedTestId(e.target.value)} className="bg-slate-50 px-6 py-2 rounded-2xl font-black text-xs outline-none border-none">
+            <div className="flex flex-col sm:flex-row gap-4 p-2 bg-white/70 backdrop-blur-md rounded-3xl shadow-sm border border-white/50">
+              <select value={selectedTestId} onChange={e => setSelectedTestId(e.target.value)} className="bg-slate-50/50 px-6 py-2 rounded-2xl font-black text-xs outline-none border-none">
                 {tests.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
               <div className="flex gap-1">
                 {Object.values(QCLevel).map(lvl => (
-                  <button key={lvl} onClick={() => setSelectedLevel(lvl)} className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase transition-all ${selectedLevel === lvl ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400'}`}>{lvl}</button>
+                  <button key={lvl} onClick={() => setSelectedLevel(lvl)} className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase transition-all ${selectedLevel === lvl ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-white/50'}`}>{lvl}</button>
                 ))}
               </div>
             </div>
@@ -473,7 +473,6 @@ const App = () => {
 
         {activeTab === 'dashboard' && activeTest && (
           <div className="space-y-10 animate-in fade-in duration-500">
-            {/* Sigma & Predictive Section */}
             <div className="grid grid-cols-1 gap-6">
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
@@ -488,14 +487,14 @@ const App = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 border-b-4 border-b-blue-600"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Mean (Đích)</p><span className="text-4xl font-black text-slate-900">{activeLevelConfig.mean}</span></div>
-              <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 border-b-4 border-b-slate-400"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">SD (Lệch chuẩn)</p><span className="text-4xl font-black text-slate-900">{activeLevelConfig.sd}</span></div>
-              <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 border-b-4 border-b-emerald-600"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">CV (%)</p><span className="text-4xl font-black text-blue-600">{((activeLevelConfig.sd / activeLevelConfig.mean) * 100 || 0).toFixed(2)}%</span></div>
+              <div className="bg-white/90 backdrop-blur-md p-6 rounded-[2.5rem] shadow-sm border border-slate-100 border-b-4 border-b-blue-600"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Mean (Đích)</p><span className="text-4xl font-black text-slate-900">{activeLevelConfig.mean}</span></div>
+              <div className="bg-white/90 backdrop-blur-md p-6 rounded-[2.5rem] shadow-sm border border-slate-100 border-b-4 border-b-slate-400"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">SD (Lệch chuẩn)</p><span className="text-4xl font-black text-slate-900">{activeLevelConfig.sd}</span></div>
+              <div className="bg-white/90 backdrop-blur-md p-6 rounded-[2.5rem] shadow-sm border border-slate-100 border-b-4 border-b-emerald-600"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">CV (%)</p><span className="text-4xl font-black text-blue-600">{((activeLevelConfig.sd / activeLevelConfig.mean) * 100 || 0).toFixed(2)}%</span></div>
             </div>
             
             <LeveyJenningsChart key={`${selectedTestId}-${selectedLevel}-${activeResults.length}`} data={activeResults} config={activeLevelConfig} unit={activeTest.unit} title={`${activeTest.name} - Mức ${selectedLevel}`} />
             
-            <div className="bg-white rounded-[2.5rem] shadow-sm border overflow-hidden">
+            <div className="bg-white/90 backdrop-blur-md rounded-[2.5rem] shadow-sm border overflow-hidden">
                <div className="p-6 border-b flex justify-between items-center bg-slate-50/50">
                  <h3 className="font-black text-slate-800 text-sm flex items-center gap-3"><i className="fas fa-history text-blue-500"></i> NHẬT KÝ NỘI KIỂM</h3>
                  <div className="flex items-center gap-4">
@@ -521,7 +520,7 @@ const App = () => {
                         const sdDiff = activeLevelConfig.sd !== 0 ? (r.value - activeLevelConfig.mean) / activeLevelConfig.sd : 0;
                         const isViolated = Math.abs(sdDiff) >= 2;
                         return (
-                          <tr key={r.id} onClick={() => openActionModal(r)} className={`transition-all ${isViolated ? 'cursor-pointer hover:bg-red-50' : 'hover:bg-slate-50'}`}>
+                          <tr key={r.id} onClick={() => openActionModal(r)} className={`transition-all ${isViolated ? 'cursor-pointer hover:bg-red-50' : 'hover:bg-white/50'}`}>
                             <td className="px-6 py-6 text-slate-500">{new Date(r.timestamp).toLocaleString('vi-VN')}</td>
                             <td className="px-6 py-6 font-black">{r.value}</td>
                             <td className={`px-6 py-6 font-black ${Math.abs(sdDiff) >= 3 ? 'text-red-600' : Math.abs(sdDiff) >= 2 ? 'text-orange-500' : 'text-emerald-500'}`}>
@@ -538,7 +537,7 @@ const App = () => {
                             <td className="px-6 py-6 text-center">
                               <button 
                                 onClick={(e) => handleDeleteQCResult(e, r.id)}
-                                className="w-8 h-8 rounded-lg bg-red-50 text-red-400 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center mx-auto shadow-sm"
+                                className="w-8 h-8 rounded-lg bg-red-50/50 text-red-400 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center mx-auto shadow-sm"
                                 title="Xoá kết quả này"
                               >
                                 <i className="fas fa-trash-alt text-xs"></i>
@@ -556,15 +555,15 @@ const App = () => {
         )}
 
         {activeTab === 'entry' && (
-          <div className="max-w-2xl mx-auto bg-white p-8 md:p-12 rounded-[3rem] shadow-2xl border animate-in zoom-in-95 duration-500">
+          <div className="max-w-2xl mx-auto bg-white/90 backdrop-blur-md p-8 md:p-12 rounded-[3rem] shadow-2xl border border-white/50 animate-in zoom-in-95 duration-500">
             <div className="text-center mb-10"><div className="w-20 h-20 bg-blue-600 rounded-[2rem] flex items-center justify-center text-white mx-auto mb-8 shadow-2xl shadow-blue-200"><i className="fas fa-plus text-3xl"></i></div><h3 className="text-2xl font-black text-slate-900 tracking-tight">Nhập Kết quả QC</h3></div>
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase ml-2">Xét nghiệm</label><select value={selectedTestId} onChange={e => setSelectedTestId(e.target.value)} className="w-full bg-slate-50 p-4 rounded-2xl font-black border-none outline-none">{tests.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
-                <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase ml-2">Mức QC</label><select value={selectedLevel} onChange={e => setSelectedLevel(e.target.value as QCLevel)} className="w-full bg-slate-50 p-4 rounded-2xl font-black border-none outline-none">{Object.values(QCLevel).map(lvl => <option key={lvl} value={lvl}>{lvl}</option>)}</select></div>
+                <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase ml-2">Xét nghiệm</label><select value={selectedTestId} onChange={e => setSelectedTestId(e.target.value)} className="w-full bg-slate-100/50 p-4 rounded-2xl font-black border-none outline-none">{tests.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
+                <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase ml-2">Mức QC</label><select value={selectedLevel} onChange={e => setSelectedLevel(e.target.value as QCLevel)} className="w-full bg-slate-100/50 p-4 rounded-2xl font-black border-none outline-none">{Object.values(QCLevel).map(lvl => <option key={lvl} value={lvl}>{lvl}</option>)}</select></div>
               </div>
-              <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase ml-2">Ngày thực hiện</label><input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} className="w-full bg-slate-50 p-4 rounded-2xl font-black border-none outline-none" /></div>
-              <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase ml-2">Giá trị đo ({activeTest?.unit})</label><input type="number" step="0.01" value={formValue} onChange={e => setFormValue(e.target.value)} placeholder="Nhập kết quả..." className="w-full bg-slate-50 p-8 rounded-[2rem] font-black text-5xl text-blue-600 border-none outline-none text-center shadow-inner" /></div>
+              <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase ml-2">Ngày thực hiện</label><input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} className="w-full bg-slate-100/50 p-4 rounded-2xl font-black border-none outline-none" /></div>
+              <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase ml-2">Giá trị đo ({activeTest?.unit})</label><input type="number" step="0.01" value={formValue} onChange={e => setFormValue(e.target.value)} placeholder="Nhập kết quả..." className="w-full bg-slate-100/50 p-8 rounded-[2rem] font-black text-5xl text-blue-600 border-none outline-none text-center shadow-inner" /></div>
               <button onClick={addQCResult} className="w-full bg-slate-900 text-white font-black py-5 rounded-3xl shadow-xl hover:bg-blue-600 transition-all text-lg tracking-tight">LƯU KẾT QUẢ QC</button>
             </div>
           </div>
@@ -573,10 +572,10 @@ const App = () => {
         {activeTab === 'config' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in duration-700 pb-10">
             {tests.map(test => (
-              <div key={test.id} className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-200 relative group flex flex-col min-h-[600px]">
+              <div key={test.id} className="bg-white/90 backdrop-blur-md p-8 rounded-[3rem] shadow-sm border border-slate-200 relative group flex flex-col min-h-[600px]">
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-4">
-                    <div className="bg-slate-50 w-12 h-12 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all"><i className="fas fa-flask text-lg"></i></div>
+                    <div className="bg-slate-100/50 w-12 h-12 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all"><i className="fas fa-flask text-lg"></i></div>
                     <div><h4 className="text-xl font-black text-slate-900">{test.name}</h4><p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{test.unit}</p></div>
                   </div>
                   <button onClick={() => handleDeleteTest(test.id)} className="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><i className="fas fa-trash-alt text-xs"></i></button>
@@ -586,7 +585,7 @@ const App = () => {
                   <div className="px-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">TEa Cho phép (%) - CLIA 2024</label><input type="number" step="0.1" value={test.tea} onChange={(e) => setTests(prev => prev.map(t => t.id === test.id ? { ...t, tea: Number(e.target.value) } : t))} className="w-full bg-slate-50 p-3 rounded-xl font-black text-blue-600 mt-1" /></div>
                   
                   {Object.values(QCLevel).map(lvl => (
-                    <div key={lvl} className="p-5 rounded-3xl bg-slate-50/50 border border-slate-100 hover:bg-white transition-all">
+                    <div key={lvl} className="p-5 rounded-3xl bg-slate-100/30 border border-slate-100 hover:bg-white/50 transition-all">
                       <p className="text-[10px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-2 mb-4">Cấu hình IQC & EQA - Mức {lvl}</p>
                       <div className="grid grid-cols-2 gap-4 mb-4">
                         <div className="space-y-1"><label className="text-[8px] font-black text-slate-400 block ml-2 uppercase">Mean (Nội kiểm)</label><input type="number" step="0.01" value={test.configs[lvl].mean} onChange={(e) => setTests(prev => prev.map(t => t.id === test.id ? { ...t, configs: { ...t.configs, [lvl]: { ...t.configs[lvl], mean: Number(e.target.value) } } } : t))} className="w-full bg-white border border-slate-200 p-2.5 rounded-xl font-black text-xs outline-none focus:ring-2 focus:ring-blue-100" /></div>
@@ -612,7 +611,7 @@ const App = () => {
               </div>
             ))}
 
-            <button onClick={() => setIsAddModalOpen(true)} className="bg-slate-50 border-4 border-dashed border-slate-200 rounded-[3rem] flex flex-col items-center justify-center p-14 text-slate-400 hover:border-blue-400 hover:bg-blue-50/50 cursor-pointer transition-all min-h-[500px]">
+            <button onClick={() => setIsAddModalOpen(true)} className="bg-white/40 backdrop-blur-sm border-4 border-dashed border-slate-300 rounded-[3rem] flex flex-col items-center justify-center p-14 text-slate-500 hover:border-blue-400 hover:bg-white/60 cursor-pointer transition-all min-h-[500px]">
               <div className="w-16 h-16 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center mb-6"><i className="fas fa-plus text-2xl"></i></div>
               <span className="font-black uppercase tracking-widest text-sm">Thêm xét nghiệm mới</span>
               <p className="text-[10px] mt-2 font-bold opacity-60">Theo chuẩn CLIA 2024</p>
