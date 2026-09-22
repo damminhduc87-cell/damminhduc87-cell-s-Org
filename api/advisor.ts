@@ -46,8 +46,9 @@ export default async function handler(req: any, res: any) {
       return res.end(err);
     }
 
-    // Ưu tiên API key từ biến môi trường hệ thống (Server-side)
-    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+    // Ưu tiên API key từ biến môi trường hệ thống (Server-side), cho phép fallback qua header nếu có
+    const headerKey = req.headers?.['x-gemini-api-key'] || (typeof req.headers?.get === 'function' ? req.headers.get('x-gemini-api-key') : null);
+    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || headerKey;
 
     if (!apiKey) {
       const err = JSON.stringify({ 

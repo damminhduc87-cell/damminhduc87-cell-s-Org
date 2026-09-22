@@ -15,10 +15,12 @@ export interface AdvisorContext {
 
 export async function askAdvisorApi(prompt: string, context?: AdvisorContext): Promise<{ text: string; error?: string }> {
   try {
+    const customKey = localStorage.getItem('mdlab_api_key') || localStorage.getItem('gemini_api_key');
     const res = await fetch('/api/advisor', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        ...(customKey ? { 'x-gemini-api-key': customKey } : {})
       },
       body: JSON.stringify({ prompt, context })
     });
