@@ -4,20 +4,32 @@ import { LabTest, QCLevel } from '../types';
 interface AddEditTestModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSaveTest: (test: LabTest) => void;
+  onSaveTest?: (test: LabTest) => void;
+  onSave?: (test: LabTest) => void;
   editingTest?: LabTest | null;
-  availableAnalyzers: string[];
+  initialTest?: LabTest | null;
+  availableAnalyzers?: string[];
+  analyzers?: string[];
   onAddAnalyzer?: (name: string) => void;
+  onAddNewAnalyzer?: (name: string) => void;
 }
 
 export const AddEditTestModal: React.FC<AddEditTestModalProps> = ({
   isOpen,
   onClose,
   onSaveTest,
+  onSave,
   editingTest,
+  initialTest,
   availableAnalyzers,
-  onAddAnalyzer
+  analyzers,
+  onAddAnalyzer,
+  onAddNewAnalyzer
 }) => {
+  const activeEditingTest = editingTest !== undefined ? editingTest : initialTest;
+  const currentAnalyzers = availableAnalyzers ?? analyzers ?? [];
+  const currentOnSave = onSaveTest ?? onSave;
+  const currentOnAddAnalyzer = onAddAnalyzer ?? onAddNewAnalyzer;
   const [name, setName] = useState('');
   const [unit, setUnit] = useState('mmol/L');
   const [analyzerName, setAnalyzerName] = useState('Máy Hóa sinh 1');
@@ -38,36 +50,36 @@ export const AddEditTestModal: React.FC<AddEditTestModalProps> = ({
   const [highLot, setHighLot] = useState('LOT-2026-H');
 
   useEffect(() => {
-    if (editingTest) {
-      setName(editingTest.name);
-      setUnit(editingTest.unit);
-      setAnalyzerName(editingTest.analyzerName || 'Máy Hóa sinh 1');
-      setTea(String(editingTest.tea));
+    if (activeEditingTest) {
+      setName(activeEditingTest.name);
+      setUnit(activeEditingTest.unit);
+      setAnalyzerName(activeEditingTest.analyzerName || 'Máy Hóa sinh 1');
+      setTea(String(activeEditingTest.tea));
 
-      const l = editingTest.configs[QCLevel.LOW];
+      const l = activeEditingTest.configs[QCLevel.LOW];
       setLowMean(String(l.mean));
       setLowSd(String(l.sd));
       setLowLot(l.currentLot || 'LOT-2026-L');
 
-      const n = editingTest.configs[QCLevel.NORMAL];
+      const n = activeEditingTest.configs[QCLevel.NORMAL];
       setNormMean(String(n.mean));
       setNormSd(String(n.sd));
       setNormLot(n.currentLot || 'LOT-2026-N');
 
-      const h = editingTest.configs[QCLevel.HIGH];
+      const h = activeEditingTest.configs[QCLevel.HIGH];
       setHighMean(String(h.mean));
       setHighSd(String(h.sd));
       setHighLot(h.currentLot || 'LOT-2026-H');
     } else {
       setName('');
       setUnit('mmol/L');
-      setAnalyzerName(availableAnalyzers[0] || 'Máy Hóa sinh 1');
+      setAnalyzerName(currentAnalyzers[0] || 'Máy Hóa sinh 1');
       setTea('10');
       setLowMean(''); setLowSd(''); setLowLot('LOT-2026-L');
       setNormMean(''); setNormSd(''); setNormLot('LOT-2026-N');
       setHighMean(''); setHighSd(''); setHighLot('LOT-2026-H');
     }
-  }, [editingTest, isOpen, availableAnalyzers]);
+  }, [activeEditingTest, isOpen, currentAnalyzers]);
 
   if (!isOpen) return null;
 
@@ -79,11 +91,11 @@ export const AddEditTestModal: React.FC<AddEditTestModalProps> = ({
     const teaVal = parseFloat(tea) || 10;
     const finalAnalyzer = customAnalyzer.trim() ? customAnalyzer.trim() : analyzerName;
 
-    if (customAnalyzer.trim() && onAddAnalyzer) {
-      onAddAnalyzer(customAnalyzer.trim());
+    if (customAnalyzer.trim() && currentOnAddAnalyzer) {
+      currentOnAddAnalyzer(customAnalyzer.trim());
     }
 
-    const testId = editingTest ? editingTest.id : `test_${Date.now()}_${name.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+    const testId = activeEditingTest ? activeEditingTest.id : `test_${Date.now()}_${name.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
 
     const savedTest: LabTest = {
       id: testId,
@@ -113,24 +125,26 @@ export const AddEditTestModal: React.FC<AddEditTestModalProps> = ({
       }
     };
 
-    onSaveTest(savedTest);
+    if (currentOnSave) {
+      currentOnSave(savedTest);
+    }
     onClose();
   };
 
   return (
     <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative bg-white dark:bg-slate-900 w-full max-w-3xl rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 p-6 md:p-10 max-h-[92vh] overflow-y-auto custom-scrollbar">
+      <div className="relative bg-white w-full max-w-3xl rounded-2xl shadow-xl border border-slate-200 p-6 md:p-8 max-h-[92vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between pb-6 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-center justify-between pb-5 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-xl shadow-lg shadow-blue-500/30">
-              <i className={`fas ${editingTest ? 'fa-edit' : 'fa-plus-circle'}`}></i>
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center text-lg">
+              <i className={`fas ${activeEditingTest ? 'fa-edit' : 'fa-plus-circle'}`}></i>
             </div>
             <div>
-              <h3 className="text-xl font-black text-slate-900 dark:text-white">
-                {editingTest ? 'CHỈNH SỬA XÉT NGHIỆM' : 'THÊM XÉT NGHIỆM MỚI'}
+              <h3 className="text-lg font-bold text-[#0F1F3D]">
+                {activeEditingTest ? 'Chỉnh sửa xét nghiệm' : 'Thêm xét nghiệm mới'}
               </h3>
-              <p className="text-xs text-slate-400 font-bold">
+              <p className="text-xs text-slate-400 font-medium">
                 Cấu hình thông số kỹ thuật, Máy phân tích và Giá trị Mean / SD
               </p>
             </div>
@@ -353,9 +367,9 @@ export const AddEditTestModal: React.FC<AddEditTestModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-black shadow-lg shadow-blue-200 uppercase tracking-wider cursor-pointer transition-all"
+              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 uppercase tracking-wider cursor-pointer transition-all"
             >
-              {editingTest ? 'LƯU CẬP NHẬT' : 'TẠO XÉT NGHIỆM MỚI'}
+              {activeEditingTest ? 'Lưu cập nhật' : 'Tạo xét nghiệm mới'}
             </button>
           </div>
         </form>
