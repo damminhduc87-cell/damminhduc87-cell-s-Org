@@ -1,29 +1,52 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import * as XLSX from 'xlsx';
 import { QCLevel, LabTest, QCResult, CAPARecord } from './types';
-import { INITIAL_TESTS, MOCK_RESULTS, INITIAL_CAPA_RECORDS } from './constants';
+import { INITIAL_TESTS, MOCK_RESULTS, INITIAL_CAPA_RECORDS, DEFAULT_ANALYZERS } from './constants';
 import { evaluateAllResults, evaluateWestgardResult, getWestgardStyle } from './services/westgardEngine';
 import { LeveyJenningsChart } from './components/LeveyJenningsChart';
 import { SigmaAnalysis } from './components/SigmaAnalysis';
 import { CapaReportModal } from './components/CapaReportModal';
 import { LotManagementModal } from './components/LotManagementModal';
 import { RegulatoryAdvisor } from './components/RegulatoryAdvisor';
+import { AddEditTestModal } from './components/AddEditTestModal';
 
 export const App: React.FC = () => {
   // 1. Quản lý trạng thái dữ liệu (đồng bộ với localStorage)
   const [tests, setTests] = useState<LabTest[]>(() => {
-    const saved = localStorage.getItem('mdlab_tests_v2');
-    return saved ? JSON.parse(saved) : INITIAL_TESTS;
+    const saved = localStorage.getItem('mdlab_tests_v3');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    // Fallback nếu có v2
+    const savedV2 = localStorage.getItem('mdlab_tests_v2');
+    if (savedV2) {
+      try {
+        const parsedV2 = JSON.parse(savedV2);
+        if (Array.isArray(parsedV2) && parsedV2.length >= INITIAL_TESTS.length) return parsedV2;
+      } catch (e) {}
+    }
+    return INITIAL_TESTS;
   });
 
   const [rawResults, setRawResults] = useState<QCResult[]>(() => {
-    const saved = localStorage.getItem('mdlab_results_v2');
+    const saved = localStorage.getItem('mdlab_results_v3') || localStorage.getItem('mdlab_results_v2');
     return saved ? JSON.parse(saved) : MOCK_RESULTS;
   });
 
   const [capas, setCapas] = useState<CAPARecord[]>(() => {
-    const saved = localStorage.getItem('mdlab_capas_v2');
+    const saved = localStorage.getItem('mdlab_capas_v3') || localStorage.getItem('mdlab_capas_v2');
     return saved ? JSON.parse(saved) : INITIAL_CAPA_RECORDS;
+  });
+
+  // Danh mục máy phân tích (Customizable analyzers)
+  const [analyzers, setAnalyzers] = useState<string[]>(() => {
+    const saved = localStorage.getItem('mdlab_analyzers');
+    return saved ? JSON.parse(saved) : DEFAULT_ANALYZERS;
   });
 
   // 2. Điều hướng & Bộ lọc
@@ -36,7 +59,13 @@ export const App: React.FC = () => {
   const [isCapaModalOpen, setIsCapaModalOpen] = useState(false);
   const [selectedResultForCapa, setSelectedResultForCapa] = useState<QCResult | null>(null);
   const [isLotModalOpen, setIsLotModalOpen] = useState(false);
+  const [isAddEditTestModalOpen, setIsAddEditTestModalOpen] = useState(false);
+  const [editingTestForModal, setEditingTestForModal] = useState<LabTest | null>(null);
+
+  // Kỹ thuật viên & Lọc máy phân tích
   const [currentTechnician, setCurrentTechnician] = useState('KTV. Nguyễn Văn A');
+  const [selectedWorksheetAnalyzer, setSelectedWorksheetAnalyzer] = useState<string>('all');
+  const [configSearchTerm, setConfigSearchTerm] = useState('');
 
   // 4. Trạng thái Form nhập đơn lẻ
   const [singleValue, setSingleValue] = useState('');
@@ -47,9 +76,61 @@ export const App: React.FC = () => {
   const [worksheetDate, setWorksheetDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Lưu trữ tự động
-  useEffect(() => { localStorage.setItem('mdlab_tests_v2', JSON.stringify(tests)); }, [tests]);
-  useEffect(() => { localStorage.setItem('mdlab_results_v2', JSON.stringify(rawResults)); }, [rawResults]);
-  useEffect(() => { localStorage.setItem('mdlab_capas_v2', JSON.stringify(capas)); }, [capas]);
+  useEffect(() => { localStorage.setItem('mdlab_tests_v3', JSON.stringify(tests)); }, [tests]);
+  useEffect(() => { localStorage.setItem('mdlab_results_v3', JSON.stringify(rawResults)); }, [rawResults]);
+  useEffect(() => { localStorage.setItem('mdlab_capas_v3', JSON.stringify(capas)); }, [capas]);
+  useEffect(() => { localStorage.setItem('mdlab_analyzers', JSON.stringify(analyzers)); }, [analyzers]);
+
+  // Thêm máy phân tích mới
+  const handleAddAnalyzer = (newAnalyzerName: string) => {
+    if (!newAnalyzerName.trim()) return;
+    const trimmed = newAnalyzerName.trim();
+    if (!analyzers.includes(trimmed)) {
+      setAnalyzers(prev => [...prev, trimmed]);
+    }
+  };
+
+  // Đồng bộ / khôi phục danh mục 20 xét nghiệm đầy đủ
+  const handleRestoreFullCatalog = () => {
+    if (confirm('Bạn có muốn bổ sung toàn bộ các chỉ số xét nghiệm hóa sinh chuẩn vào danh mục không? (Dữ liệu kết quả nội kiểm hiện có sẽ được giữ nguyên).')) {
+      const existingIds = new Set(tests.map(t => t.id));
+      const missingTests = INITIAL_TESTS.filter(t => !existingIds.has(t.id));
+      if (missingTests.length === 0) {
+        alert('Danh mục của bạn đã có đầy đủ toàn bộ các chỉ số hóa sinh!');
+      } else {
+        setTests(prev => [...prev, ...missingTests]);
+        alert(`Đã bổ sung thành công ${missingTests.length} xét nghiệm mới vào danh mục!`);
+      }
+    }
+  };
+
+  // Lưu xét nghiệm mới hoặc cập nhật xét nghiệm
+  const handleSaveTest = (savedTest: LabTest) => {
+    setTests(prev => {
+      const exists = prev.some(t => t.id === savedTest.id);
+      if (exists) {
+        return prev.map(t => t.id === savedTest.id ? savedTest : t);
+      }
+      return [...prev, savedTest];
+    });
+    handleAddAnalyzer(savedTest.analyzerName || 'Máy Hóa sinh 1');
+    setSelectedTestId(savedTest.id);
+  };
+
+  // Xóa xét nghiệm
+  const handleDeleteTest = (testId: string, testName: string) => {
+    if (confirm(`Bạn có chắc chắn muốn xóa xét nghiệm "${testName}" và toàn bộ kết quả QC của nó?`)) {
+      setTests(prev => {
+        const filtered = prev.filter(t => t.id !== testId);
+        if (selectedTestId === testId && filtered.length > 0) {
+          setSelectedTestId(filtered[0].id);
+        }
+        return filtered;
+      });
+      setRawResults(prev => prev.filter(r => r.testId !== testId));
+      alert(`Đã xóa xét nghiệm "${testName}".`);
+    }
+  };
 
   // Xét nghiệm đang chọn
   const activeTest = useMemo(() => tests.find(t => t.id === selectedTestId) || tests[0], [tests, selectedTestId]);
@@ -87,7 +168,6 @@ export const App: React.FC = () => {
   // Lưu biên bản CAPA
   const handleSaveCapa = (newCapa: CAPARecord) => {
     setCapas(prev => [newCapa, ...prev.filter(c => c.id !== newCapa.id)]);
-    // Cập nhật kết quả QC tương ứng để gán mã capaId
     if (selectedResultForCapa) {
       setRawResults(prev => prev.map(r => 
         r.id === selectedResultForCapa.id 
@@ -117,7 +197,6 @@ export const App: React.FC = () => {
       lotNumber: activeLevelConfig.currentLot || 'LOT-DEFAULT'
     };
 
-    // Đánh giá nhanh với engine Westgard
     const history = rawResults.filter(r => r.testId === selectedTestId);
     const evaluation = evaluateWestgardResult(newRes, history, activeTest.configs);
 
@@ -137,6 +216,12 @@ export const App: React.FC = () => {
       setActiveTab('dashboard');
     }
   };
+
+  // Lọc xét nghiệm cho bảng kiểm đầu ngày
+  const filteredWorksheetTests = useMemo(() => {
+    if (selectedWorksheetAnalyzer === 'all') return tests;
+    return tests.filter(t => t.analyzerName === selectedWorksheetAnalyzer);
+  }, [tests, selectedWorksheetAnalyzer]);
 
   // Lưu cả mẻ kiểm soát nội kiểm đầu ngày (Batch Worksheet Entry)
   const handleSaveWorksheet = () => {
@@ -208,6 +293,7 @@ export const App: React.FC = () => {
     const dataToExport = activeLevelResults.slice().sort((a, b) => b.timestamp - a.timestamp).map(r => ({
       'Ngày giờ': new Date(r.timestamp).toLocaleString('vi-VN'),
       'Xét nghiệm': activeTest.name,
+      'Máy phân tích': activeTest.analyzerName || 'Máy Hóa sinh',
       'Mức QC': r.level,
       'Số Lô': r.lotNumber || activeLevelConfig.currentLot || '---',
       'Giá trị đo': r.value,
@@ -228,6 +314,17 @@ export const App: React.FC = () => {
     const fileName = `So_Noi_Kiem_${activeTest.name}_${selectedLevel}_${new Date().toISOString().split('T')[0]}.xlsx`;
     XLSX.writeFile(wb, fileName);
   };
+
+  // Lọc danh mục cấu hình
+  const filteredConfigTests = useMemo(() => {
+    if (!configSearchTerm.trim()) return tests;
+    const term = configSearchTerm.toLowerCase();
+    return tests.filter(t => 
+      t.name.toLowerCase().includes(term) || 
+      t.unit.toLowerCase().includes(term) ||
+      (t.analyzerName && t.analyzerName.toLowerCase().includes(term))
+    );
+  }, [tests, configSearchTerm]);
 
   return (
     <div className="flex min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-x-hidden font-sans">
@@ -272,7 +369,7 @@ export const App: React.FC = () => {
             { id: 'worksheet', label: 'Bảng kiểm mẻ đầu ngày', icon: 'fa-table' },
             { id: 'entry', label: 'Nhập kết quả đơn lẻ', icon: 'fa-plus-circle' },
             { id: 'capas', label: 'Sổ tay biên bản CAPA', icon: 'fa-clipboard-check' },
-            { id: 'config', label: 'Cấu hình & Quản lý Lô', icon: 'fa-boxes' },
+            { id: 'config', label: 'Cấu hình & Danh mục', icon: 'fa-boxes' },
             { id: 'advisor', label: 'Cố vấn AI 2429', icon: 'fa-robot' }
           ].map(item => (
             <button
@@ -297,7 +394,7 @@ export const App: React.FC = () => {
 
         {/* Footer info */}
         <div className="p-4 border-t border-slate-800 text-[10px] text-slate-500 font-bold text-center">
-          Phiên bản 2.0 • ISO 15189:2022
+          Tổng: {tests.length} xét nghiệm • {analyzers.length} máy
         </div>
       </aside>
 
@@ -323,14 +420,14 @@ export const App: React.FC = () => {
           {/* Top Bar / Selectors for Dashboard */}
           {activeTab === 'dashboard' && (
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-3xl shadow-xs border border-slate-200 dark:border-slate-800">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <select
                   value={selectedTestId}
                   onChange={e => setSelectedTestId(e.target.value)}
                   className="bg-slate-50 dark:bg-slate-800 px-4 py-2.5 rounded-2xl font-black text-xs outline-none border border-slate-200 dark:border-slate-700 cursor-pointer"
                 >
                   {tests.map(t => (
-                    <option key={t.id} value={t.id}>{t.name} ({t.unit})</option>
+                    <option key={t.id} value={t.id}>{t.name} ({t.unit}) - {t.analyzerName || 'Máy Hóa sinh'}</option>
                   ))}
                 </select>
 
@@ -352,6 +449,9 @@ export const App: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-500 hidden sm:inline">
+                  <i className="fas fa-microchip mr-1"></i> {activeTest?.analyzerName || 'Máy Hóa sinh'}
+                </span>
                 <button
                   type="button"
                   onClick={() => setIsLotModalOpen(true)}
@@ -416,9 +516,11 @@ export const App: React.FC = () => {
                   </span>
                 </div>
                 <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-                  <span className="text-[10px] font-black uppercase text-slate-400 block tracking-widest mb-2">Tổng số mẫu chạy</span>
-                  <span className="text-3xl font-black text-slate-900 dark:text-white">{activeLevelResults.length}</span>
-                  <span className="text-xs text-slate-400 ml-1 font-bold">mẫu</span>
+                  <span className="text-[10px] font-black uppercase text-slate-400 block tracking-widest mb-2">Máy phân tích</span>
+                  <span className="text-sm font-black text-slate-900 dark:text-white block mt-2 truncate">
+                    {activeTest.analyzerName || 'Máy Hóa sinh'}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-bold">Tổng {activeLevelResults.length} mẫu QC</span>
                 </div>
               </div>
 
@@ -463,6 +565,7 @@ export const App: React.FC = () => {
                     <thead>
                       <tr className="bg-slate-50 dark:bg-slate-800/80 text-[10px] font-black uppercase text-slate-400 border-b border-slate-100 dark:border-slate-800">
                         <th className="px-5 py-4">Ngày giờ</th>
+                        <th className="px-5 py-4">Máy phân tích</th>
                         <th className="px-5 py-4">Số Lô (Lot)</th>
                         <th className="px-5 py-4">Giá trị đo</th>
                         <th className="px-5 py-4">Z-score</th>
@@ -475,7 +578,7 @@ export const App: React.FC = () => {
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                       {activeLevelResults.length === 0 ? (
                         <tr>
-                          <td colSpan={8} className="p-12 text-center text-slate-400 italic font-bold">
+                          <td colSpan={9} className="p-12 text-center text-slate-400 italic font-bold">
                             Chưa có dữ liệu nội kiểm cho xét nghiệm này ở mức {selectedLevel}.
                           </td>
                         </tr>
@@ -490,6 +593,9 @@ export const App: React.FC = () => {
                             >
                               <td className="px-5 py-4 text-slate-500">
                                 {new Date(r.timestamp).toLocaleString('vi-VN')}
+                              </td>
+                              <td className="px-5 py-4 font-bold text-slate-600 dark:text-slate-300">
+                                {activeTest.analyzerName || 'Máy Hóa sinh'}
                               </td>
                               <td className="px-5 py-4 font-bold">{r.lotNumber || '---'}</td>
                               <td className="px-5 py-4 font-black text-sm text-slate-900 dark:text-white">
@@ -547,18 +653,34 @@ export const App: React.FC = () => {
                     <i className="fas fa-table text-blue-600"></i> BẢNG KIỂM NỘI KIỂM ĐẦU NGÀY (WORKSHEET)
                   </h3>
                   <p className="text-xs text-slate-400 font-bold mt-1">
-                    Nhập toàn bộ các chỉ số kiểm soát đầu ngày dạng lưới Excel trong 1 phút
+                    Nhập toàn bộ các chỉ số kiểm soát đầu ngày dạng lưới Excel trong 1 phút ({filteredWorksheetTests.length} xét nghiệm)
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3 text-xs">
-                  <label className="font-bold text-slate-500 uppercase text-[10px]">Ngày thực hiện:</label>
-                  <input
-                    type="date"
-                    value={worksheetDate}
-                    onChange={e => setWorksheetDate(e.target.value)}
-                    className="bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 font-bold"
-                  />
+                <div className="flex flex-wrap items-center gap-3 text-xs">
+                  {/* Lọc theo Máy phân tích */}
+                  <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <i className="fas fa-filter text-slate-400 ml-1"></i>
+                    <select
+                      value={selectedWorksheetAnalyzer}
+                      onChange={e => setSelectedWorksheetAnalyzer(e.target.value)}
+                      className="bg-transparent font-black text-xs outline-none cursor-pointer text-slate-700 dark:text-slate-200"
+                    >
+                      <option value="all">Tất cả máy phân tích ({tests.length})</option>
+                      {analyzers.map(a => (
+                        <option key={a} value={a}>{a}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="date"
+                      value={worksheetDate}
+                      onChange={e => setWorksheetDate(e.target.value)}
+                      className="bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-xs"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -576,11 +698,15 @@ export const App: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {tests.map(t => (
+                    {filteredWorksheetTests.map(t => (
                       <tr key={t.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
                         <td className="px-4 py-3 font-black text-slate-900 dark:text-white">{t.name}</td>
                         <td className="px-4 py-3 text-slate-400 font-bold">{t.unit}</td>
-                        <td className="px-4 py-3 text-slate-500 text-[11px]">{t.analyzerName || 'Máy sinh hóa'}</td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300 font-bold text-[11px]">
+                          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 inline-block">
+                            {t.analyzerName || 'Máy Hóa sinh 1'}
+                          </span>
+                        </td>
                         {[QCLevel.LOW, QCLevel.NORMAL, QCLevel.HIGH].map(lvl => {
                           const cfg = t.configs[lvl];
                           return (
@@ -613,7 +739,10 @@ export const App: React.FC = () => {
                 </table>
               </div>
 
-              <div className="pt-4 flex justify-end">
+              <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-800">
+                <span className="text-xs text-slate-400 font-bold">
+                  Mẹo: Dùng phím Tab để nhảy nhanh giữa các ô nhập kết quả.
+                </span>
                 <button
                   type="button"
                   onClick={handleSaveWorksheet}
@@ -645,7 +774,7 @@ export const App: React.FC = () => {
                       onChange={e => setSelectedTestId(e.target.value)}
                       className="w-full bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 font-bold"
                     >
-                      {tests.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                      {tests.map(t => <option key={t.id} value={t.id}>{t.name} ({t.unit})</option>)}
                     </select>
                   </div>
                   <div>
@@ -683,7 +812,7 @@ export const App: React.FC = () => {
 
                 <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 text-center">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
-                    Giá trị đo ({activeTest.unit})
+                    Giá trị đo ({activeTest.unit}) • {activeTest.analyzerName || 'Máy Hóa sinh'}
                   </span>
                   <input
                     type="number"
@@ -745,7 +874,7 @@ export const App: React.FC = () => {
                           </span>
                         </div>
                         <p className="text-xs text-slate-700 dark:text-slate-300 font-bold">
-                          Xét nghiệm: <span className="text-blue-600">{capa.testName}</span> (Mức {capa.level} - Lô {capa.lotNumber}) • Giá trị vi phạm: <strong>{capa.value} {capa.unit}</strong> (Z = {capa.zScore > 0 ? '+' : ''}{capa.zScore} SD)
+                          Xét nghiệm: <span className="text-blue-600">{capa.testName}</span> (Mức {capa.level} - Lô {capa.lotNumber} - {capa.analyzerName}) • Giá trị vi phạm: <strong>{capa.value} {capa.unit}</strong> (Z = {capa.zScore > 0 ? '+' : ''}{capa.zScore} SD)
                         </p>
                         <p className="text-xs text-slate-500 line-clamp-2">
                           <strong>Khắc phục:</strong> {capa.immediateCorrection}
@@ -787,43 +916,129 @@ export const App: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 5: CẤU HÌNH & QUẢN LÝ LÔ */}
+          {/* TAB 5: CẤU HÌNH & QUẢN LÝ XÉT NGHIỆM */}
           {activeTab === 'config' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300">
-              {tests.map(test => (
-                <div key={test.id} className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2.5rem] shadow-xs border border-slate-200 dark:border-slate-800 space-y-4">
-                  <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
-                    <div>
-                      <h4 className="text-lg font-black text-slate-900 dark:text-white">{test.name}</h4>
-                      <p className="text-xs text-slate-400 font-bold">{test.unit} • {test.analyzerName || 'Máy sinh hóa'}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedTestId(test.id);
-                        setIsLotModalOpen(true);
-                      }}
-                      className="px-4 py-2 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all border border-indigo-200 dark:border-indigo-800"
-                    >
-                      <i className="fas fa-boxes"></i> Đổi Lô (Lot QC)
-                    </button>
-                  </div>
+            <div className="space-y-6 animate-in fade-in duration-300">
+              {/* Header Actions Bar */}
+              <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] shadow-xs border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                    <i className="fas fa-sliders-h text-blue-600"></i> CẤU HÌNH XÉT NGHIỆM & MÁY PHÂN TÍCH
+                  </h3>
+                  <p className="text-xs text-slate-400 font-bold mt-1">
+                    Quản lý thông số kỹ thuật, tự do kê loại máy phân tích, thiết lập Mean, SD và Số Lô
+                  </p>
+                </div>
 
-                  <div className="space-y-3 text-xs">
-                    {Object.values(QCLevel).map(lvl => {
-                      const cfg = test.configs[lvl];
-                      return (
-                        <div key={lvl} className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl flex items-center justify-between">
-                          <span className="font-bold text-slate-600 dark:text-slate-300">Mức {lvl} ({cfg.currentLot || 'LOT-2026'})</span>
-                          <span className="font-black text-slate-900 dark:text-white">
-                            Mean: {cfg.mean} | SD: {cfg.sd} | CV%: {cfg.mean > 0 ? ((cfg.sd / cfg.mean) * 100).toFixed(2) : 0}%
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleRestoreFullCatalog}
+                    className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs font-black flex items-center gap-2 cursor-pointer transition-all"
+                    title="Khôi phục đầy đủ 20 chỉ số hóa sinh chuẩn"
+                  >
+                    <i className="fas fa-sync-alt"></i> Khôi phục 20 chỉ số chuẩn
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingTestForModal(null);
+                      setIsAddEditTestModalOpen(true);
+                    }}
+                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black shadow-lg shadow-blue-200 dark:shadow-none flex items-center gap-2 cursor-pointer transition-all"
+                  >
+                    <i className="fas fa-plus"></i> THÊM XÉT NGHIỆM MỚI
+                  </button>
+                </div>
+              </div>
+
+              {/* Search & Filter */}
+              <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+                <i className="fas fa-search text-slate-400 ml-2"></i>
+                <input
+                  type="text"
+                  placeholder="Tìm nhanh xét nghiệm theo tên, đơn vị hoặc máy phân tích..."
+                  value={configSearchTerm}
+                  onChange={e => setConfigSearchTerm(e.target.value)}
+                  className="w-full bg-transparent text-xs font-bold outline-none"
+                />
+                {configSearchTerm && (
+                  <button onClick={() => setConfigSearchTerm('')} className="text-slate-400 hover:text-slate-600 text-xs">
+                    <i className="fas fa-times"></i>
+                  </button>
+                )}
+              </div>
+
+              {/* Test Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {filteredConfigTests.map(test => (
+                  <div key={test.id} className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2.5rem] shadow-xs border border-slate-200 dark:border-slate-800 space-y-4 hover:shadow-md transition-all">
+                    <div className="flex items-start justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-lg font-black text-slate-900 dark:text-white">{test.name}</h4>
+                          <span className="px-2 py-0.5 rounded-lg text-[10px] font-black bg-blue-100 text-blue-700">
+                            TEa: {test.tea}%
                           </span>
                         </div>
-                      );
-                    })}
+                        <p className="text-xs text-slate-400 font-bold mt-1">
+                          Đơn vị: <strong>{test.unit}</strong> • Máy: <strong className="text-indigo-600 dark:text-indigo-400">{test.analyzerName || 'Máy Hóa sinh'}</strong>
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingTestForModal(test);
+                            setIsAddEditTestModalOpen(true);
+                          }}
+                          className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-blue-600 hover:text-white text-slate-600 dark:bg-slate-800 dark:text-slate-300 flex items-center justify-center cursor-pointer transition-all"
+                          title="Sửa thông số & Đổi máy"
+                        >
+                          <i className="fas fa-edit text-xs"></i>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedTestId(test.id);
+                            setIsLotModalOpen(true);
+                          }}
+                          className="px-3 py-2 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all border border-indigo-200 dark:border-indigo-800"
+                          title="Quản lý Lô chứng"
+                        >
+                          <i className="fas fa-boxes"></i> Lô QC
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteTest(test.id, test.name)}
+                          className="w-9 h-9 rounded-xl bg-red-50 hover:bg-red-500 hover:text-white text-red-500 flex items-center justify-center cursor-pointer transition-all"
+                          title="Xóa xét nghiệm"
+                        >
+                          <i className="fas fa-trash-alt text-xs"></i>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 text-xs">
+                      {Object.values(QCLevel).map(lvl => {
+                        const cfg = test.configs[lvl];
+                        return (
+                          <div key={lvl} className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl flex items-center justify-between">
+                            <span className="font-bold text-slate-600 dark:text-slate-300">
+                              Mức {lvl} ({cfg.currentLot || 'LOT-2026'})
+                            </span>
+                            <span className="font-black text-slate-900 dark:text-white">
+                              Mean: {cfg.mean} | SD: {cfg.sd} | CV: {cfg.mean > 0 ? ((cfg.sd / cfg.mean) * 100).toFixed(2) : 0}%
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
 
@@ -835,6 +1050,18 @@ export const App: React.FC = () => {
           )}
         </main>
       </div>
+
+      {/* MODAL: THÊM / SỬA XÉT NGHIỆM (ADD / EDIT TEST) */}
+      {isAddEditTestModalOpen && (
+        <AddEditTestModal
+          isOpen={isAddEditTestModalOpen}
+          onClose={() => setIsAddEditTestModalOpen(false)}
+          onSaveTest={handleSaveTest}
+          editingTest={editingTestForModal}
+          availableAnalyzers={analyzers}
+          onAddAnalyzer={handleAddAnalyzer}
+        />
+      )}
 
       {/* MODAL: BIÊN BẢN CAPA IN A4 */}
       {isCapaModalOpen && selectedResultForCapa && activeTest && (
