@@ -1,0 +1,17 @@
+{
+  "functions": {
+    "api/advisor.ts": {
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/advisor",
+      "destination": "/api/advisor"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

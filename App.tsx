@@ -1,414 +1,863 @@
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import * as XLSX from 'xlsx';
+import { QCLevel, LabTest, QCResult, CAPARecord } from './types';
+import { INITIAL_TESTS, MOCK_RESULTS, INITIAL_CAPA_RECORDS } from './constants';
+import { evaluateAllResults, evaluateWestgardResult, getWestgardStyle } from './services/westgardEngine';
+import { LeveyJenningsChart } from './components/LeveyJenningsChart';
+import { SigmaAnalysis } from './components/SigmaAnalysis';
+import { CapaReportModal } from './components/CapaReportModal';
+import { LotManagementModal } from './components/LotManagementModal';
+import { RegulatoryAdvisor } from './components/RegulatoryAdvisor';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { QCLevel, LabTest, QCResult, QCConfig } from './types';
-import { INITIAL_TESTS, MOCK_RESULTS } from './constants';
-import LeveyJenningsChart from './components/LeveyJenningsChart';
-import RegulatoryAdvisor from './components/RegulatoryAdvisor';
-
-const App: React.FC = () => {
+export const App: React.FC = () => {
+  // 1. Quản lý trạng thái dữ liệu (đồng bộ với localStorage)
   const [tests, setTests] = useState<LabTest[]>(() => {
-    const saved = localStorage.getItem('mdlab_tests');
+    const saved = localStorage.getItem('mdlab_tests_v2');
     return saved ? JSON.parse(saved) : INITIAL_TESTS;
   });
-  const [results, setResults] = useState<QCResult[]>(() => {
-    const saved = localStorage.getItem('mdlab_results');
+
+  const [rawResults, setRawResults] = useState<QCResult[]>(() => {
+    const saved = localStorage.getItem('mdlab_results_v2');
     return saved ? JSON.parse(saved) : MOCK_RESULTS;
   });
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'config' | 'entry' | 'advisor'>('dashboard');
-  const [selectedTestId, setSelectedTestId] = useState<string>(tests[0]?.id || INITIAL_TESTS[0].id);
-  const [selectedLevel, setSelectedLevel] = useState<QCLevel>(QCLevel.NORMAL);
-  
-  // Modal states
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isActionModalOpen, setIsActionModalOpen] = useState(false);
-  const [selectedResultForAction, setSelectedResultForAction] = useState<QCResult | null>(null);
-  const [actionComment, setActionComment] = useState('');
-  const [savingTestId, setSavingTestId] = useState<string | null>(null);
 
-  const [entryDate, setEntryDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [worksheetData, setWorksheetData] = useState<Record<string, Record<QCLevel, { val: string, action: string, rule: string }>>>({});
-
-  // State for new test creation
-  const [newTestDraft, setNewTestDraft] = useState<LabTest>({
-    id: '', name: '', unit: '', tea: 10,
-    configs: {
-      [QCLevel.LOW]: { mean: 0, sd: 0, bias: 0 },
-      [QCLevel.NORMAL]: { mean: 0, sd: 0, bias: 0 },
-      [QCLevel.HIGH]: { mean: 0, sd: 0, bias: 0 },
-    }
+  const [capas, setCapas] = useState<CAPARecord[]>(() => {
+    const saved = localStorage.getItem('mdlab_capas_v2');
+    return saved ? JSON.parse(saved) : INITIAL_CAPA_RECORDS;
   });
 
-  useEffect(() => { localStorage.setItem('mdlab_tests', JSON.stringify(tests)); }, [tests]);
-  useEffect(() => { localStorage.setItem('mdlab_results', JSON.stringify(results)); }, [results]);
+  // 2. Điều hướng & Bộ lọc
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'entry' | 'worksheet' | 'config' | 'capas' | 'advisor'>('dashboard');
+  const [selectedTestId, setSelectedTestId] = useState<string>(tests[0]?.id || INITIAL_TESTS[0].id);
+  const [selectedLevel, setSelectedLevel] = useState<QCLevel>(QCLevel.NORMAL);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Phân tích quy tắc Westgard và đề xuất hành động
-  const analyzeWestgard = (testId: string, level: QCLevel, currentValue: number): { rule: string, action: string } => {
-    const test = tests.find(t => t.id === testId);
-    if (!test) return { rule: '', action: '' };
-    
-    const config = test.configs[level];
-    if (config.sd === 0) return { rule: 'Chưa cấu hình SD', action: '' };
-    
-    const sdDiff = (currentValue - config.mean) / config.sd;
-    const absSD = Math.abs(sdDiff);
+  // 3. Quản lý Modal
+  const [isCapaModalOpen, setIsCapaModalOpen] = useState(false);
+  const [selectedResultForCapa, setSelectedResultForCapa] = useState<QCResult | null>(null);
+  const [isLotModalOpen, setIsLotModalOpen] = useState(false);
+  const [currentTechnician, setCurrentTechnician] = useState('KTV. Nguyễn Văn A');
 
-    if (absSD >= 3) {
-      return {
-        rule: "Vi phạm 1-3s",
-        action: "Lỗi ngẫu nhiên hoặc hệ thống nặng. Dừng xét nghiệm. Kiểm tra hệ thống, calib lại hoặc thay thuốc thử."
-      };
-    }
+  // 4. Trạng thái Form nhập đơn lẻ
+  const [singleValue, setSingleValue] = useState('');
+  const [singleDate, setSingleDate] = useState(new Date().toISOString().split('T')[0]);
 
-    if (absSD >= 2) {
-      return {
-        rule: "Cảnh báo 1-2s",
-        action: "Cần kiểm tra các quy tắc Westgard khác (2-2s, R-4s). Nếu đạt, có thể chấp nhận kết quả nhưng cần theo dõi."
-      };
-    }
+  // 5. Trạng thái Bảng kiểm hàng loạt (Worksheet Batch Entry)
+  const [worksheetValues, setWorksheetValues] = useState<Record<string, Record<QCLevel, string>>>({});
+  const [worksheetDate, setWorksheetDate] = useState(new Date().toISOString().split('T')[0]);
 
-    return { rule: "Đạt", action: "" };
-  };
+  // Lưu trữ tự động
+  useEffect(() => { localStorage.setItem('mdlab_tests_v2', JSON.stringify(tests)); }, [tests]);
+  useEffect(() => { localStorage.setItem('mdlab_results_v2', JSON.stringify(rawResults)); }, [rawResults]);
+  useEffect(() => { localStorage.setItem('mdlab_capas_v2', JSON.stringify(capas)); }, [capas]);
 
-  useEffect(() => {
-    const startOfDay = new Date(entryDate).setHours(0,0,0,0);
-    const endOfDay = new Date(entryDate).setHours(23,59,59,999);
-    
-    const initialData: Record<string, Record<QCLevel, { val: string, action: string, rule: string }>> = {};
-    tests.forEach(t => {
-      initialData[t.id] = {
-        [QCLevel.LOW]: { val: '', action: '', rule: '' },
-        [QCLevel.NORMAL]: { val: '', action: '', rule: '' },
-        [QCLevel.HIGH]: { val: '', action: '', rule: '' }
-      };
-      
-      const dayResults = results.filter(r => 
-        r.testId === t.id && 
-        r.timestamp >= startOfDay && 
-        r.timestamp <= endOfDay
-      );
-      
-      dayResults.forEach(r => {
-        const analysis = analyzeWestgard(t.id, r.level, r.value);
-        initialData[t.id][r.level] = { 
-          val: r.value.toString(), 
-          action: r.correctiveAction || '',
-          rule: analysis.rule
-        };
-      });
-    });
-    setWorksheetData(initialData);
-  }, [entryDate, results, tests, activeTab]);
-
+  // Xét nghiệm đang chọn
   const activeTest = useMemo(() => tests.find(t => t.id === selectedTestId) || tests[0], [tests, selectedTestId]);
-  const activeLevelConfig = activeTest.configs[selectedLevel];
-  const activeResults = results.filter(r => r.testId === selectedTestId && r.level === selectedLevel);
+  const activeLevelConfig = activeTest?.configs?.[selectedLevel] || { mean: 0, sd: 0, bias: 0 };
 
-  const handleAddNewTest = () => {
-    if (!newTestDraft.name || !newTestDraft.unit) return alert('Vui lòng nhập tên và đơn vị xét nghiệm');
-    const id = newTestDraft.name.toLowerCase().replace(/\s/g, '-') + '-' + Date.now();
-    setTests(prev => [...prev, { ...newTestDraft, id }]);
-    setIsAddModalOpen(false);
-    setNewTestDraft({ id: '', name: '', unit: '', tea: 10, configs: { [QCLevel.LOW]: { mean: 0, sd: 0, bias: 0 }, [QCLevel.NORMAL]: { mean: 0, sd: 0, bias: 0 }, [QCLevel.HIGH]: { mean: 0, sd: 0, bias: 0 } } });
+  // 6. THUẬT TOÁN ĐA QUY TẮC WESTGARD: Tự động đánh giá toàn bộ chuỗi theo thời gian
+  const evaluatedResults = useMemo(() => {
+    if (!activeTest) return [];
+    const testResults = rawResults.filter(r => r.testId === activeTest.id);
+    return evaluateAllResults(testResults, activeTest.configs);
+  }, [rawResults, activeTest]);
+
+  // Lọc kết quả của mức đang chọn
+  const activeLevelResults = useMemo(() => {
+    return evaluatedResults.filter(r => r.level === selectedLevel);
+  }, [evaluatedResults, selectedLevel]);
+
+  // Kết quả mới nhất của mức đang chọn
+  const latestResult = useMemo(() => {
+    if (activeLevelResults.length === 0) return null;
+    return activeLevelResults[activeLevelResults.length - 1];
+  }, [activeLevelResults]);
+
+  // Trạng thái Westgard mới nhất
+  const currentWestgardStyle = latestResult 
+    ? getWestgardStyle(latestResult.westgardStatus || 'passed', latestResult.westgardRule || 'none')
+    : null;
+
+  // Xử lý khi bấm vào điểm trên biểu đồ hoặc bảng để lập CAPA
+  const handleOpenCapa = (result: QCResult) => {
+    setSelectedResultForCapa(result);
+    setIsCapaModalOpen(true);
   };
 
-  const handleDeleteTest = (id: string) => {
-    if (confirm('Bạn có chắc chắn muốn xoá xét nghiệm này và toàn bộ dữ liệu QC liên quan?')) {
-      setTests(prev => prev.filter(t => t.id !== id));
-      setResults(prev => prev.filter(r => r.testId !== id));
-      if (selectedTestId === id) setSelectedTestId(tests.find(t => t.id !== id)?.id || '');
+  // Lưu biên bản CAPA
+  const handleSaveCapa = (newCapa: CAPARecord) => {
+    setCapas(prev => [newCapa, ...prev.filter(c => c.id !== newCapa.id)]);
+    // Cập nhật kết quả QC tương ứng để gán mã capaId
+    if (selectedResultForCapa) {
+      setRawResults(prev => prev.map(r => 
+        r.id === selectedResultForCapa.id 
+          ? { ...r, capaId: newCapa.code, correctiveAction: newCapa.immediateCorrection } 
+          : r
+      ));
     }
+    alert(`Đã lưu biên bản CAPA ${newCapa.code} thành công!`);
   };
 
-  const handleSaveConfig = (id: string) => {
-    setSavingTestId(id);
-    // Simulating a save effect
-    setTimeout(() => {
-      setSavingTestId(null);
-      // Data is already updated in state via onChange
-    }, 600);
-  };
+  // Thêm 1 kết quả QC đơn lẻ
+  const handleAddSingleResult = () => {
+    const valNum = parseFloat(singleValue);
+    if (isNaN(valNum)) return alert('Vui lòng nhập giá trị đo hợp lệ (dạng số).');
 
-  const openActionModal = (res: QCResult) => {
-    const config = activeTest.configs[res.level];
-    const sdDiff = Math.abs((res.value - config.mean) / config.sd);
-    if (sdDiff >= 2) {
-      setSelectedResultForAction(res);
-      setActionComment(res.correctiveAction || '');
-      setIsActionModalOpen(true);
-    }
-  };
+    const now = new Date();
+    const [year, month, day] = singleDate.split('-').map(Number);
+    const dateToUse = new Date(year, month - 1, day, now.getHours(), now.getMinutes(), now.getSeconds());
 
-  const saveAction = () => {
-    if (selectedResultForAction) {
-      setResults(prev => prev.map(r => r.id === selectedResultForAction.id ? { ...r, correctiveAction: actionComment } : r));
-      setIsActionModalOpen(false);
-    }
-  };
+    const newRes: QCResult = {
+      id: `qc_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+      testId: selectedTestId,
+      level: selectedLevel,
+      value: valNum,
+      timestamp: dateToUse.getTime(),
+      technician: currentTechnician,
+      lotNumber: activeLevelConfig.currentLot || 'LOT-DEFAULT'
+    };
 
-  const handleWorksheetChange = (testId: string, level: QCLevel, value: string) => {
-    const numVal = parseFloat(value);
-    let analysis = { rule: '', action: '' };
-    if (!isNaN(numVal)) analysis = analyzeWestgard(testId, level, numVal);
+    // Đánh giá nhanh với engine Westgard
+    const history = rawResults.filter(r => r.testId === selectedTestId);
+    const evaluation = evaluateWestgardResult(newRes, history, activeTest.configs);
 
-    setWorksheetData(prev => ({
-      ...prev,
-      [testId]: {
-        ...prev[testId],
-        [level]: { 
-          val: value, 
-          action: analysis.action || prev[testId][level].action,
-          rule: analysis.rule
-        }
+    newRes.zScore = evaluation.zScore;
+    newRes.westgardRule = evaluation.rule;
+    newRes.westgardStatus = evaluation.status;
+
+    setRawResults(prev => [...prev, newRes]);
+    setSingleValue('');
+
+    if (evaluation.status === 'violation') {
+      if (confirm(`CẢNH BÁO: Kết quả vừa nhập vi phạm quy tắc Westgard (${evaluation.rule}): ${evaluation.description}\n\nBạn có muốn mở ngay Mẫu Biên Bản Khắc Phục Sự Cố CAPA theo chuẩn QĐ 2429 không?`)) {
+        setSelectedResultForCapa(newRes);
+        setIsCapaModalOpen(true);
       }
-    }));
+    } else {
+      setActiveTab('dashboard');
+    }
   };
 
-  const saveWorksheet = () => {
-    const startOfDay = new Date(entryDate).setHours(0,0,0,0);
-    const endOfDay = new Date(entryDate).setHours(23,59,59,999);
-    const timestamp = new Date(entryDate).getTime();
+  // Lưu cả mẻ kiểm soát nội kiểm đầu ngày (Batch Worksheet Entry)
+  const handleSaveWorksheet = () => {
+    const now = new Date();
+    const [year, month, day] = worksheetDate.split('-').map(Number);
+    const baseTime = new Date(year, month - 1, day, now.getHours(), now.getMinutes()).getTime();
 
-    const otherResults = results.filter(r => r.timestamp < startOfDay || r.timestamp > endOfDay);
-    const newResults: QCResult[] = [];
-    
-    Object.keys(worksheetData).forEach(testId => {
-      Object.keys(worksheetData[testId]).forEach(lvlKey => {
-        const lvl = lvlKey as QCLevel;
-        const data = worksheetData[testId][lvl];
-        if (data.val && !isNaN(parseFloat(data.val))) {
-          newResults.push({
-            id: Math.random().toString(36).substr(2, 9),
-            testId, level: lvl,
-            value: parseFloat(data.val),
-            correctiveAction: data.action,
-            timestamp: timestamp + (newResults.length * 1000)
-          });
+    const newResultsToAdd: QCResult[] = [];
+    let violationCount = 0;
+
+    Object.entries(worksheetValues).forEach(([testId, levels]) => {
+      const t = tests.find(x => x.id === testId);
+      if (!t) return;
+
+      Object.entries(levels).forEach(([lvl, strVal]) => {
+        const numVal = parseFloat(strVal);
+        if (!isNaN(numVal)) {
+          const cfg = t.configs[lvl as QCLevel];
+          const itemRes: QCResult = {
+            id: `qc_${Date.now()}_${testId}_${lvl}`,
+            testId,
+            level: lvl as QCLevel,
+            value: numVal,
+            timestamp: baseTime,
+            technician: currentTechnician,
+            lotNumber: cfg?.currentLot || 'LOT-2026'
+          };
+          
+          const history = rawResults.filter(r => r.testId === testId);
+          const evaluation = evaluateWestgardResult(itemRes, history, t.configs);
+          itemRes.zScore = evaluation.zScore;
+          itemRes.westgardRule = evaluation.rule;
+          itemRes.westgardStatus = evaluation.status;
+
+          if (evaluation.status === 'violation') violationCount++;
+          newResultsToAdd.push(itemRes);
         }
       });
     });
 
-    setResults([...otherResults, ...newResults]);
-    alert(`Đã lưu ${newResults.length} kết quả thành công!`);
+    if (newResultsToAdd.length === 0) {
+      return alert('Chưa có chỉ số nào được nhập giá trị.');
+    }
+
+    setRawResults(prev => [...prev, ...newResultsToAdd]);
+    setWorksheetValues({});
+
+    if (violationCount > 0) {
+      alert(`Đã lưu thành công ${newResultsToAdd.length} kết quả nội kiểm!\n⚠️ Phát hiện ${violationCount} chỉ số vi phạm quy tắc Westgard. Vui lòng kiểm tra lại trên Bảng điều khiển và lập biên bản CAPA.`);
+    } else {
+      alert(`Đã lưu thành công mẻ nội kiểm ${newResultsToAdd.length} kết quả! Toàn bộ đều đạt chuẩn an toàn.`);
+    }
+
     setActiveTab('dashboard');
   };
 
+  // Xóa kết quả QC
+  const handleDeleteResult = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (confirm('Bạn có chắc chắn muốn xóa kết quả nội kiểm này?')) {
+      setRawResults(prev => prev.filter(r => r.id !== id));
+    }
+  };
+
+  // Xuất Excel chuẩn Bộ Y tế
+  const handleExportExcel = () => {
+    if (activeLevelResults.length === 0) return alert('Không có dữ liệu để xuất.');
+
+    const dataToExport = activeLevelResults.slice().sort((a, b) => b.timestamp - a.timestamp).map(r => ({
+      'Ngày giờ': new Date(r.timestamp).toLocaleString('vi-VN'),
+      'Xét nghiệm': activeTest.name,
+      'Mức QC': r.level,
+      'Số Lô': r.lotNumber || activeLevelConfig.currentLot || '---',
+      'Giá trị đo': r.value,
+      'Đơn vị': activeTest.unit,
+      'Mean Đích': activeLevelConfig.mean,
+      'SD Đích': activeLevelConfig.sd,
+      'Z-score (SDI)': r.zScore,
+      'Quy tắc Westgard': r.westgardRule || 'Hợp lệ',
+      'Trạng thái': r.westgardStatus === 'violation' ? 'Vi phạm' : r.westgardStatus === 'warning' ? 'Cảnh báo' : 'Hợp lệ',
+      'Mã biên bản CAPA': r.capaId || '',
+      'KTV thực hiện': r.technician || currentTechnician
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "NhatKyIQC_2429");
+    
+    const fileName = `So_Noi_Kiem_${activeTest.name}_${selectedLevel}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
+
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-transparent">
-      <aside className="w-full md:w-72 bg-slate-900/95 text-slate-300 flex flex-col shrink-0 border-r border-slate-800 backdrop-blur-md">
-        <div className="p-8 flex items-center gap-4 border-b border-slate-800">
-          <div className="bg-gradient-to-tr from-blue-600 to-blue-400 p-2.5 rounded-xl shadow-lg"><i className="fas fa-microscope text-white text-xl"></i></div>
-          <div><h1 className="font-bold text-white text-lg leading-tight">MinhDucLab</h1><p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">QC Management</p></div>
+    <div className="flex min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-x-hidden font-sans">
+      {/* Mobile Drawer Backdrop */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] lg:hidden" 
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar Navigation */}
+      <aside className={`fixed inset-y-0 left-0 w-72 bg-slate-900 text-slate-300 z-[70] transition-transform duration-300 lg:relative lg:translate-x-0 flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="p-6 flex items-center gap-3 border-b border-slate-800">
+          <div className="bg-blue-600 w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+            <i className="fas fa-microscope text-lg"></i>
+          </div>
+          <div>
+            <h1 className="text-white font-black text-lg tracking-tight">MinhDucLab QC</h1>
+            <p className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">Tiêu chuẩn QĐ 2429/QĐ-BYT</p>
+          </div>
         </div>
-        <nav className="flex-1 py-6 px-4 space-y-2">
-          {[{ id: 'dashboard', label: 'Biểu đồ IQC', icon: 'fa-chart-line' }, { id: 'entry', label: 'Nhập liệu QC', icon: 'fa-edit' }, { id: 'config', label: 'Cấu hình Mean/SD', icon: 'fa-sliders-h' }, { id: 'advisor', label: 'Cố vấn AI', icon: 'fa-robot' }].map(item => (
-            <button key={item.id} onClick={() => setActiveTab(item.id as any)} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all ${activeTab === item.id ? 'bg-blue-600 text-white shadow-xl' : 'hover:bg-slate-800 hover:text-white'}`}>
-              <i className={`fas ${item.icon} w-5 text-lg`}></i><span className="font-semibold text-sm">{item.label}</span>
+
+        {/* Current Technician Profile */}
+        <div className="px-6 py-4 bg-slate-800/60 mx-4 my-4 rounded-2xl border border-slate-700/50">
+          <span className="text-[9px] font-bold text-slate-400 uppercase block tracking-wider mb-1">KTV Trực Máy</span>
+          <div className="flex items-center gap-2">
+            <i className="fas fa-user-circle text-blue-400"></i>
+            <input
+              type="text"
+              value={currentTechnician}
+              onChange={e => setCurrentTechnician(e.target.value)}
+              className="bg-transparent text-xs font-black text-white outline-none w-full border-b border-transparent focus:border-blue-400"
+            />
+          </div>
+        </div>
+
+        {/* Nav Links */}
+        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto">
+          {[
+            { id: 'dashboard', label: 'Giám sát IQC (Chart)', icon: 'fa-chart-line' },
+            { id: 'worksheet', label: 'Bảng kiểm mẻ đầu ngày', icon: 'fa-table' },
+            { id: 'entry', label: 'Nhập kết quả đơn lẻ', icon: 'fa-plus-circle' },
+            { id: 'capas', label: 'Sổ tay biên bản CAPA', icon: 'fa-clipboard-check' },
+            { id: 'config', label: 'Cấu hình & Quản lý Lô', icon: 'fa-boxes' },
+            { id: 'advisor', label: 'Cố vấn AI 2429', icon: 'fa-robot' }
+          ].map(item => (
+            <button
+              key={item.id}
+              onClick={() => { setActiveTab(item.id as any); setIsSidebarOpen(false); }}
+              className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl text-xs font-black transition-all cursor-pointer ${
+                activeTab === item.id 
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' 
+                  : 'hover:bg-slate-800 text-slate-400 hover:text-white'
+              }`}
+            >
+              <i className={`fas ${item.icon} w-5 text-center text-sm`}></i>
+              <span>{item.label}</span>
+              {item.id === 'capas' && capas.length > 0 && (
+                <span className="ml-auto px-2 py-0.5 rounded-full text-[10px] bg-red-500 text-white">
+                  {capas.length}
+                </span>
+              )}
             </button>
           ))}
         </nav>
+
+        {/* Footer info */}
+        <div className="p-4 border-t border-slate-800 text-[10px] text-slate-500 font-bold text-center">
+          Phiên bản 2.0 • ISO 15189:2022
+        </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto p-6 md:p-10">
-        <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase">
-              {activeTab === 'dashboard' ? 'Giám sát Nội kiểm IQC' : activeTab === 'entry' ? 'Bảng nhập liệu Westgard' : activeTab === 'config' ? 'Cấu hình Thông số' : 'Trợ lý Quy định AI'}
-            </h2>
-            <p className="text-slate-600 mt-1 font-medium italic">Tiêu chuẩn ISO 15189 & 2429/QĐ-BYT</p>
-          </div>
-          {activeTab === 'dashboard' && (
-            <div className="flex gap-3 glass-panel p-2 rounded-2xl shadow-sm">
-              <select value={selectedTestId} onChange={(e) => setSelectedTestId(e.target.value)} className="bg-white/50 border-none px-4 py-2 rounded-xl font-bold text-sm outline-none">
-                {tests.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </select>
-              <div className="flex gap-1">{Object.values(QCLevel).map(lvl => <button key={lvl} onClick={() => setSelectedLevel(lvl)} className={`px-4 py-2 rounded-xl text-xs font-black uppercase transition-all ${selectedLevel === lvl ? 'bg-slate-900 text-white shadow-md' : 'text-slate-600 hover:bg-white/50'}`}>{lvl}</button>)}</div>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Mobile Top Navbar */}
+        <header className="lg:hidden h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-5 sticky top-0 z-40">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white text-xs">
+              <i className="fas fa-microscope"></i>
             </div>
-          )}
+            <span className="font-black text-sm">MinhDucLab QC</span>
+          </div>
+          <button 
+            onClick={() => setIsSidebarOpen(true)} 
+            className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-200 cursor-pointer"
+          >
+            <i className="fas fa-bars"></i>
+          </button>
         </header>
 
-        {activeTab === 'dashboard' && (
-          <div className="space-y-8 animate-in fade-in duration-500">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white/90 backdrop-blur-sm p-7 rounded-3xl shadow-sm border border-slate-200 border-b-4 border-b-blue-500"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Mean Target</p><div className="flex items-baseline gap-2"><span className="text-4xl font-black text-slate-900">{activeLevelConfig.mean}</span><span className="text-slate-400 font-bold">{activeTest.unit}</span></div></div>
-              <div className="bg-white/90 backdrop-blur-sm p-7 rounded-3xl shadow-sm border border-slate-200 border-b-4 border-b-slate-400"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">SD Spec</p><span className="text-4xl font-black text-slate-900">{activeLevelConfig.sd}</span></div>
-              <div className="bg-white/90 backdrop-blur-sm p-7 rounded-3xl shadow-sm border border-slate-200 border-b-4 border-b-emerald-500"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">CV Hiện tại</p><span className="text-4xl font-black text-emerald-600">{activeLevelConfig.mean !== 0 ? ((activeLevelConfig.sd / activeLevelConfig.mean) * 100).toFixed(2) : '0'}%</span></div>
-            </div>
+        <main className="p-4 md:p-8 lg:p-10 max-w-7xl w-full mx-auto space-y-8">
+          {/* Top Bar / Selectors for Dashboard */}
+          {activeTab === 'dashboard' && (
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-3xl shadow-xs border border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <select
+                  value={selectedTestId}
+                  onChange={e => setSelectedTestId(e.target.value)}
+                  className="bg-slate-50 dark:bg-slate-800 px-4 py-2.5 rounded-2xl font-black text-xs outline-none border border-slate-200 dark:border-slate-700 cursor-pointer"
+                >
+                  {tests.map(t => (
+                    <option key={t.id} value={t.id}>{t.name} ({t.unit})</option>
+                  ))}
+                </select>
 
-            <LeveyJenningsChart data={activeResults} config={activeLevelConfig} unit={activeTest.unit} title={`${activeTest.name} (${selectedLevel})`} />
+                <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl">
+                  {Object.values(QCLevel).map(lvl => (
+                    <button
+                      key={lvl}
+                      onClick={() => setSelectedLevel(lvl)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase transition-all cursor-pointer ${
+                        selectedLevel === lvl 
+                          ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs' 
+                          : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                      }`}
+                    >
+                      {lvl}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-            <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-              <div className="px-8 py-6 border-b border-slate-100"><h3 className="font-black text-slate-800 text-xs tracking-widest uppercase">Nhật ký chi tiết (Nhấn hàng vi phạm để xử lý)</h3></div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="bg-slate-50/50 text-slate-400 font-bold text-[10px] uppercase"><tr><th className="px-8 py-5">Thời gian</th><th className="px-8 py-5">Kết quả</th><th className="px-8 py-5">SD Index</th><th className="px-8 py-5">Trạng thái</th><th className="px-8 py-5">Ghi chú</th></tr></thead>
-                  <tbody className="divide-y divide-slate-100 text-sm">
-                    {activeResults.length === 0 ? (<tr><td colSpan={5} className="px-8 py-12 text-center text-slate-300 italic">Chưa có dữ liệu.</td></tr>) : 
-                      activeResults.slice().sort((a,b) => b.timestamp - a.timestamp).map(r => {
-                        const sdDiff = activeLevelConfig.sd !== 0 ? (r.value - activeLevelConfig.mean) / activeLevelConfig.sd : 0;
-                        const isViolated = Math.abs(sdDiff) >= 2;
-                        return (
-                          <tr key={r.id} onClick={() => openActionModal(r)} className={`transition-colors ${isViolated ? 'cursor-pointer hover:bg-red-50 bg-red-50/20' : 'hover:bg-slate-100/50'}`}>
-                            <td className="px-8 py-5 text-slate-500">{new Date(r.timestamp).toLocaleString('vi-VN')}</td>
-                            <td className="px-8 py-5 font-black text-slate-900">{r.value}</td>
-                            <td className={`px-8 py-5 font-bold ${Math.abs(sdDiff) >= 3 ? 'text-red-600' : Math.abs(sdDiff) >= 2 ? 'text-orange-600' : 'text-emerald-600'}`}>{sdDiff > 0 ? '+' : ''}{sdDiff.toFixed(2)} SD</td>
-                            <td className="px-8 py-5"><span className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase ${Math.abs(sdDiff) >= 3 ? 'bg-red-100 text-red-700' : Math.abs(sdDiff) >= 2 ? 'bg-orange-100 text-orange-700' : 'bg-emerald-100 text-emerald-700'}`}>{Math.abs(sdDiff) >= 3 ? 'Vi phạm' : Math.abs(sdDiff) >= 2 ? 'Cảnh báo' : 'Hợp lệ'}</span></td>
-                            <td className="px-8 py-5 text-[10px] italic text-slate-500">{r.correctiveAction || "---"}</td>
-                          </tr>
-                        );
-                      })
-                    }
-                  </tbody>
-                </table>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsLotModalOpen(true)}
+                  className="px-4 py-2 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 rounded-xl text-xs font-black flex items-center gap-2 cursor-pointer transition-all"
+                >
+                  <i className="fas fa-boxes"></i> Lô: {activeLevelConfig.currentLot || 'Chưa gán'}
+                </button>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {activeTab === 'entry' && (
-          <div className="space-y-6 animate-in zoom-in-95 duration-300">
-             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/90 backdrop-blur-sm p-6 rounded-[2rem] shadow-sm border border-slate-200">
-                <div className="flex items-center gap-5">
-                   <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-blue-200"><i className="fas fa-calendar-day text-xl"></i></div>
-                   <div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ngày thực hiện</p><input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} className="bg-transparent border-none font-black text-xl outline-none cursor-pointer" /></div>
+          {/* TAB 1: GIÁM SÁT IQC (DASHBOARD) */}
+          {activeTab === 'dashboard' && activeTest && (
+            <div className="space-y-8 animate-in fade-in duration-300">
+              {/* Westgard Status Alert Banner */}
+              {latestResult && currentWestgardStyle && (
+                <div className={`p-5 rounded-3xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${currentWestgardStyle.badgeClass}`}>
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white text-xl shadow-md ${currentWestgardStyle.dotClass}`}>
+                      <i className={`fas ${latestResult.westgardStatus === 'violation' ? 'fa-exclamation-circle' : latestResult.westgardStatus === 'warning' ? 'fa-exclamation-triangle' : 'fa-check-circle'}`}></i>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-black text-sm uppercase tracking-wider">{currentWestgardStyle.label}</span>
+                        <span className="text-xs font-bold opacity-75">
+                          (Lần đo gần nhất: {new Date(latestResult.timestamp).toLocaleString('vi-VN')} - Giá trị: {latestResult.value} {activeTest.unit})
+                        </span>
+                      </div>
+                      <p className="text-xs font-medium mt-1">
+                        Z-score = <strong>{latestResult.zScore > 0 ? '+' : ''}{latestResult.zScore} SD</strong>. {latestResult.comment || 'Hệ thống đánh giá tự động theo chuỗi thời gian.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {latestResult.westgardStatus === 'violation' && (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenCapa(latestResult)}
+                      className="px-5 py-3 bg-red-600 hover:bg-red-700 text-white rounded-2xl text-xs font-black shadow-lg shadow-red-200 dark:shadow-none uppercase tracking-wider shrink-0 flex items-center gap-2 cursor-pointer transition-all animate-pulse"
+                    >
+                      <i className="fas fa-file-medical-alt"></i> LẬP BIÊN BẢN CAPA NGAY
+                    </button>
+                  )}
                 </div>
-                <button onClick={saveWorksheet} className="bg-slate-900 text-white font-black px-10 py-4 rounded-2xl shadow-xl hover:bg-blue-600 transition-all flex items-center gap-3 active:scale-95"><i className="fas fa-save"></i> LƯU KẾT QUẢ</button>
-             </div>
-             <div className="bg-white/90 backdrop-blur-sm rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden">
-                <table className="w-full text-left">
-                  <thead className="bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest"><tr><th className="px-8 py-6">Xét nghiệm</th><th className="px-4 py-6 text-center">Low</th><th className="px-4 py-6 text-center">Normal</th><th className="px-4 py-6 text-center">High</th><th className="px-8 py-6">Westgard</th></tr></thead>
-                  <tbody className="divide-y divide-slate-200">
-                    {tests.map(test => (
-                      <tr key={test.id} className="hover:bg-white/50">
-                        <td className="px-8 py-6"><div className="font-black text-slate-800">{test.name}</div><div className="text-[9px] text-slate-400 font-black uppercase">{test.unit}</div></td>
-                        {Object.values(QCLevel).map(lvl => (
-                          <td key={lvl} className="px-2 py-6">
-                            <input type="number" step="0.01" value={worksheetData[test.id]?.[lvl]?.val || ''} onChange={(e) => handleWorksheetChange(test.id, lvl, e.target.value)} placeholder="---" className="w-full p-4 rounded-2xl text-center font-black text-xl bg-slate-100/50 border-2 border-transparent focus:bg-white focus:border-blue-400 outline-none transition-all" />
+              )}
+
+              {/* Statistical Summary Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+                  <span className="text-[10px] font-black uppercase text-slate-400 block tracking-widest mb-2">Mean Đích</span>
+                  <span className="text-3xl font-black text-slate-900 dark:text-white">{activeLevelConfig.mean}</span>
+                  <span className="text-xs text-slate-400 ml-1 font-bold">{activeTest.unit}</span>
+                </div>
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+                  <span className="text-[10px] font-black uppercase text-slate-400 block tracking-widest mb-2">Độ Lệch Chuẩn (SD)</span>
+                  <span className="text-3xl font-black text-slate-900 dark:text-white">{activeLevelConfig.sd}</span>
+                </div>
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+                  <span className="text-[10px] font-black uppercase text-slate-400 block tracking-widest mb-2">Hệ Số Biến Thiên (CV%)</span>
+                  <span className="text-3xl font-black text-blue-600 dark:text-blue-400">
+                    {activeLevelConfig.mean > 0 ? ((activeLevelConfig.sd / activeLevelConfig.mean) * 100).toFixed(2) : 0}%
+                  </span>
+                </div>
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+                  <span className="text-[10px] font-black uppercase text-slate-400 block tracking-widest mb-2">Tổng số mẫu chạy</span>
+                  <span className="text-3xl font-black text-slate-900 dark:text-white">{activeLevelResults.length}</span>
+                  <span className="text-xs text-slate-400 ml-1 font-bold">mẫu</span>
+                </div>
+              </div>
+
+              {/* Levey-Jennings Interactive Chart */}
+              <LeveyJenningsChart
+                key={`${selectedTestId}-${selectedLevel}-${activeLevelResults.length}`}
+                data={activeLevelResults}
+                allResultsForTest={evaluatedResults}
+                config={activeLevelConfig}
+                allConfigs={activeTest.configs}
+                unit={activeTest.unit}
+                title={`${activeTest.name} - Mức ${selectedLevel}`}
+                onPointClick={handleOpenCapa}
+              />
+
+              {/* Six Sigma Analysis */}
+              <SigmaAnalysis test={activeTest} config={activeLevelConfig} />
+
+              {/* Nhật Ký Nội Kiểm Bảng Lưới (Log Table) */}
+              <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-xs border border-slate-200 dark:border-slate-800 overflow-hidden">
+                <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50 dark:bg-slate-800/40">
+                  <div className="flex items-center gap-3">
+                    <i className="fas fa-history text-blue-500 text-lg"></i>
+                    <h3 className="font-black text-sm uppercase text-slate-800 dark:text-white">
+                      Nhật ký kết quả nội kiểm (IQC Logbook)
+                    </h3>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleExportExcel}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase flex items-center gap-2 shadow-xs cursor-pointer transition-all"
+                    >
+                      <i className="fas fa-file-excel"></i> Xuất Sổ Excel
+                    </button>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-50 dark:bg-slate-800/80 text-[10px] font-black uppercase text-slate-400 border-b border-slate-100 dark:border-slate-800">
+                        <th className="px-5 py-4">Ngày giờ</th>
+                        <th className="px-5 py-4">Số Lô (Lot)</th>
+                        <th className="px-5 py-4">Giá trị đo</th>
+                        <th className="px-5 py-4">Z-score</th>
+                        <th className="px-5 py-4">Quy tắc Westgard</th>
+                        <th className="px-5 py-4">Biên bản CAPA</th>
+                        <th className="px-5 py-4">KTV</th>
+                        <th className="px-5 py-4 text-center">Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
+                      {activeLevelResults.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="p-12 text-center text-slate-400 italic font-bold">
+                            Chưa có dữ liệu nội kiểm cho xét nghiệm này ở mức {selectedLevel}.
                           </td>
-                        ))}
-                        <td className="px-8 py-6">
-                          {Object.values(QCLevel).map(lvl => {
-                             const data = worksheetData[test.id]?.[lvl];
-                             if (data?.val && data.rule !== 'Đạt') return <div key={lvl} className="text-[9px] font-black uppercase text-red-600 mb-1">{lvl}: {data.rule}</div>;
-                             return null;
-                          })}
-                        </td>
+                        </tr>
+                      ) : (
+                        activeLevelResults.slice().reverse().map(r => {
+                          const style = getWestgardStyle(r.westgardStatus || 'passed', r.westgardRule || 'none');
+                          return (
+                            <tr 
+                              key={r.id} 
+                              onClick={() => handleOpenCapa(r)}
+                              className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 cursor-pointer transition-all"
+                            >
+                              <td className="px-5 py-4 text-slate-500">
+                                {new Date(r.timestamp).toLocaleString('vi-VN')}
+                              </td>
+                              <td className="px-5 py-4 font-bold">{r.lotNumber || '---'}</td>
+                              <td className="px-5 py-4 font-black text-sm text-slate-900 dark:text-white">
+                                {r.value} <span className="text-[10px] text-slate-400 font-normal">{activeTest.unit}</span>
+                              </td>
+                              <td className={`px-5 py-4 font-black ${style.textClass}`}>
+                                {r.zScore > 0 ? '+' : ''}{r.zScore} SD
+                              </td>
+                              <td className="px-5 py-4">
+                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${style.badgeClass}`}>
+                                  {r.westgardRule === 'none' ? 'Hợp lệ' : r.westgardRule}
+                                </span>
+                              </td>
+                              <td className="px-5 py-4">
+                                {r.capaId ? (
+                                  <span className="text-emerald-600 font-bold flex items-center gap-1">
+                                    <i className="fas fa-check-circle"></i> {r.capaId}
+                                  </span>
+                                ) : r.westgardStatus === 'violation' ? (
+                                  <span className="text-red-500 font-black animate-pulse">
+                                    Cần lập CAPA ↗
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-300">---</span>
+                                )}
+                              </td>
+                              <td className="px-5 py-4 text-slate-500">{r.technician || 'KTV'}</td>
+                              <td className="px-5 py-4 text-center">
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleDeleteResult(e, r.id)}
+                                  className="w-7 h-7 rounded-lg bg-red-50 hover:bg-red-500 text-red-500 hover:text-white transition-all flex items-center justify-center mx-auto cursor-pointer"
+                                  title="Xóa kết quả"
+                                >
+                                  <i className="fas fa-trash-alt text-[10px]"></i>
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: BẢNG KIỂM HÀNG LOẠT (WORKSHEET BATCH ENTRY) */}
+          {activeTab === 'worksheet' && (
+            <div className="bg-white dark:bg-slate-900 p-6 md:p-10 rounded-[2.5rem] shadow-xs border border-slate-200 dark:border-slate-800 space-y-6 animate-in fade-in duration-300">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-slate-800">
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                    <i className="fas fa-table text-blue-600"></i> BẢNG KIỂM NỘI KIỂM ĐẦU NGÀY (WORKSHEET)
+                  </h3>
+                  <p className="text-xs text-slate-400 font-bold mt-1">
+                    Nhập toàn bộ các chỉ số kiểm soát đầu ngày dạng lưới Excel trong 1 phút
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 text-xs">
+                  <label className="font-bold text-slate-500 uppercase text-[10px]">Ngày thực hiện:</label>
+                  <input
+                    type="date"
+                    value={worksheetDate}
+                    onChange={e => setWorksheetDate(e.target.value)}
+                    className="bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 font-bold"
+                  />
+                </div>
+              </div>
+
+              {/* Grid Form */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 dark:bg-slate-800 text-[10px] font-black uppercase text-slate-400 border-b border-slate-200 dark:border-slate-700">
+                      <th className="px-4 py-3">Xét nghiệm</th>
+                      <th className="px-4 py-3">Đơn vị</th>
+                      <th className="px-4 py-3">Máy phân tích</th>
+                      <th className="px-4 py-3">Mức Thấp (Low)</th>
+                      <th className="px-4 py-3">Mức Bình thường (Normal)</th>
+                      <th className="px-4 py-3">Mức Cao (High)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {tests.map(t => (
+                      <tr key={t.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                        <td className="px-4 py-3 font-black text-slate-900 dark:text-white">{t.name}</td>
+                        <td className="px-4 py-3 text-slate-400 font-bold">{t.unit}</td>
+                        <td className="px-4 py-3 text-slate-500 text-[11px]">{t.analyzerName || 'Máy sinh hóa'}</td>
+                        {[QCLevel.LOW, QCLevel.NORMAL, QCLevel.HIGH].map(lvl => {
+                          const cfg = t.configs[lvl];
+                          return (
+                            <td key={lvl} className="px-4 py-3">
+                              <div className="space-y-1">
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder={`Mean: ${cfg.mean}`}
+                                  value={worksheetValues[t.id]?.[lvl] || ''}
+                                  onChange={e => {
+                                    const val = e.target.value;
+                                    setWorksheetValues(prev => ({
+                                      ...prev,
+                                      [t.id]: {
+                                        ...prev[t.id],
+                                        [lvl]: val
+                                      }
+                                    }));
+                                  }}
+                                  className="w-28 bg-slate-50 dark:bg-slate-800 p-2 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-center text-xs focus:ring-2 focus:ring-blue-500"
+                                />
+                              </div>
+                            </td>
+                          );
+                        })}
                       </tr>
                     ))}
                   </tbody>
                 </table>
-             </div>
-          </div>
-        )}
+              </div>
 
-        {activeTab === 'config' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in duration-500 pb-10">
-            {tests.map(test => (
-              <div key={test.id} className="bg-white/90 backdrop-blur-sm p-8 rounded-[2.5rem] shadow-sm border border-slate-200 relative group flex flex-col">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-3">
-                     <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-300 group-hover:text-blue-600 transition-colors"><i className="fas fa-flask"></i></div>
-                     <div><h4 className="text-xl font-black text-slate-900">{test.name}</h4><p className="text-[10px] text-slate-400 font-bold uppercase">{test.unit}</p></div>
-                  </div>
-                  <button onClick={() => handleDeleteTest(test.id)} className="w-9 h-9 rounded-xl bg-red-50 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm"><i className="fas fa-trash-alt text-xs"></i></button>
-                </div>
-                <div className="space-y-4 flex-1">
-                  {Object.values(QCLevel).map(lvl => (
-                    <div key={lvl} className="p-5 rounded-3xl bg-slate-100/50 border border-slate-200 hover:bg-white transition-all">
-                      <p className="text-[9px] font-black text-slate-500 uppercase mb-3 flex items-center gap-2">
-                         <span className={`w-1.5 h-1.5 rounded-full ${lvl === 'Low' ? 'bg-blue-400' : lvl === 'Normal' ? 'bg-emerald-400' : 'bg-orange-400'}`}></span>
-                         Mức {lvl}
-                      </p>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div><label className="text-[8px] font-black text-slate-400 block ml-2">Mean</label><input type="number" step="0.01" value={test.configs[lvl].mean} onChange={(e) => setTests(prev => prev.map(t => t.id === test.id ? { ...t, configs: { ...t.configs, [lvl]: { ...t.configs[lvl], mean: Number(e.target.value) } } } : t))} className="w-full bg-white p-3 rounded-xl font-black border border-slate-200 outline-none focus:ring-2 focus:ring-blue-100 transition-all text-sm" /></div>
-                        <div><label className="text-[8px] font-black text-slate-400 block ml-2">SD</label><input type="number" step="0.01" value={test.configs[lvl].sd} onChange={(e) => setTests(prev => prev.map(t => t.id === test.id ? { ...t, configs: { ...t.configs, [lvl]: { ...t.configs[lvl], sd: Number(e.target.value) } } } : t))} className="w-full bg-white p-3 rounded-xl font-black border border-slate-200 outline-none focus:ring-2 focus:ring-blue-100 transition-all text-sm" /></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <button onClick={() => handleSaveConfig(test.id)} className={`w-full mt-6 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-3 ${savingTestId === test.id ? 'bg-emerald-500 text-white ring-4 ring-emerald-100' : 'bg-slate-900 text-white hover:bg-blue-600'}`}>
-                   {savingTestId === test.id ? <><i className="fas fa-check"></i> ĐÃ LƯU</> : <><i className="fas fa-save"></i> LƯU CẤU HÌNH</>}
+              <div className="pt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleSaveWorksheet}
+                  className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-black shadow-lg shadow-blue-200 dark:shadow-none uppercase tracking-wider cursor-pointer transition-all"
+                >
+                  <i className="fas fa-save mr-2"></i> LƯU TOÀN BỘ MẺ NỘI KIỂM ĐẦU NGÀY
                 </button>
               </div>
-            ))}
-            <button onClick={() => setIsAddModalOpen(true)} className="bg-white/40 backdrop-blur-sm border-4 border-dashed border-slate-300 rounded-[2.5rem] flex flex-col items-center justify-center p-16 text-slate-400 hover:border-blue-400 hover:bg-white/60 transition-all cursor-pointer min-h-[500px]">
-              <div className="w-20 h-20 rounded-full border-4 border-dashed border-slate-300 flex items-center justify-center mb-6 group-hover:border-blue-300"><i className="fas fa-plus text-3xl"></i></div>
-              <span className="font-black uppercase tracking-widest text-sm text-slate-500">Thêm xét nghiệm mới</span>
-              <p className="text-[10px] mt-2 font-bold opacity-60">Nhấn để mở trình cài đặt</p>
-            </button>
-          </div>
-        )}
+            </div>
+          )}
 
-        {activeTab === 'advisor' && <div className="h-[calc(100vh-250px)]"><RegulatoryAdvisor /></div>}
-      </main>
+          {/* TAB 3: NHẬP ĐƠN LẺ */}
+          {activeTab === 'entry' && activeTest && (
+            <div className="max-w-xl mx-auto bg-white dark:bg-slate-900 p-8 md:p-10 rounded-[2.5rem] shadow-xs border border-slate-200 dark:border-slate-800 space-y-6 animate-in zoom-in-95 duration-200">
+              <div className="text-center space-y-2">
+                <div className="w-16 h-16 bg-blue-600 rounded-3xl flex items-center justify-center text-white text-2xl mx-auto shadow-lg shadow-blue-500/30">
+                  <i className="fas fa-plus"></i>
+                </div>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white">Nhập Kết Quả Nội Kiểm Đơn Lẻ</h3>
+                <p className="text-xs text-slate-400 font-bold">Hệ thống sẽ tự động đối chiếu các quy tắc Westgard</p>
+              </div>
 
-      {/* MODAL: THÊM XÉT NGHIỆM */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsAddModalOpen(false)}></div>
-          <div className="relative bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl p-8 overflow-y-auto max-h-[90vh]">
-             <div className="flex justify-between items-center mb-8">
-                <h3 className="text-2xl font-black text-slate-900">THIẾT LẬP XÉT NGHIỆM</h3>
-                <button onClick={() => setIsAddModalOpen(false)} className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center"><i className="fas fa-times"></i></button>
-             </div>
-             <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="space-y-1"><label className="text-[10px] font-black text-slate-500 uppercase ml-2">Tên xét nghiệm</label><input placeholder="VD: Glucose" className="w-full bg-slate-50 p-4 rounded-2xl font-bold border-none outline-none focus:ring-2 focus:ring-blue-500" onChange={e => setNewTestDraft({...newTestDraft, name: e.target.value})} /></div>
-                <div className="space-y-1"><label className="text-[10px] font-black text-slate-500 uppercase ml-2">Đơn vị</label><input placeholder="VD: mmol/L" className="w-full bg-slate-50 p-4 rounded-2xl font-bold border-none outline-none focus:ring-2 focus:ring-blue-500" onChange={e => setNewTestDraft({...newTestDraft, unit: e.target.value})} /></div>
-             </div>
-             <div className="space-y-4">
-                {Object.values(QCLevel).map(lvl => (
-                  <div key={lvl} className="p-5 bg-slate-50 rounded-3xl space-y-4 border border-slate-100">
-                     <p className="font-black text-[10px] uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${lvl === 'Low' ? 'bg-blue-400' : lvl === 'Normal' ? 'bg-emerald-400' : 'bg-orange-400'}`}></span>
-                        THÔNG SỐ MỨC {lvl}
-                     </p>
-                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1"><label className="text-[8px] font-black text-slate-400 ml-2">Mean Target</label><input type="number" step="0.01" placeholder="0.0" className="w-full p-4 rounded-xl border bg-white font-black" onChange={e => setNewTestDraft({...newTestDraft, configs: {...newTestDraft.configs, [lvl]: {...newTestDraft.configs[lvl], mean: Number(e.target.value)}}})} /></div>
-                        <div className="space-y-1"><label className="text-[8px] font-black text-slate-400 ml-2">SD Spec</label><input type="number" step="0.01" placeholder="0.0" className="w-full p-4 rounded-xl border bg-white font-black" onChange={e => setNewTestDraft({...newTestDraft, configs: {...newTestDraft.configs, [lvl]: {...newTestDraft.configs[lvl], sd: Number(e.target.value)}}})} /></div>
-                     </div>
+              <div className="space-y-4 text-xs">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="font-bold text-slate-500 block mb-1 uppercase text-[10px]">Xét nghiệm</label>
+                    <select
+                      value={selectedTestId}
+                      onChange={e => setSelectedTestId(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 font-bold"
+                    >
+                      {tests.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </select>
                   </div>
-                ))}
-             </div>
-             <div className="flex gap-4 mt-8">
-                <button onClick={() => setIsAddModalOpen(false)} className="flex-1 py-4 font-black text-slate-400 uppercase tracking-widest text-xs">Huỷ bỏ</button>
-                <button onClick={handleAddNewTest} className="flex-2 bg-blue-600 text-white px-10 py-5 rounded-3xl font-black shadow-xl hover:bg-blue-700 transition-all uppercase tracking-widest text-xs">Xác nhận tạo mới</button>
-             </div>
-          </div>
-        </div>
+                  <div>
+                    <label className="font-bold text-slate-500 block mb-1 uppercase text-[10px]">Mức QC</label>
+                    <select
+                      value={selectedLevel}
+                      onChange={e => setSelectedLevel(e.target.value as QCLevel)}
+                      className="w-full bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 font-bold"
+                    >
+                      {Object.values(QCLevel).map(lvl => <option key={lvl} value={lvl}>{lvl}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="font-bold text-slate-500 block mb-1 uppercase text-[10px]">Ngày thực hiện</label>
+                    <input
+                      type="date"
+                      value={singleDate}
+                      onChange={e => setSingleDate(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-500 block mb-1 uppercase text-[10px]">Số Lô (Lot QC)</label>
+                    <input
+                      type="text"
+                      disabled
+                      value={activeLevelConfig.currentLot || 'LOT-2026'}
+                      className="w-full bg-slate-100 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-slate-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 text-center">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
+                    Giá trị đo ({activeTest.unit})
+                  </span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder={`Mean: ${activeLevelConfig.mean}`}
+                    value={singleValue}
+                    onChange={e => setSingleValue(e.target.value)}
+                    className="w-full bg-transparent text-center font-black text-4xl text-blue-600 dark:text-blue-400 outline-none p-2"
+                  />
+                  <span className="text-xs text-slate-400 font-bold block mt-1">
+                    Giới hạn an toàn ±2SD: [{(activeLevelConfig.mean - 2 * activeLevelConfig.sd).toFixed(2)} - {(activeLevelConfig.mean + 2 * activeLevelConfig.sd).toFixed(2)}]
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleAddSingleResult}
+                  className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-black shadow-lg shadow-blue-200 dark:shadow-none uppercase tracking-wider cursor-pointer transition-all"
+                >
+                  LƯU KẾT QUẢ & ĐÁNH GIÁ WESTGARD
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: SỔ TAY BIÊN BẢN CAPA (HỒ SƠ 2429) */}
+          {activeTab === 'capas' && (
+            <div className="bg-white dark:bg-slate-900 p-6 md:p-10 rounded-[2.5rem] shadow-xs border border-slate-200 dark:border-slate-800 space-y-6 animate-in fade-in duration-300">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-slate-800">
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                    <i className="fas fa-clipboard-check text-red-500"></i> SỔ THEO DÕI SỰ CỐ & BIÊN BẢN CAPA
+                  </h3>
+                  <p className="text-xs text-slate-400 font-bold mt-1">
+                    Lưu trữ hồ sơ xử lý sự cố chất lượng theo Chương VIII - Tiêu chí 2429/QĐ-BYT & ISO 15189
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {capas.length === 0 ? (
+                  <div className="p-12 text-center text-slate-400 italic font-bold">
+                    Chưa có biên bản CAPA nào được tạo. Khi có sự cố vi phạm Westgard, hãy nhấn vào điểm lỗi để lập biên bản.
+                  </div>
+                ) : (
+                  capas.map(capa => (
+                    <div
+                      key={capa.id}
+                      className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-xs transition-all"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <strong className="text-sm font-black text-slate-900 dark:text-white">{capa.code}</strong>
+                          <span className="px-3 py-0.5 rounded-full text-xs font-black bg-red-100 text-red-700 uppercase">
+                            Westgard {capa.violatedRule}
+                          </span>
+                          <span className="text-xs text-slate-400 font-bold">
+                            {new Date(capa.timestamp).toLocaleString('vi-VN')}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-700 dark:text-slate-300 font-bold">
+                          Xét nghiệm: <span className="text-blue-600">{capa.testName}</span> (Mức {capa.level} - Lô {capa.lotNumber}) • Giá trị vi phạm: <strong>{capa.value} {capa.unit}</strong> (Z = {capa.zScore > 0 ? '+' : ''}{capa.zScore} SD)
+                        </p>
+                        <p className="text-xs text-slate-500 line-clamp-2">
+                          <strong>Khắc phục:</strong> {capa.immediateCorrection}
+                        </p>
+                        <p className="text-[11px] text-slate-400">
+                          Người lập: <strong>{capa.technician}</strong> | Người duyệt: <strong>{capa.approver}</strong> | Chạy lại: <strong className={capa.retestStatus === 'passed' ? 'text-emerald-600' : 'text-red-500'}>{capa.retestValue} {capa.unit} ({capa.retestStatus === 'passed' ? 'ĐẠT' : 'CHƯA ĐẠT'})</strong>
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const dummyRes: QCResult = {
+                              id: capa.id,
+                              testId: capa.testId,
+                              level: capa.level,
+                              value: capa.value,
+                              timestamp: capa.timestamp,
+                              lotNumber: capa.lotNumber,
+                              technician: capa.technician,
+                              approver: capa.approver,
+                              westgardRule: capa.violatedRule,
+                              capaId: capa.code
+                            };
+                            const targetTest = tests.find(t => t.id === capa.testId) || activeTest;
+                            setSelectedResultForCapa(dummyRes);
+                            setIsCapaModalOpen(true);
+                          }}
+                          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black shadow-xs flex items-center gap-2 cursor-pointer transition-all"
+                        >
+                          <i className="fas fa-print"></i> Xem & In Lại A4
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: CẤU HÌNH & QUẢN LÝ LÔ */}
+          {activeTab === 'config' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300">
+              {tests.map(test => (
+                <div key={test.id} className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2.5rem] shadow-xs border border-slate-200 dark:border-slate-800 space-y-4">
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+                    <div>
+                      <h4 className="text-lg font-black text-slate-900 dark:text-white">{test.name}</h4>
+                      <p className="text-xs text-slate-400 font-bold">{test.unit} • {test.analyzerName || 'Máy sinh hóa'}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedTestId(test.id);
+                        setIsLotModalOpen(true);
+                      }}
+                      className="px-4 py-2 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all border border-indigo-200 dark:border-indigo-800"
+                    >
+                      <i className="fas fa-boxes"></i> Đổi Lô (Lot QC)
+                    </button>
+                  </div>
+
+                  <div className="space-y-3 text-xs">
+                    {Object.values(QCLevel).map(lvl => {
+                      const cfg = test.configs[lvl];
+                      return (
+                        <div key={lvl} className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl flex items-center justify-between">
+                          <span className="font-bold text-slate-600 dark:text-slate-300">Mức {lvl} ({cfg.currentLot || 'LOT-2026'})</span>
+                          <span className="font-black text-slate-900 dark:text-white">
+                            Mean: {cfg.mean} | SD: {cfg.sd} | CV%: {cfg.mean > 0 ? ((cfg.sd / cfg.mean) * 100).toFixed(2) : 0}%
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* TAB 6: CỐ VẤN AI 2429 */}
+          {activeTab === 'advisor' && (
+            <div className="h-[650px] md:h-[750px] animate-in fade-in duration-300">
+              <RegulatoryAdvisor currentTest={activeTest} latestViolation={latestResult?.westgardStatus === 'violation' ? latestResult : undefined} />
+            </div>
+          )}
+        </main>
+      </div>
+
+      {/* MODAL: BIÊN BẢN CAPA IN A4 */}
+      {isCapaModalOpen && selectedResultForCapa && activeTest && (
+        <CapaReportModal
+          isOpen={isCapaModalOpen}
+          onClose={() => setIsCapaModalOpen(false)}
+          result={selectedResultForCapa}
+          test={tests.find(t => t.id === selectedResultForCapa.testId) || activeTest}
+          onSaveCapa={handleSaveCapa}
+          existingCapa={capas.find(c => c.code === selectedResultForCapa.capaId || (c.timestamp === selectedResultForCapa.timestamp && c.testId === selectedResultForCapa.testId))}
+        />
       )}
 
-      {/* MODAL: HÀNH ĐỘNG KHẮC PHỤC */}
-      {isActionModalOpen && selectedResultForAction && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsActionModalOpen(false)}></div>
-          <div className="relative bg-white w-full max-w-xl rounded-[3rem] shadow-2xl p-10">
-            <div className="flex items-center gap-5 mb-8">
-              <div className="w-14 h-14 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center text-2xl shadow-inner shadow-red-50"><i className="fas fa-exclamation-triangle"></i></div>
-              <div><h3 className="text-2xl font-black text-slate-900 leading-none mb-2">XỬ LÝ LỖI QC</h3><p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest italic">Corrective Action Record</p></div>
-            </div>
-            <div className="space-y-5 mb-10">
-               <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">Phân tích vi phạm Westgard</p>
-                  <p className="font-black text-slate-800 text-sm leading-relaxed">
-                    {analyzeWestgard(selectedResultForAction.testId, selectedResultForAction.level, selectedResultForAction.value).rule}: 
-                    <span className="font-medium text-slate-600 ml-2 italic">{analyzeWestgard(selectedResultForAction.testId, selectedResultForAction.level, selectedResultForAction.value).action}</span>
-                  </p>
-               </div>
-               <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase ml-2">Nội dung hành động thực tế</label>
-                  <textarea value={actionComment} onChange={e => setActionComment(e.target.value)} placeholder="Mô tả hành động của bạn (VD: Kiểm tra đường ống, thay thuốc thử mới...)" className="w-full bg-slate-50 p-6 rounded-[2rem] border-2 border-transparent focus:border-blue-400 focus:bg-white outline-none h-36 text-sm font-medium transition-all" />
-               </div>
-               <div className="flex flex-wrap gap-2">
-                  {['Chạy lại mẫu QC mới', 'Hiệu chuẩn (Calibration)', 'Thay thuốc thử', 'Bảo trì kim hút', 'Kiểm tra nhiệt độ'].map(txt => (
-                    <button key={txt} onClick={() => setActionComment(txt)} className="text-[10px] font-black px-4 py-2 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-xl transition-all">{txt}</button>
-                  ))}
-               </div>
-            </div>
-            <div className="flex gap-4">
-              <button onClick={() => setIsActionModalOpen(false)} className="flex-1 py-4 font-black text-slate-400 uppercase tracking-widest text-[10px]">Đóng</button>
-              <button onClick={saveAction} className="flex-2 bg-slate-900 text-white px-10 py-5 rounded-3xl font-black shadow-2xl hover:bg-blue-600 transition-all uppercase tracking-widest text-[10px]">Xác nhận xử lý lỗi</button>
-            </div>
-          </div>
-        </div>
+      {/* MODAL: QUẢN LÝ LÔ CHỨNG (LOT QC) */}
+      {isLotModalOpen && activeTest && (
+        <LotManagementModal
+          isOpen={isLotModalOpen}
+          onClose={() => setIsLotModalOpen(false)}
+          test={activeTest}
+          onUpdateTestLots={(updatedTest) => {
+            setTests(prev => prev.map(t => t.id === updatedTest.id ? updatedTest : t));
+          }}
+        />
       )}
     </div>
   );

@@ -1,107 +1,183 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { ChatMessage } from '../types';
-import { getRegulatoryAdvice } from '../services/geminiService';
+import { ChatMessage, LabTest, QCResult } from '../types';
+import { askAdvisorApi } from '../services/advisorClient';
 
-const RegulatoryAdvisor: React.FC = () => {
+interface RegulatoryAdvisorProps {
+  currentTest?: LabTest;
+  latestViolation?: QCResult;
+}
+
+export const RegulatoryAdvisor: React.FC<RegulatoryAdvisorProps> = ({
+  currentTest,
+  latestViolation
+}) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'model', text: 'Chào bạn! Tôi là chuyên gia cố vấn QC. Bạn cần tìm hiểu về 2429/QĐ-BYT hay an toàn sinh học?', timestamp: Date.now() }
+    {
+      role: 'model',
+      text: `Xin chào! Tôi là Trợ lý AI Cố Vấn Quản Lý Chất Lượng Phòng Xét Nghiệm Y Học (Chuẩn Quyết định 2429/QĐ-BYT & ISO 15189).
+
+Tôi có thể hỗ trợ bạn:
+1. 📋 Giải thích và hướng dẫn xử lý các vi phạm đa quy tắc Westgard ($1_{3s}, 2_{2s}, R_{4s}, 4_{1s}, 10_x$).
+2. 🔬 Phân tích nguyên nhân sự cố theo mô hình 5M (Con người, Thiết bị, Hóa chất, Phương pháp, Môi trường).
+3. 📑 Hướng dẫn lập hồ sơ quản lý mẫu nội kiểm (IQC) và ngoại kiểm (EQA) theo Tiêu chí 2429.
+4. 📈 Phương pháp đánh giá Six Sigma & TEa theo khuyến cáo CLIA 2024.
+
+Hãy nhập câu hỏi hoặc chọn các câu hỏi gợi ý bên dưới!`,
+      timestamp: Date.now()
+    }
   ]);
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
+  const quickPrompts = [
+    'Quy trình xử lý khi vi phạm 1-3s và 2-2s theo QĐ 2429',
+    'Hướng dẫn thiết lập Mean/SD cho Lô chứng mới (chu kỳ 20 ngày)',
+    'Cách tính Six Sigma từ TEa và sai số EQA (Ngoại kiểm)',
+    'Các tiêu chí điểm mức 3, 4, 5 của Chương VIII - QĐ 2429'
+  ];
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+  const handleSend = async (customText?: string) => {
+    const textToSend = customText || input;
+    if (!textToSend.trim() || loading) return;
 
-    const userMsg: ChatMessage = { role: 'user', text: input, timestamp: Date.now() };
+    const userMsg: ChatMessage = {
+      role: 'user',
+      text: textToSend.trim(),
+      timestamp: Date.now()
+    };
+
     setMessages(prev => [...prev, userMsg]);
-    setInput('');
-    setIsLoading(true);
+    if (!customText) setInput('');
+    setLoading(true);
 
-    const response = await getRegulatoryAdvice(input);
-    
-    /* Fix: Extract and append grounding search sources as links to the message text as per guidelines */
-    let modelText = response.text;
-    if (response.sources && response.sources.length > 0) {
-      const links = response.sources
-        .map((chunk: any) => chunk.web ? `[${chunk.web.title}](${chunk.web.uri})` : null)
-        .filter(Boolean);
-      if (links.length > 0) {
-        modelText += '\n\n**Nguồn tham khảo:**\n' + links.join('\n');
+    try {
+      // Đính kèm ngữ cảnh xét nghiệm nếu có
+      let context;
+      if (currentTest) {
+        const config = latestViolation ? currentTest.configs[latestViolation.level] : currentTest.configs['Normal'];
+        context = {
+          testName: currentTest.name,
+          level: latestViolation?.level,
+          value: latestViolation?.value,
+          mean: config?.mean,
+          sd: config?.sd,
+          zScore: latestViolation?.zScore,
+          violatedRule: latestViolation?.westgardRule,
+          analyzerName: currentTest.analyzerName
+        };
       }
-    }
 
-    setMessages(prev => [...prev, { 
-      role: 'model', 
-      text: modelText, 
-      timestamp: Date.now() 
-    }]);
-    setIsLoading(false);
+      const res = await askAdvisorApi(userMsg.text, context);
+      
+      const modelMsg: ChatMessage = {
+        role: 'model',
+        text: res.text,
+        timestamp: Date.now()
+      };
+
+      setMessages(prev => [...prev, modelMsg]);
+    } catch (err) {
+      setMessages(prev => [
+        ...prev,
+        {
+          role: 'model',
+          text: 'Đã xảy ra sự cố khi kết nối tới máy chủ AI. Vui lòng kiểm tra lại đường truyền mạng hoặc thử lại sau.',
+          timestamp: Date.now()
+        }
+      ]);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+  }, [messages, loading]);
+
   return (
-    <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div className="bg-blue-600 p-4 text-white flex items-center justify-between">
-        <h3 className="font-bold flex items-center gap-2">
-          <i className="fas fa-robot"></i> Cố vấn Quy định AI
-        </h3>
-        <span className="text-xs bg-blue-500 px-2 py-1 rounded">2429/QĐ-BYT & Biosafety</span>
+    <div className="flex flex-col h-full bg-white/95 dark:bg-slate-900/90 backdrop-blur-md rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden">
+      {/* Header */}
+      <div className="bg-slate-900 p-6 text-white flex justify-between items-center">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+            <i className="fas fa-robot text-base"></i>
+          </div>
+          <div>
+            <h3 className="font-black text-sm uppercase tracking-wide">Cố Vấn AI Quản Lý Chất Lượng 2429</h3>
+            <p className="text-[10px] text-slate-400 font-bold">Mô hình: Gemini 2.0 Flash • Bảo mật Vercel Serverless</p>
+          </div>
+        </div>
+
+        {currentTest && (
+          <span className="hidden sm:inline-block px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-blue-400 border border-slate-700">
+            Ngữ cảnh: {currentTest.name}
+          </span>
+        )}
       </div>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+      {/* Message List */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/40 dark:bg-slate-950/40 custom-scrollbar">
         {messages.map((m, idx) => (
-          <div key={idx} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] p-3 rounded-2xl ${
-              m.role === 'user' 
-                ? 'bg-blue-600 text-white rounded-tr-none' 
-                : 'bg-white text-slate-800 border border-slate-200 shadow-sm rounded-tl-none'
-            }`}>
-              <div className="whitespace-pre-wrap text-sm leading-relaxed">{m.text}</div>
-              <div className={`text-[10px] mt-1 opacity-60 ${m.role === 'user' ? 'text-right' : 'text-left'}`}>
-                {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </div>
+          <div key={idx} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in duration-200`}>
+            <div
+              className={`max-w-[90%] md:max-w-[80%] p-5 rounded-2xl shadow-xs text-sm leading-relaxed ${
+                m.role === 'user'
+                  ? 'bg-blue-600 text-white rounded-tr-none'
+                  : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-tl-none border border-slate-200 dark:border-slate-700'
+              }`}
+            >
+              <div className="whitespace-pre-wrap">{m.text}</div>
+              <span className="text-[9px] opacity-60 mt-2 block text-right font-medium">
+                {new Date(m.timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+              </span>
             </div>
           </div>
         ))}
-        {isLoading && (
+
+        {loading && (
           <div className="flex justify-start">
-            <div className="bg-white border border-slate-200 p-3 rounded-2xl rounded-tl-none flex gap-1">
-              <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce"></div>
-              <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-              <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl rounded-tl-none border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-500 flex items-center gap-2">
+              <i className="fas fa-spinner fa-spin text-blue-600"></i>
+              <span>Cố vấn AI đang tra cứu tiêu chuẩn 2429 & soạn câu trả lời...</span>
             </div>
           </div>
         )}
       </div>
 
-      <div className="p-4 border-t border-slate-200 bg-white">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Ví dụ: Cấp độ 3 của 2429 yêu cầu gì?"
-            className="flex-1 p-3 bg-slate-100 border-none rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-          />
+      {/* Quick Prompts */}
+      <div className="p-3 bg-slate-100/70 dark:bg-slate-800/70 border-t border-slate-200 dark:border-slate-700 flex flex-wrap gap-2 overflow-x-auto">
+        {quickPrompts.map((qp, i) => (
           <button
-            onClick={handleSend}
-            disabled={isLoading}
-            className="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            key={i}
+            disabled={loading}
+            onClick={() => handleSend(qp)}
+            className="text-[11px] font-bold px-3 py-1.5 bg-white dark:bg-slate-700 hover:bg-blue-600 hover:text-white text-slate-700 dark:text-slate-200 rounded-xl transition-all shadow-2xs cursor-pointer shrink-0 disabled:opacity-50"
           >
-            <i className="fas fa-paper-plane"></i>
+            {qp}
           </button>
-        </div>
+        ))}
+      </div>
+
+      {/* Input bar */}
+      <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex gap-3">
+        <input
+          type="text"
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
+          placeholder="Hỏi về quy tắc Westgard, QĐ 2429, cách giải quyết lỗi QC..."
+          className="flex-1 bg-slate-100/70 dark:bg-slate-800 rounded-2xl px-5 py-3 text-sm outline-none border border-transparent focus:border-blue-500 transition-all font-medium"
+        />
+        <button
+          type="button"
+          disabled={loading || !input.trim()}
+          onClick={() => handleSend()}
+          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white w-12 h-12 rounded-2xl flex items-center justify-center transition-all cursor-pointer shadow-md shadow-blue-200 shrink-0"
+        >
+          <i className="fas fa-paper-plane text-sm"></i>
+        </button>
       </div>
     </div>
   );
 };
-
-export default RegulatoryAdvisor;
