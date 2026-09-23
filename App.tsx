@@ -20,6 +20,7 @@ import { CapaReportModal } from './components/CapaReportModal';
 import { LotManagementModal } from './components/LotManagementModal';
 import { RegulatoryAdvisor } from './components/RegulatoryAdvisor';
 import { AddEditTestModal } from './components/AddEditTestModal';
+import { ImportDataModal } from './components/ImportDataModal';
 
 export const App: React.FC = () => {
   // 1. Quản lý trạng thái dữ liệu (đồng bộ với localStorage)
@@ -75,6 +76,7 @@ export const App: React.FC = () => {
   const [isLotModalOpen, setIsLotModalOpen] = useState<boolean>(false);
   const [isAddEditTestModalOpen, setIsAddEditTestModalOpen] = useState<boolean>(false);
   const [editingTestForModal, setEditingTestForModal] = useState<LabTest | null>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
 
   // 4. Người thực hiện & Cấu hình tìm kiếm
   const [currentTechnician, setCurrentTechnician] = useState<string>(() => {
@@ -113,11 +115,12 @@ export const App: React.FC = () => {
         if (isCapaModalOpen) setIsCapaModalOpen(false);
         if (isLotModalOpen) setIsLotModalOpen(false);
         if (isAddEditTestModalOpen) setIsAddEditTestModalOpen(false);
+        if (isImportModalOpen) setIsImportModalOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isCapaModalOpen, isLotModalOpen, isAddEditTestModalOpen]);
+  }, [isCapaModalOpen, isLotModalOpen, isAddEditTestModalOpen, isImportModalOpen]);
 
   // Lưu trữ tự động vào localStorage
   useEffect(() => { localStorage.setItem('mdlab_tests_v3', JSON.stringify(tests)); }, [tests]);
@@ -176,6 +179,19 @@ export const App: React.FC = () => {
       setRawResults(prev => prev.filter(r => r.testId !== testId));
       addToast('warning', 'Đã xóa xét nghiệm', `Đã xóa xét nghiệm "${testName}" khỏi hệ thống.`);
     }
+  };
+
+  // Nạp kết quả từ Google Drive / Excel vào hệ thống
+  const handleImportSuccess = (importedResults: QCResult[], updatedTests?: LabTest[]) => {
+    if (updatedTests && updatedTests.length > 0) {
+      setTests(updatedTests);
+    }
+    setRawResults(prev => {
+      const existingIds = new Set(prev.map(r => r.id));
+      const newUnique = importedResults.filter(r => !existingIds.has(r.id));
+      return [...prev, ...newUnique];
+    });
+    addToast('success', 'Đồng bộ thành công', `Đã nạp thành công ${importedResults.length} kết quả từ Google Drive vào hệ thống!`);
   };
 
   // Xét nghiệm đang chọn
@@ -436,6 +452,7 @@ export const App: React.FC = () => {
           technician={currentTechnician}
           warningCount={unresolvedCapaCount}
           onOpenCapas={() => setActiveTab('capas')}
+          onOpenImport={() => setIsImportModalOpen(true)}
         />
 
         {/* Main Content Viewport */}
@@ -505,6 +522,7 @@ export const App: React.FC = () => {
                 onOpenCapa={handleOpenCapa}
                 onDeleteResult={handleDeleteResult}
                 onExportExcel={handleExportExcel}
+                onOpenImport={() => setIsImportModalOpen(true)}
               />
             </div>
           )}
@@ -548,6 +566,17 @@ export const App: React.FC = () => {
                       className="bg-slate-50 p-2 rounded-xl border border-slate-200 font-semibold text-xs text-slate-700 outline-none"
                     />
                   </div>
+
+                  {/* Nạp từ Google Drive */}
+                  <button
+                    type="button"
+                    onClick={() => setIsImportModalOpen(true)}
+                    className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                    title="Nạp kết quả từ file Google Drive hoặc dán trực tiếp"
+                  >
+                    <i className="fas fa-cloud-upload-alt text-blue-600"></i>
+                    <span>Nạp Google Drive</span>
+                  </button>
                 </div>
               </div>
 
@@ -991,6 +1020,16 @@ export const App: React.FC = () => {
           analyzers={analyzers}
           onSave={handleSaveTest}
           onAddNewAnalyzer={handleAddAnalyzer}
+        />
+      )}
+
+      {isImportModalOpen && (
+        <ImportDataModal
+          isOpen={isImportModalOpen}
+          onClose={() => setIsImportModalOpen(false)}
+          tests={tests}
+          currentTechnician={currentTechnician}
+          onImportSuccess={handleImportSuccess}
         />
       )}
 

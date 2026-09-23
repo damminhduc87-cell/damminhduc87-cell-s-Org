@@ -7,6 +7,7 @@ interface TopbarProps {
   technician: string;
   warningCount: number;
   onOpenCapas: () => void;
+  onOpenImport?: () => void;
 }
 
 export const Topbar: React.FC<TopbarProps> = ({
@@ -14,7 +15,8 @@ export const Topbar: React.FC<TopbarProps> = ({
   onOpenMobileMenu,
   technician,
   warningCount,
-  onOpenCapas
+  onOpenCapas,
+  onOpenImport
 }) => {
   const [currentTime, setCurrentTime] = useState<string>('');
 
@@ -105,6 +107,19 @@ export const Topbar: React.FC<TopbarProps> = ({
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span>Đồng bộ: vừa xong</span>
           </div>
+
+          {/* Drive Import Button */}
+          {onOpenImport && (
+            <button
+              type="button"
+              onClick={onOpenImport}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-bold transition-colors cursor-pointer shadow-2xs"
+              title="Đồng bộ nạp dữ liệu từ Google Drive / Excel"
+            >
+              <i className="fas fa-cloud-upload-alt text-blue-600"></i>
+              <span className="hidden sm:inline">Nạp từ Drive</span>
+            </button>
+          )}
 
           {/* Clock */}
           <div className="hidden md:flex items-center gap-1.5 text-xs text-slate-500 font-medium bg-slate-50 border border-slate-200 px-3 py-1 rounded-xl">

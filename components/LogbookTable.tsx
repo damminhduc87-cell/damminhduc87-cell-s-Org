@@ -8,6 +8,7 @@ interface LogbookTableProps {
   onOpenCapa: (result: QCResult) => void;
   onDeleteResult: (e: React.MouseEvent, id: string) => void;
   onExportExcel: () => void;
+  onOpenImport?: () => void;
 }
 
 export const LogbookTable: React.FC<LogbookTableProps> = ({
@@ -15,7 +16,8 @@ export const LogbookTable: React.FC<LogbookTableProps> = ({
   activeTest,
   onOpenCapa,
   onDeleteResult,
-  onExportExcel
+  onExportExcel,
+  onOpenImport
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'passed' | 'warning' | 'violation'>('all');
@@ -56,12 +58,24 @@ export const LogbookTable: React.FC<LogbookTableProps> = ({
           </p>
         </div>
 
-        {/* Action button: Xuất Excel */}
+        {/* Action buttons: Nhập file & Xuất Excel */}
         <div className="flex items-center gap-2.5 flex-wrap">
+          {onOpenImport && (
+            <button
+              type="button"
+              onClick={onOpenImport}
+              className="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+              title="Đồng bộ nạp dữ liệu từ Google Sheets hoặc file Excel"
+            >
+              <i className="fas fa-file-import text-blue-600"></i>
+              <span>Nhập từ Google Drive (Excel)</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={onExportExcel}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer transition-colors shadow-xs"
+            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
             title="Tải sổ theo dõi nội kiểm dạng file Excel (.xlsx)"
           >
             <i className="fas fa-file-excel"></i>
