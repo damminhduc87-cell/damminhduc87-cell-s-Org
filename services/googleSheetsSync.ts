@@ -36,32 +36,50 @@ export const APPS_SCRIPT_TEMPLATE = `function doPost(e) {
       var target = payload.target || {};
       var values = sheet.getDataRange().getValues();
       var deletedCount = 0;
-      for (var i = values.length - 1; i >= 1; i--) {
-        var rowDate = String(values[i][0] || "");
-        var rowTest = String(values[i][1] || "").trim().toLowerCase();
-        var rowLevel = String(values[i][2] || "").trim().toLowerCase();
-        var rowVal = parseFloat(String(values[i][3] || "").replace(",", "."));
-        
-        var targetTest = String(target.XET_NGHIEM || "").trim().toLowerCase();
-        var targetLevel = String(target.MUC_IQC || "").trim().toLowerCase();
-        var targetVal = parseFloat(String(target.GIA_TRI_DO_LUONG || "0").replace(",", "."));
-        
-        var testMatch = !targetTest || rowTest.includes(targetTest) || targetTest.includes(rowTest);
-        var levelMatch = !targetLevel || rowLevel.includes(targetLevel) || targetLevel.includes(rowLevel);
-        var valMatch = isNaN(targetVal) || Math.abs(rowVal - targetVal) < 0.02;
-        var dateMatch = true;
-        if (target.NGAY_GIO) {
-          var datePrefix = target.NGAY_GIO.split(" ")[0];
-          dateMatch = rowDate.includes(datePrefix);
+      
+      function norm(s) {
+        return String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      }
+      function getDateStr(val) {
+        if (!val) return "";
+        if (val instanceof Date) {
+          var d = val.getDate();
+          var m = val.getMonth() + 1;
+          var y = val.getFullYear();
+          return (d < 10 ? '0' : '') + d + '/' + (m < 10 ? '0' : '') + m + '/' + y;
         }
+        var s = String(val).trim();
+        if (s.indexOf('T') !== -1) {
+          var parts = s.split('T')[0].split('-');
+          if (parts.length === 3) return parts[2] + '/' + parts[1] + '/' + parts[0];
+        }
+        if (s.indexOf('/') !== -1) return s.split(' ')[0];
+        return s;
+      }
+      
+      var targetTest = norm(target.XET_NGHIEM);
+      var targetLevel = norm(target.MUC_IQC);
+      var targetVal = parseFloat(String(target.GIA_TRI_DO_LUONG || "0").replace(",", "."));
+      var targetDate = getDateStr(target.NGAY_GIO);
+      
+      for (var i = values.length - 1; i >= 1; i--) {
+        var rowTest = norm(values[i][1]);
+        var rowLevel = norm(values[i][2]);
+        var rowVal = parseFloat(String(values[i][3] || "").replace(",", "."));
+        var rowDate = getDateStr(values[i][0]);
+        
+        var testMatch = !targetTest || rowTest.indexOf(targetTest) !== -1 || targetTest.indexOf(rowTest) !== -1;
+        var levelMatch = !targetLevel || rowLevel.indexOf(targetLevel) !== -1 || targetLevel.indexOf(rowLevel) !== -1;
+        var valMatch = isNaN(targetVal) || Math.abs(rowVal - targetVal) < 0.05;
+        var dateMatch = !targetDate || !rowDate || targetDate === rowDate;
         
         if (testMatch && levelMatch && valMatch && dateMatch) {
           sheet.deleteRow(i + 1);
           deletedCount++;
-          break; // Xóa đúng 1 dòng khớp nhất
+          break; // Xóa đúng 1 dòng khớp nhất từ dưới lên
         }
       }
-      return ContentService.createTextOutput(JSON.stringify({ status: "success", deletedCount: deletedCount }))
+      return ContentService.createTextOutput(JSON.stringify({ status: "success", action: "delete", deletedCount: deletedCount }))
         .setMimeType(ContentService.MimeType.JSON);
     }
     

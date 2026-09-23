@@ -366,36 +366,49 @@ export const App: React.FC = () => {
       const res = await pullResultsFromGoogleSheets(googleSheetsUrl, tests);
       if (res.success && res.results.length > 0) {
         setRawResults(prev => {
-          const newItems: QCResult[] = [];
+          const sheetSignatures = new Set(res.results.map(r => getResultSignature(r)));
+          const now = Date.now();
+
+          // 1. Đồng bộ xóa: Loại bỏ các kết quả cũ đã bị xóa trên Google Sheet
+          // Chỉ giữ lại kết quả nếu:
+          // - Có mặt trên Google Sheet
+          // - HOẶC vừa mới nhập trên thiết bị này trong vòng 60 giây qua (đang đợi gửi lên)
+          // - VÀ tuyệt đối không nằm trong danh sách chữ ký đã xóa (deletedSignatures)
+          const reconciledLocal = prev.filter(local => {
+            const sig = getResultSignature(local);
+            if (deletedSignatures.includes(sig)) return false;
+            if (sheetSignatures.has(sig)) return true;
+            return (now - local.timestamp) < 60000;
+          });
+
+          // 2. Đồng bộ nạp: Bổ sung các kết quả từ Google Sheet mà thiết bị này chưa có
+          let addedCount = 0;
+          const localSigSet = new Set(reconciledLocal.map(l => getResultSignature(l)));
           res.results.forEach(sheetRes => {
             const sig = getResultSignature(sheetRes);
-            if (deletedSignatures.includes(sig)) {
-              // Bỏ qua vì KTV đã chủ động xóa kết quả này
-              return;
-            }
-
-            const alreadyExists = prev.some(
-              local =>
-                local.testId === sheetRes.testId &&
-                local.level === sheetRes.level &&
-                Math.abs(local.value - sheetRes.value) < 0.001 &&
-                Math.abs(local.timestamp - sheetRes.timestamp) < 60000
-            );
-            if (!alreadyExists) {
-              newItems.push(sheetRes);
+            if (deletedSignatures.includes(sig)) return;
+            if (!localSigSet.has(sig)) {
+              reconciledLocal.push(sheetRes);
+              localSigSet.add(sig);
+              addedCount++;
             }
           });
 
-          if (newItems.length > 0) {
-            addToast('success', 'Đồng bộ thiết bị', `Đã nạp thêm ${newItems.length} kết quả mới từ Google Drive!`);
-            const lastItem = newItems[newItems.length - 1];
-            setSelectedTestId(lastItem.testId);
-            setSelectedLevel(lastItem.level);
-            return [...prev, ...newItems];
-          } else {
-            if (!silent) addToast('info', 'Dữ liệu đã mới nhất', 'Tất cả kết quả trên Google Drive đã được đồng bộ đầy đủ.');
-            return prev;
+          // Sắp xếp lại theo thời gian
+          reconciledLocal.sort((a, b) => a.timestamp - b.timestamp);
+
+          if (addedCount > 0) {
+            addToast('success', 'Đồng bộ thiết bị', `Đã nạp thêm ${addedCount} kết quả mới từ Google Drive!`);
+            const lastItem = reconciledLocal[reconciledLocal.length - 1];
+            if (lastItem) {
+              setSelectedTestId(lastItem.testId);
+              setSelectedLevel(lastItem.level);
+            }
+          } else if (!silent) {
+            addToast('info', 'Dữ liệu đã mới nhất', 'Tất cả kết quả trên Google Drive đã được đồng bộ đầy đủ.');
           }
+
+          return reconciledLocal;
         });
       } else if (res.success && res.results.length === 0) {
         if (!silent) addToast('info', 'Google Drive trống', 'Chưa có bản ghi kết quả nào trong sheet NhatKy_IQC.');
