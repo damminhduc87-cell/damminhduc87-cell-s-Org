@@ -21,6 +21,8 @@ import { LotManagementModal } from './components/LotManagementModal';
 import { RegulatoryAdvisor } from './components/RegulatoryAdvisor';
 import { AddEditTestModal } from './components/AddEditTestModal';
 import { ImportDataModal } from './components/ImportDataModal';
+import { GoogleDriveSyncModal } from './components/GoogleDriveSyncModal';
+import { syncResultsToGoogleSheets } from './services/googleSheetsSync';
 
 export const App: React.FC = () => {
   // 1. Quản lý trạng thái dữ liệu (đồng bộ với localStorage)
@@ -77,6 +79,7 @@ export const App: React.FC = () => {
   const [isAddEditTestModalOpen, setIsAddEditTestModalOpen] = useState<boolean>(false);
   const [editingTestForModal, setEditingTestForModal] = useState<LabTest | null>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
+  const [isDriveSyncModalOpen, setIsDriveSyncModalOpen] = useState<boolean>(false);
 
   // 4. Người thực hiện & Cấu hình tìm kiếm
   const [currentTechnician, setCurrentTechnician] = useState<string>(() => {
@@ -96,7 +99,16 @@ export const App: React.FC = () => {
   const [worksheetValues, setWorksheetValues] = useState<Record<string, Record<QCLevel, string>>>({});
   const [worksheetDate, setWorksheetDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
-  // 7. Toast Notification System
+  // 7. Google Drive / Google Sheets Webhook Sync
+  const [googleSheetsUrl, setGoogleSheetsUrl] = useState<string>(() => {
+    return localStorage.getItem('mdlab_google_sheets_url') || '';
+  });
+  const [autoSyncToSheets, setAutoSyncToSheets] = useState<boolean>(() => {
+    const saved = localStorage.getItem('mdlab_auto_sync_sheets');
+    return saved !== null ? saved === 'true' : true;
+  });
+
+  // 8. Toast Notification System
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const addToast = (type: 'success' | 'warning' | 'error' | 'info', title: string, message: string) => {
@@ -116,11 +128,12 @@ export const App: React.FC = () => {
         if (isLotModalOpen) setIsLotModalOpen(false);
         if (isAddEditTestModalOpen) setIsAddEditTestModalOpen(false);
         if (isImportModalOpen) setIsImportModalOpen(false);
+        if (isDriveSyncModalOpen) setIsDriveSyncModalOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isCapaModalOpen, isLotModalOpen, isAddEditTestModalOpen, isImportModalOpen]);
+  }, [isCapaModalOpen, isLotModalOpen, isAddEditTestModalOpen, isImportModalOpen, isDriveSyncModalOpen]);
 
   // Lưu trữ tự động vào localStorage
   useEffect(() => { localStorage.setItem('mdlab_tests_v3', JSON.stringify(tests)); }, [tests]);
@@ -128,6 +141,8 @@ export const App: React.FC = () => {
   useEffect(() => { localStorage.setItem('mdlab_capas_v3', JSON.stringify(capas)); }, [capas]);
   useEffect(() => { localStorage.setItem('mdlab_analyzers', JSON.stringify(analyzers)); }, [analyzers]);
   useEffect(() => { localStorage.setItem('mdlab_technician', currentTechnician); }, [currentTechnician]);
+  useEffect(() => { localStorage.setItem('mdlab_google_sheets_url', googleSheetsUrl); }, [googleSheetsUrl]);
+  useEffect(() => { localStorage.setItem('mdlab_auto_sync_sheets', String(autoSyncToSheets)); }, [autoSyncToSheets]);
 
   // Thêm máy phân tích mới
   const handleAddAnalyzer = (newAnalyzerName: string) => {
@@ -246,6 +261,21 @@ export const App: React.FC = () => {
     addToast('success', 'Đã lập biên bản CAPA', `Biên bản sự cố ${newCapa.code} đã được lưu trữ vào hồ sơ.`);
   };
 
+  // Tự động đồng bộ sang Google Sheets khi lưu kết quả mới
+  const triggerGoogleSheetsSync = async (resultsToSync: QCResult[]) => {
+    if (!googleSheetsUrl || !autoSyncToSheets || resultsToSync.length === 0) return;
+    try {
+      const res = await syncResultsToGoogleSheets(googleSheetsUrl, resultsToSync, tests);
+      if (res.success) {
+        addToast('success', 'Đã lưu lên Google Drive', `Đã đồng bộ tự động ${res.count} kết quả vào file Google Sheets.`);
+      } else {
+        addToast('warning', 'Lưu ý Google Drive', `Đã lưu trên app nhưng chưa gửi được sang Sheet: ${res.error || 'Lỗi kết nối'}`);
+      }
+    } catch (e: any) {
+      console.error('Lỗi tự động đồng bộ Google Drive:', e);
+    }
+  };
+
   // Thêm 1 kết quả QC đơn lẻ
   const handleAddSingleResult = () => {
     const valNum = parseFloat(singleValue);
@@ -277,6 +307,9 @@ export const App: React.FC = () => {
 
     setRawResults(prev => [...prev, newRes]);
     setSingleValue('');
+
+    // Tự động đồng bộ lên Google Sheets nếu đã bật
+    triggerGoogleSheetsSync([newRes]);
 
     if (evaluation.status === 'violation') {
       addToast('error', `Cảnh báo vi phạm ${evaluation.rule}`, evaluation.description);
@@ -346,6 +379,9 @@ export const App: React.FC = () => {
 
     setRawResults(prev => [...prev, ...newResultsToAdd]);
     setWorksheetValues({});
+
+    // Tự động đồng bộ lên Google Sheets nếu đã bật
+    triggerGoogleSheetsSync(newResultsToAdd);
 
     if (violationCount > 0) {
       addToast('error', 'Phát hiện lỗi Westgard', `Đã lưu ${newResultsToAdd.length} kết quả. Phát hiện ${violationCount} xét nghiệm vi phạm quy tắc Westgard cần lập CAPA.`);
@@ -453,6 +489,8 @@ export const App: React.FC = () => {
           warningCount={unresolvedCapaCount}
           onOpenCapas={() => setActiveTab('capas')}
           onOpenImport={() => setIsImportModalOpen(true)}
+          onOpenDriveSync={() => setIsDriveSyncModalOpen(true)}
+          isDriveConnected={!!googleSheetsUrl && googleSheetsUrl.startsWith('https://script.google.com/')}
         />
 
         {/* Main Content Viewport */}
@@ -859,11 +897,22 @@ export const App: React.FC = () => {
                 <div className="flex flex-wrap items-center gap-2.5">
                   <button
                     type="button"
+                    onClick={() => setIsDriveSyncModalOpen(true)}
+                    className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+                    title="Cấu hình tự động lưu kết quả vào Google Drive / Sheets"
+                  >
+                    <i className="fab fa-google-drive text-emerald-600"></i>
+                    <span>Liên kết Google Drive</span>
+                    {googleSheetsUrl && <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>}
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={handleRestoreFullCatalog}
-                    className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+                    className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
                     title="Khôi phục đầy đủ 20 chỉ số hóa sinh chuẩn"
                   >
-                    <i className="fas fa-sync-alt text-emerald-600"></i>
+                    <i className="fas fa-sync-alt text-slate-500"></i>
                     <span>Khôi phục 20 chỉ số chuẩn</span>
                   </button>
 
@@ -1030,6 +1079,20 @@ export const App: React.FC = () => {
           tests={tests}
           currentTechnician={currentTechnician}
           onImportSuccess={handleImportSuccess}
+        />
+      )}
+
+      {isDriveSyncModalOpen && (
+        <GoogleDriveSyncModal
+          isOpen={isDriveSyncModalOpen}
+          onClose={() => setIsDriveSyncModalOpen(false)}
+          webhookUrl={googleSheetsUrl}
+          onSaveWebhookUrl={setGoogleSheetsUrl}
+          autoSync={autoSyncToSheets}
+          onToggleAutoSync={setAutoSyncToSheets}
+          tests={tests}
+          results={rawResults}
+          onAddToast={addToast}
         />
       )}
 

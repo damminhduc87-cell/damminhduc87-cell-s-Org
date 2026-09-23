@@ -8,6 +8,8 @@ interface TopbarProps {
   warningCount: number;
   onOpenCapas: () => void;
   onOpenImport?: () => void;
+  onOpenDriveSync?: () => void;
+  isDriveConnected?: boolean;
 }
 
 export const Topbar: React.FC<TopbarProps> = ({
@@ -16,7 +18,9 @@ export const Topbar: React.FC<TopbarProps> = ({
   technician,
   warningCount,
   onOpenCapas,
-  onOpenImport
+  onOpenImport,
+  onOpenDriveSync,
+  isDriveConnected
 }) => {
   const [currentTime, setCurrentTime] = useState<string>('');
 
@@ -102,11 +106,24 @@ export const Topbar: React.FC<TopbarProps> = ({
 
         {/* Right Controls */}
         <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
-          {/* Sync Status Badge */}
-          <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-medium">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Đồng bộ: vừa xong</span>
-          </div>
+          {/* Drive Sync Status Button */}
+          {onOpenDriveSync && (
+            <button
+              type="button"
+              onClick={onOpenDriveSync}
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-2xs ${
+                isDriveConnected
+                  ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-300'
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
+              }`}
+              title="Cấu hình tự động lưu vào Google Drive"
+            >
+              <i className={`fab fa-google-drive ${isDriveConnected ? 'text-emerald-600' : 'text-slate-400'}`}></i>
+              <span className="hidden sm:inline">
+                {isDriveConnected ? 'Drive: Tự động lưu 🟢' : 'Kết nối Drive'}
+              </span>
+            </button>
+          )}
 
           {/* Drive Import Button */}
           {onOpenImport && (
