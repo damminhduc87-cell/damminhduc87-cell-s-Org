@@ -101,7 +101,7 @@ export const App: React.FC = () => {
 
   // 7. Google Drive / Google Sheets Webhook Sync
   const [googleSheetsUrl, setGoogleSheetsUrl] = useState<string>(() => {
-    return localStorage.getItem('mdlab_google_sheets_url') || '';
+    return localStorage.getItem('mdlab_google_sheets_url') || 'https://script.google.com/macros/s/AKfycbwguwULZKpcHN_HPGZm6VY2ioscO8u1N5TOE0wE3iIFZVMBdSnjerZIXs5GJuqUjJKMqQ/exec';
   });
   const [autoSyncToSheets, setAutoSyncToSheets] = useState<boolean>(() => {
     const saved = localStorage.getItem('mdlab_auto_sync_sheets');
