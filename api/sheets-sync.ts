@@ -35,7 +35,7 @@ export default async function handler(req: any, res: any) {
       body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
     }
 
-    const { webhookUrl, rows, testOnly, action } = body || {};
+    const { webhookUrl, rows, testOnly, action, target } = body || {};
 
     if (!webhookUrl || typeof webhookUrl !== 'string' || !webhookUrl.startsWith('https://script.google.com/')) {
       const errRes = JSON.stringify({ error: 'URL Webhook Google Apps Script không hợp lệ.' });
@@ -92,6 +92,36 @@ export default async function handler(req: any, res: any) {
       if (isWebAPI) return new Response(fallbackBody, { status: 200, headers: { ...headers, 'Content-Type': 'application/json' } });
       res.writeHead(200, { ...headers, 'Content-Type': 'application/json' });
       return res.end(fallbackBody);
+    }
+
+    // Trường hợp xóa một dòng kết quả (Delete)
+    if (action === 'delete') {
+      const gasResponse = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8',
+        },
+        body: JSON.stringify({ action: 'delete', target }),
+        redirect: 'follow'
+      });
+
+      const responseText = await gasResponse.text();
+      let parsed: any;
+      try {
+        parsed = JSON.parse(responseText);
+      } catch (e) {
+        parsed = { raw: responseText };
+      }
+
+      const delBody = JSON.stringify({
+        success: true,
+        action: 'delete',
+        gasResult: parsed
+      });
+
+      if (isWebAPI) return new Response(delBody, { status: 200, headers: { ...headers, 'Content-Type': 'application/json' } });
+      res.writeHead(200, { ...headers, 'Content-Type': 'application/json' });
+      return res.end(delBody);
     }
 
     // Trường hợp gửi dữ liệu hàng

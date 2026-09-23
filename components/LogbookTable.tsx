@@ -231,10 +231,11 @@ export const LogbookTable: React.FC<LogbookTableProps> = ({
                     <button
                       type="button"
                       onClick={e => onDeleteResult(e, r.id)}
-                      className="w-7 h-7 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center cursor-pointer"
-                      title="Xóa"
+                      className="px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                      title="Xóa kết quả này"
                     >
-                      <i className="fas fa-trash-alt text-xs"></i>
+                      <i className="fas fa-trash-alt text-[10px]"></i>
+                      <span>Xóa</span>
                     </button>
                   </div>
                 </div>

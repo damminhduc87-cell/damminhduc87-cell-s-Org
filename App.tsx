@@ -24,7 +24,7 @@ import { ImportDataModal } from './components/ImportDataModal';
 import { GoogleDriveSyncModal } from './components/GoogleDriveSyncModal';
 import { DeviceSyncModal } from './components/DeviceSyncModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
-import { syncResultsToGoogleSheets, pullResultsFromGoogleSheets } from './services/googleSheetsSync';
+import { syncResultsToGoogleSheets, pullResultsFromGoogleSheets, deleteResultFromGoogleSheets } from './services/googleSheetsSync';
 
 // Hàm tự động chuẩn hóa và loại bỏ các xét nghiệm trùng lặp (ví dụ duplicate AIBUMIL từ import)
 function cleanAndDeduplicateTests(rawTests: LabTest[]): { cleanTests: LabTest[]; idMap: Record<string, string> } {
@@ -108,6 +108,23 @@ export const App: React.FC = () => {
     const saved = localStorage.getItem('mdlab_analyzers');
     return saved ? JSON.parse(saved) : DEFAULT_ANALYZERS;
   });
+
+  // Danh sách chữ ký các kết quả đã xóa (Tombstone chống hồi sinh khi kéo từ Google Drive)
+  const [deletedSignatures, setDeletedSignatures] = useState<string[]>(() => {
+    const saved = localStorage.getItem('mdlab_deleted_signatures');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Tạo chữ ký nhận diện duy nhất cho một kết quả
+  const getResultSignature = (r: QCResult) => {
+    const t = tests.find(x => x.id === r.testId);
+    const rawName = t?.name || r.testId;
+    const cleanName = rawName.includes('(') ? rawName.split('(')[0].trim().toLowerCase() : rawName.trim().toLowerCase();
+    const val = Number(r.value.toFixed(2));
+    const d = new Date(r.timestamp);
+    const dayStr = `${d.getDate()}-${d.getMonth() + 1}-${d.getFullYear()}`;
+    return `${cleanName}_${r.level}_${val}_${dayStr}`;
+  };
 
   // 2. Điều hướng & Bộ lọc
   const [activeTab, setActiveTab] = useState<NavTabId>('dashboard');
@@ -351,6 +368,12 @@ export const App: React.FC = () => {
         setRawResults(prev => {
           const newItems: QCResult[] = [];
           res.results.forEach(sheetRes => {
+            const sig = getResultSignature(sheetRes);
+            if (deletedSignatures.includes(sig)) {
+              // Bỏ qua vì KTV đã chủ động xóa kết quả này
+              return;
+            }
+
             const alreadyExists = prev.some(
               local =>
                 local.testId === sheetRes.testId &&
@@ -557,11 +580,35 @@ export const App: React.FC = () => {
   };
 
   // Xóa kết quả QC
-  const handleDeleteResult = (e: React.MouseEvent, id: string) => {
+  const handleDeleteResult = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (confirm('Bạn có chắc chắn muốn xóa kết quả nội kiểm này?')) {
+    const target = rawResults.find(r => r.id === id);
+    if (!target) return;
+
+    if (confirm('Bạn có chắc chắn muốn xóa kết quả nội kiểm này? Kết quả sẽ được gỡ bỏ khỏi thiết bị và đồng bộ xóa trực tiếp trên Google Drive.')) {
+      // 1. Lưu chữ ký đã xóa để chống kéo ngược lại từ Drive (tombstone)
+      const sig = getResultSignature(target);
+      setDeletedSignatures(prev => {
+        const next = [...prev, sig];
+        localStorage.setItem('mdlab_deleted_signatures', JSON.stringify(next));
+        return next;
+      });
+
+      // 2. Xóa khỏi rawResults ngay lập tức
       setRawResults(prev => prev.filter(r => r.id !== id));
-      addToast('info', 'Đã xóa', 'Kết quả nội kiểm đã được gỡ bỏ khỏi nhật ký.');
+      addToast('info', 'Đã xóa kết quả', 'Đã gỡ bỏ kết quả khỏi ứng dụng.');
+
+      // 3. Đồng bộ lệnh xóa sang Google Sheets
+      if (googleSheetsUrl) {
+        try {
+          const res = await deleteResultFromGoogleSheets(googleSheetsUrl, target, tests);
+          if (res.success) {
+            addToast('success', 'Đã xóa trên Google Drive', 'Đã đồng bộ xóa kết quả trong file Google Sheets.');
+          }
+        } catch (err: any) {
+          console.warn('Lỗi khi gửi lệnh xóa sang Google Sheets:', err);
+        }
+      }
     }
   };
 

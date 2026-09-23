@@ -30,6 +30,41 @@ export const APPS_SCRIPT_TEMPLATE = `function doPost(e) {
     }
     
     var payload = JSON.parse(e.postData.contents);
+    
+    // Trường hợp Xóa một dòng kết quả khỏi Google Sheet
+    if (payload.action === "delete") {
+      var target = payload.target || {};
+      var values = sheet.getDataRange().getValues();
+      var deletedCount = 0;
+      for (var i = values.length - 1; i >= 1; i--) {
+        var rowDate = String(values[i][0] || "");
+        var rowTest = String(values[i][1] || "").trim().toLowerCase();
+        var rowLevel = String(values[i][2] || "").trim().toLowerCase();
+        var rowVal = parseFloat(String(values[i][3] || "").replace(",", "."));
+        
+        var targetTest = String(target.XET_NGHIEM || "").trim().toLowerCase();
+        var targetLevel = String(target.MUC_IQC || "").trim().toLowerCase();
+        var targetVal = parseFloat(String(target.GIA_TRI_DO_LUONG || "0").replace(",", "."));
+        
+        var testMatch = !targetTest || rowTest.includes(targetTest) || targetTest.includes(rowTest);
+        var levelMatch = !targetLevel || rowLevel.includes(targetLevel) || targetLevel.includes(rowLevel);
+        var valMatch = isNaN(targetVal) || Math.abs(rowVal - targetVal) < 0.02;
+        var dateMatch = true;
+        if (target.NGAY_GIO) {
+          var datePrefix = target.NGAY_GIO.split(" ")[0];
+          dateMatch = rowDate.includes(datePrefix);
+        }
+        
+        if (testMatch && levelMatch && valMatch && dateMatch) {
+          sheet.deleteRow(i + 1);
+          deletedCount++;
+          break; // Xóa đúng 1 dòng khớp nhất
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({ status: "success", deletedCount: deletedCount }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
     var rows = payload.rows || [payload];
     
     for (var i = 0; i < rows.length; i++) {
@@ -361,4 +396,45 @@ export async function pullResultsFromGoogleSheets(
     };
   }
 }
+
+/**
+ * Gửi yêu cầu xóa một dòng kết quả khỏi Google Sheets
+ */
+export async function deleteResultFromGoogleSheets(
+  webhookUrl: string,
+  result: QCResult,
+  tests: LabTest[]
+): Promise<{ success: boolean; error?: string }> {
+  if (!webhookUrl || !webhookUrl.startsWith('https://script.google.com/')) {
+    return { success: false, error: 'Chưa cấu hình URL Webhook hợp lệ.' };
+  }
+
+  const target = formatResultToSheetRow(result, tests);
+
+  try {
+    const res = await fetch('/api/sheets-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ webhookUrl, action: 'delete', target })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      return { success: true };
+    }
+
+    // Fallback sang gửi trực tiếp no-cors
+    await fetch(webhookUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', target })
+    });
+    return { success: true };
+  } catch (err: any) {
+    console.error('Lỗi khi xóa kết quả trên Google Sheets:', err);
+    return { success: false, error: err.message || 'Không thể xóa trên Google Sheets' };
+  }
+}
+
 
