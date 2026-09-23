@@ -65,11 +65,94 @@ function cleanAndDeduplicateTests(rawTests: LabTest[]): { cleanTests: LabTest[];
       idMap[t.id] = canonicalId;
     } else {
       seenNorms.set(norm, t.id);
-      const cleanTest = { ...t };
+      const cleanTest = { ...t, configs: { ...t.configs } };
       if (norm === 'albumin') {
         cleanTest.name = 'Albumin (AIBUMIL)';
         cleanTest.unit = 'g/L';
       }
+
+      // Tự động nâng cấp các xét nghiệm đang mang giá trị cấu hình mẫu cũ sang thông số thực tế của phòng xét nghiệm
+      if (norm === 'cholesterol') {
+        if (cleanTest.configs?.[QCLevel.NORMAL]?.mean === 5.2) {
+          cleanTest.configs[QCLevel.NORMAL] = { ...cleanTest.configs[QCLevel.NORMAL], mean: 3.52, sd: 0.26 };
+        }
+        if (cleanTest.configs?.[QCLevel.HIGH]?.mean === 8.5) {
+          cleanTest.configs[QCLevel.HIGH] = { ...cleanTest.configs[QCLevel.HIGH], mean: 5.82, sd: 0.43 };
+        }
+      }
+      if (norm === 'triglycerides') {
+        if (cleanTest.configs?.[QCLevel.NORMAL]?.mean === 1.7) {
+          cleanTest.configs[QCLevel.NORMAL] = { ...cleanTest.configs[QCLevel.NORMAL], mean: 1.46, sd: 0.115 };
+        }
+        if (cleanTest.configs?.[QCLevel.HIGH]?.mean === 4.5) {
+          cleanTest.configs[QCLevel.HIGH] = { ...cleanTest.configs[QCLevel.HIGH], mean: 2.32, sd: 0.182 };
+        }
+      }
+      if (norm === 'hdl') {
+        if (cleanTest.configs?.[QCLevel.NORMAL]?.mean === 1.2) {
+          cleanTest.configs[QCLevel.NORMAL] = { ...cleanTest.configs[QCLevel.NORMAL], mean: 1.15, sd: 0.145 };
+        }
+        if (cleanTest.configs?.[QCLevel.HIGH]?.mean === 2.5) {
+          cleanTest.configs[QCLevel.HIGH] = { ...cleanTest.configs[QCLevel.HIGH], mean: 1.81, sd: 0.225 };
+        }
+      }
+      if (norm === 'ast') {
+        if (cleanTest.configs?.[QCLevel.NORMAL]?.mean === 45) {
+          cleanTest.configs[QCLevel.NORMAL] = { ...cleanTest.configs[QCLevel.NORMAL], mean: 46, sd: 4.15 };
+        }
+        if (cleanTest.configs?.[QCLevel.HIGH]?.mean === 180) {
+          cleanTest.configs[QCLevel.HIGH] = { ...cleanTest.configs[QCLevel.HIGH], mean: 189.1, sd: 17 };
+        }
+      }
+      if (norm === 'alt') {
+        if (cleanTest.configs?.[QCLevel.NORMAL]?.mean === 40) {
+          cleanTest.configs[QCLevel.NORMAL] = { ...cleanTest.configs[QCLevel.NORMAL], mean: 45.2, sd: 4.05 };
+        }
+        if (cleanTest.configs?.[QCLevel.HIGH]?.mean === 165) {
+          cleanTest.configs[QCLevel.HIGH] = { ...cleanTest.configs[QCLevel.HIGH], mean: 138.1, sd: 12.5 };
+        }
+      }
+      if (norm === 'creatinine') {
+        if (cleanTest.configs?.[QCLevel.NORMAL]?.mean === 95) {
+          cleanTest.configs[QCLevel.NORMAL] = { ...cleanTest.configs[QCLevel.NORMAL], mean: 94.6, sd: 8.6 };
+        }
+        if (cleanTest.configs?.[QCLevel.HIGH]?.mean === 380) {
+          cleanTest.configs[QCLevel.HIGH] = { ...cleanTest.configs[QCLevel.HIGH], mean: 354, sd: 31.75 };
+        }
+      }
+      if (norm === 'urea') {
+        if (cleanTest.configs?.[QCLevel.NORMAL]?.mean === 6.5) {
+          cleanTest.configs[QCLevel.NORMAL] = { ...cleanTest.configs[QCLevel.NORMAL], mean: 7.19, sd: 0.54 };
+        }
+        if (cleanTest.configs?.[QCLevel.HIGH]?.mean === 22.0) {
+          cleanTest.configs[QCLevel.HIGH] = { ...cleanTest.configs[QCLevel.HIGH], mean: 22.66, sd: 1.7 };
+        }
+      }
+      if (norm === 'uric-acid') {
+        if (cleanTest.configs?.[QCLevel.NORMAL]?.mean === 350) {
+          cleanTest.configs[QCLevel.NORMAL] = { ...cleanTest.configs[QCLevel.NORMAL], mean: 297, sd: 22 };
+        }
+        if (cleanTest.configs?.[QCLevel.HIGH]?.mean === 650) {
+          cleanTest.configs[QCLevel.HIGH] = { ...cleanTest.configs[QCLevel.HIGH], mean: 559, sd: 41.25 };
+        }
+      }
+      if (norm === 'albumin') {
+        if (cleanTest.configs?.[QCLevel.NORMAL]?.mean === 42) {
+          cleanTest.configs[QCLevel.NORMAL] = { ...cleanTest.configs[QCLevel.NORMAL], mean: 39.2, sd: 3.5 };
+        }
+        if (cleanTest.configs?.[QCLevel.HIGH]?.mean === 55) {
+          cleanTest.configs[QCLevel.HIGH] = { ...cleanTest.configs[QCLevel.HIGH], mean: 49.5, sd: 4.45 };
+        }
+      }
+      if (norm === 'protein') {
+        if (cleanTest.configs?.[QCLevel.NORMAL]?.mean === 70) {
+          cleanTest.configs[QCLevel.NORMAL] = { ...cleanTest.configs[QCLevel.NORMAL], mean: 56, sd: 3.5 };
+        }
+        if (cleanTest.configs?.[QCLevel.HIGH]?.mean === 95) {
+          cleanTest.configs[QCLevel.HIGH] = { ...cleanTest.configs[QCLevel.HIGH], mean: 73.2, sd: 4.75 };
+        }
+      }
+
       cleanTests.push(cleanTest);
     }
   });
@@ -365,6 +448,9 @@ export const App: React.FC = () => {
     try {
       const res = await pullResultsFromGoogleSheets(googleSheetsUrl, tests);
       if (res.success && res.results.length > 0) {
+        if (res.updatedTests && res.updatedTests.length > 0) {
+          setTests(res.updatedTests);
+        }
         setRawResults(prev => {
           const sheetSignatures = new Set(res.results.map(r => getResultSignature(r)));
           const now = Date.now();

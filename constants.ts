@@ -27,9 +27,9 @@ export const INITIAL_TESTS: LabTest[] = [
     tea: 10,
     analyzerName: 'Máy Hóa sinh 1',
     configs: {
-      [QCLevel.LOW]: { mean: 3.1, sd: 0.08, bias: 1.5, currentLot: 'LOT-2026-LIP-L' },
-      [QCLevel.NORMAL]: { mean: 5.2, sd: 0.15, bias: 1.2, currentLot: 'LOT-2026-LIP-N' },
-      [QCLevel.HIGH]: { mean: 8.5, sd: 0.25, bias: 1.8, currentLot: 'LOT-2026-LIP-H' },
+      [QCLevel.LOW]: { mean: 2.2, sd: 0.15, bias: 1.5, currentLot: 'LOT-2026-LIP-L' },
+      [QCLevel.NORMAL]: { mean: 3.52, sd: 0.26, bias: 1.2, currentLot: 'LOT-2026-LIP-N' },
+      [QCLevel.HIGH]: { mean: 5.82, sd: 0.43, bias: 1.8, currentLot: 'LOT-2026-LIP-H' },
     }
   },
   {
@@ -40,8 +40,8 @@ export const INITIAL_TESTS: LabTest[] = [
     analyzerName: 'Máy Hóa sinh 1',
     configs: {
       [QCLevel.LOW]: { mean: 0.8, sd: 0.04, bias: 2.0, currentLot: 'LOT-2026-LIP-L' },
-      [QCLevel.NORMAL]: { mean: 1.7, sd: 0.07, bias: 1.8, currentLot: 'LOT-2026-LIP-N' },
-      [QCLevel.HIGH]: { mean: 4.5, sd: 0.18, bias: 2.5, currentLot: 'LOT-2026-LIP-H' },
+      [QCLevel.NORMAL]: { mean: 1.46, sd: 0.115, bias: 1.8, currentLot: 'LOT-2026-LIP-N' },
+      [QCLevel.HIGH]: { mean: 2.32, sd: 0.182, bias: 2.5, currentLot: 'LOT-2026-LIP-H' },
     }
   },
   {
@@ -52,8 +52,8 @@ export const INITIAL_TESTS: LabTest[] = [
     analyzerName: 'Máy Hóa sinh 1',
     configs: {
       [QCLevel.LOW]: { mean: 0.7, sd: 0.05, bias: 3.0, currentLot: 'LOT-2026-LIP-L' },
-      [QCLevel.NORMAL]: { mean: 1.2, sd: 0.08, bias: 2.5, currentLot: 'LOT-2026-LIP-N' },
-      [QCLevel.HIGH]: { mean: 2.5, sd: 0.15, bias: 3.5, currentLot: 'LOT-2026-LIP-H' },
+      [QCLevel.NORMAL]: { mean: 1.15, sd: 0.145, bias: 2.5, currentLot: 'LOT-2026-LIP-N' },
+      [QCLevel.HIGH]: { mean: 1.81, sd: 0.225, bias: 3.5, currentLot: 'LOT-2026-LIP-H' },
     }
   },
   {
@@ -76,8 +76,8 @@ export const INITIAL_TESTS: LabTest[] = [
     analyzerName: 'Máy Hóa sinh 2',
     configs: {
       [QCLevel.LOW]: { mean: 25, sd: 1.2, bias: 2.5, currentLot: 'LOT-2026-ENZ-L' },
-      [QCLevel.NORMAL]: { mean: 45, sd: 1.8, bias: 2.0, currentLot: 'LOT-2026-ENZ-N' },
-      [QCLevel.HIGH]: { mean: 180, sd: 7.5, bias: 3.0, currentLot: 'LOT-2026-ENZ-H' },
+      [QCLevel.NORMAL]: { mean: 46, sd: 4.15, bias: 2.0, currentLot: 'LOT-2026-ENZ-N' },
+      [QCLevel.HIGH]: { mean: 189.1, sd: 17, bias: 3.0, currentLot: 'LOT-2026-ENZ-H' },
     }
   },
   {
@@ -88,8 +88,8 @@ export const INITIAL_TESTS: LabTest[] = [
     analyzerName: 'Máy Hóa sinh 2',
     configs: {
       [QCLevel.LOW]: { mean: 22, sd: 1.0, bias: 2.5, currentLot: 'LOT-2026-ENZ-L' },
-      [QCLevel.NORMAL]: { mean: 40, sd: 1.6, bias: 2.0, currentLot: 'LOT-2026-ENZ-N' },
-      [QCLevel.HIGH]: { mean: 165, sd: 6.5, bias: 3.0, currentLot: 'LOT-2026-ENZ-H' },
+      [QCLevel.NORMAL]: { mean: 45.2, sd: 4.05, bias: 2.0, currentLot: 'LOT-2026-ENZ-N' },
+      [QCLevel.HIGH]: { mean: 138.1, sd: 12.5, bias: 3.0, currentLot: 'LOT-2026-ENZ-H' },
     }
   },
   {
@@ -112,8 +112,8 @@ export const INITIAL_TESTS: LabTest[] = [
     analyzerName: 'Máy Hóa sinh 1',
     configs: {
       [QCLevel.LOW]: { mean: 55, sd: 2.5, bias: 1.8, currentLot: 'LOT-2026-REN-L' },
-      [QCLevel.NORMAL]: { mean: 95, sd: 3.8, bias: 1.5, currentLot: 'LOT-2026-REN-N' },
-      [QCLevel.HIGH]: { mean: 380, sd: 12.0, bias: 2.0, currentLot: 'LOT-2026-REN-H' },
+      [QCLevel.NORMAL]: { mean: 94.6, sd: 8.6, bias: 1.5, currentLot: 'LOT-2026-REN-N' },
+      [QCLevel.HIGH]: { mean: 354, sd: 31.75, bias: 2.0, currentLot: 'LOT-2026-REN-H' },
     }
   },
   {
@@ -124,8 +124,8 @@ export const INITIAL_TESTS: LabTest[] = [
     analyzerName: 'Máy Hóa sinh 1',
     configs: {
       [QCLevel.LOW]: { mean: 3.0, sd: 0.15, bias: 1.5, currentLot: 'LOT-2026-REN-L' },
-      [QCLevel.NORMAL]: { mean: 6.5, sd: 0.25, bias: 1.2, currentLot: 'LOT-2026-REN-N' },
-      [QCLevel.HIGH]: { mean: 22.0, sd: 0.85, bias: 1.8, currentLot: 'LOT-2026-REN-H' },
+      [QCLevel.NORMAL]: { mean: 7.19, sd: 0.54, bias: 1.2, currentLot: 'LOT-2026-REN-N' },
+      [QCLevel.HIGH]: { mean: 22.66, sd: 1.7, bias: 1.8, currentLot: 'LOT-2026-REN-H' },
     }
   },
   {
@@ -136,8 +136,8 @@ export const INITIAL_TESTS: LabTest[] = [
     analyzerName: 'Máy Hóa sinh 1',
     configs: {
       [QCLevel.LOW]: { mean: 180, sd: 6, bias: 1.8, currentLot: 'LOT-2026-URI-L' },
-      [QCLevel.NORMAL]: { mean: 350, sd: 12, bias: 1.5, currentLot: 'LOT-2026-URI-N' },
-      [QCLevel.HIGH]: { mean: 650, sd: 25, bias: 2.0, currentLot: 'LOT-2026-URI-H' },
+      [QCLevel.NORMAL]: { mean: 297, sd: 22, bias: 1.5, currentLot: 'LOT-2026-URI-N' },
+      [QCLevel.HIGH]: { mean: 559, sd: 41.25, bias: 2.0, currentLot: 'LOT-2026-URI-H' },
     }
   },
   {
@@ -148,8 +148,8 @@ export const INITIAL_TESTS: LabTest[] = [
     analyzerName: 'Máy Hóa sinh 1',
     configs: {
       [QCLevel.LOW]: { mean: 25, sd: 0.6, bias: 1.5, currentLot: 'LOT-2026-PRO-L' },
-      [QCLevel.NORMAL]: { mean: 42, sd: 1.1, bias: 1.2, currentLot: 'LOT-2026-PRO-N' },
-      [QCLevel.HIGH]: { mean: 55, sd: 1.5, bias: 1.8, currentLot: 'LOT-2026-PRO-H' },
+      [QCLevel.NORMAL]: { mean: 39.2, sd: 3.5, bias: 1.2, currentLot: 'LOT-2026-PRO-N' },
+      [QCLevel.HIGH]: { mean: 49.5, sd: 4.45, bias: 1.8, currentLot: 'LOT-2026-PRO-H' },
     }
   },
   {
@@ -160,8 +160,8 @@ export const INITIAL_TESTS: LabTest[] = [
     analyzerName: 'Máy Hóa sinh 1',
     configs: {
       [QCLevel.LOW]: { mean: 45, sd: 1.2, bias: 1.5, currentLot: 'LOT-2026-PRO-L' },
-      [QCLevel.NORMAL]: { mean: 70, sd: 1.8, bias: 1.2, currentLot: 'LOT-2026-PRO-N' },
-      [QCLevel.HIGH]: { mean: 95, sd: 2.5, bias: 1.8, currentLot: 'LOT-2026-PRO-H' },
+      [QCLevel.NORMAL]: { mean: 56, sd: 3.5, bias: 1.2, currentLot: 'LOT-2026-PRO-N' },
+      [QCLevel.HIGH]: { mean: 73.2, sd: 4.75, bias: 1.8, currentLot: 'LOT-2026-PRO-H' },
     }
   },
   {

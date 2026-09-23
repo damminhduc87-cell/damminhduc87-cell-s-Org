@@ -305,6 +305,7 @@ export async function pullResultsFromGoogleSheets(
     }
 
     const parsedResults: QCResult[] = [];
+    const latestConfigsMap = new Map<string, { mean: number; sd: number }>();
     const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
     const testMap = new Map<string, LabTest>();
     tests.forEach(t => {
@@ -335,6 +336,17 @@ export async function pullResultsFromGoogleSheets(
         level = QCLevel.LOW;
       } else if (rawLevel.includes('HIGH') || rawLevel.includes('CAO') || rawLevel === 'H' || rawLevel.includes('MỨC 3')) {
         level = QCLevel.HIGH;
+      }
+
+      // Đọc Mean & SD thực tế từ Google Sheet của phòng xét nghiệm
+      let rowMean = row.TAGRET_MEAN ?? row.TARGET_MEAN ?? row['Giá trị đích'] ?? row['Mean'];
+      let rowSD = row.SD_DOLECHCHUAN ?? row.SD ?? row['Độ lệch chuẩn'];
+      if (typeof rowMean === 'string') rowMean = parseFloat(rowMean.replace(',', '.'));
+      if (typeof rowSD === 'string') rowSD = parseFloat(rowSD.replace(',', '.'));
+      const meanNum = Number(rowMean);
+      const sdNum = Number(rowSD);
+      if (!isNaN(meanNum) && meanNum > 0 && !isNaN(sdNum) && sdNum > 0) {
+        latestConfigsMap.set(`${testId}_${level}`, { mean: meanNum, sd: sdNum });
       }
 
       let rawVal = row.GIA_TRI_DO_LUONG ?? row['Giá trị đo'] ?? row['Giá trị'];
@@ -399,10 +411,34 @@ export async function pullResultsFromGoogleSheets(
       });
     });
 
+    // Tạo danh mục xét nghiệm cập nhật theo Mean & SD thực tế từ Google Sheet
+    let hasTestUpdates = false;
+    const updatedTests = tests.map(t => {
+      let isChanged = false;
+      const nextConfigs = { ...t.configs };
+      [QCLevel.LOW, QCLevel.NORMAL, QCLevel.HIGH].forEach(lvl => {
+        const key = `${t.id}_${lvl}`;
+        const sheetCfg = latestConfigsMap.get(key);
+        if (sheetCfg && nextConfigs[lvl]) {
+          if (Math.abs(nextConfigs[lvl].mean - sheetCfg.mean) > 0.01 || Math.abs(nextConfigs[lvl].sd - sheetCfg.sd) > 0.005) {
+            nextConfigs[lvl] = {
+              ...nextConfigs[lvl],
+              mean: sheetCfg.mean,
+              sd: sheetCfg.sd
+            };
+            isChanged = true;
+            hasTestUpdates = true;
+          }
+        }
+      });
+      return isChanged ? { ...t, configs: nextConfigs } : t;
+    });
+
     return {
       success: true,
       results: parsedResults,
-      count: parsedResults.length
+      count: parsedResults.length,
+      updatedTests: hasTestUpdates ? updatedTests : undefined
     };
   } catch (err: any) {
     console.error('Lỗi tải dữ liệu từ Google Sheets:', err);
