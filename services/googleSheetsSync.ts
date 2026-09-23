@@ -59,8 +59,43 @@ export const APPS_SCRIPT_TEMPLATE = `function doPost(e) {
 }
 
 function doGet(e) {
-  return ContentService.createTextOutput(JSON.stringify({ status: "ok", message: "MinhDucLab QC Webhook đang hoạt động" }))
-    .setMimeType(ContentService.MimeType.JSON);
+  var action = (e && e.parameter && e.parameter.action) || "read";
+  if (action === "ping") {
+    return ContentService.createTextOutput(JSON.stringify({ status: "ok", message: "MinhDucLab QC Webhook đang hoạt động" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  try {
+    var sheetName = "NhatKy_IQC";
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(sheetName);
+    if (!sheet) {
+      return ContentService.createTextOutput(JSON.stringify({ status: "success", count: 0, rows: [] }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    var values = sheet.getDataRange().getValues();
+    if (values.length <= 1) {
+      return ContentService.createTextOutput(JSON.stringify({ status: "success", count: 0, rows: [] }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    var headers = values[0];
+    var rows = [];
+    for (var i = 1; i < values.length; i++) {
+      var rowObj = {};
+      for (var j = 0; j < headers.length; j++) {
+        rowObj[headers[j]] = values[i][j];
+      }
+      rows.push(rowObj);
+    }
+    
+    return ContentService.createTextOutput(JSON.stringify({ status: "success", count: rows.length, rows: rows }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 }`;
 
 /**
@@ -182,3 +217,148 @@ export async function syncResultsToGoogleSheets(
     return { success: false, count: 0, error: err.message || 'Không thể đồng bộ' };
   }
 }
+
+/**
+ * Tải danh sách kết quả nội kiểm từ Google Sheets (Pull / Read 2 chiều)
+ */
+export async function pullResultsFromGoogleSheets(
+  webhookUrl: string,
+  tests: LabTest[]
+): Promise<{ success: boolean; results: QCResult[]; count: number; error?: string }> {
+  if (!webhookUrl || !webhookUrl.startsWith('https://script.google.com/')) {
+    return { success: false, results: [], count: 0, error: 'Chưa cấu hình URL Webhook hợp lệ.' };
+  }
+
+  try {
+    const res = await fetch('/api/sheets-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ webhookUrl, action: 'pull' })
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    if (!data.success || !Array.isArray(data.rows)) {
+      return {
+        success: false,
+        results: [],
+        count: 0,
+        error: data.error || 'Dữ liệu từ Google Sheets không đúng định dạng hoặc script chưa hỗ trợ đọc.'
+      };
+    }
+
+    const parsedResults: QCResult[] = [];
+    const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const testMap = new Map<string, LabTest>();
+    tests.forEach(t => {
+      testMap.set(normalize(t.name), t);
+      const shortName = t.name.includes('(') ? t.name.split('(')[0].trim() : t.name.trim();
+      testMap.set(normalize(shortName), t);
+      testMap.set(normalize(t.id), t);
+    });
+
+    data.rows.forEach((row: any, idx: number) => {
+      const rawTestName = String(row.XET_NGHIEM || row['Xét nghiệm'] || row['Tên xét nghiệm'] || '').trim();
+      if (!rawTestName) return;
+
+      const normName = normalize(rawTestName);
+      let matchedTest = testMap.get(normName);
+      if (!matchedTest) {
+        matchedTest = tests.find(t => {
+          const tNorm = normalize(t.name);
+          return normName.includes(tNorm) || tNorm.includes(normName);
+        });
+      }
+
+      const testId = matchedTest ? matchedTest.id : `test_${normName}`;
+
+      const rawLevel = String(row.MUC_IQC || row['Mức QC'] || row['Level'] || '').toUpperCase();
+      let level = QCLevel.NORMAL;
+      if (rawLevel.includes('LOW') || rawLevel.includes('THẤP') || rawLevel.includes('THAP') || rawLevel === 'L' || rawLevel.includes('MỨC 1')) {
+        level = QCLevel.LOW;
+      } else if (rawLevel.includes('HIGH') || rawLevel.includes('CAO') || rawLevel === 'H' || rawLevel.includes('MỨC 3')) {
+        level = QCLevel.HIGH;
+      }
+
+      let rawVal = row.GIA_TRI_DO_LUONG ?? row['Giá trị đo'] ?? row['Giá trị'];
+      if (typeof rawVal === 'string') {
+        rawVal = parseFloat(rawVal.replace(',', '.'));
+      }
+      const valNum = Number(rawVal);
+      if (isNaN(valNum)) return;
+
+      const rawDate = row.NGAY_GIO || row['Ngày giờ'] || row['Ngày'];
+      let timestamp = Date.now() - idx * 1000;
+      if (rawDate) {
+        if (typeof rawDate === 'string' && rawDate.includes('/')) {
+          const parts = rawDate.split(' ');
+          const dateParts = parts[0].split('/');
+          const timeParts = (parts[1] || '08:00').split(':');
+          if (dateParts.length >= 3) {
+            const day = parseInt(dateParts[0], 10);
+            const month = parseInt(dateParts[1], 10) - 1;
+            const year = parseInt(dateParts[2], 10);
+            const hour = parseInt(timeParts[0] || '8', 10);
+            const minute = parseInt(timeParts[1] || '0', 10);
+            const parsedD = new Date(year, month, day, hour, minute);
+            if (!isNaN(parsedD.getTime())) timestamp = parsedD.getTime();
+          }
+        } else {
+          const parsedD = new Date(rawDate);
+          if (!isNaN(parsedD.getTime())) timestamp = parsedD.getTime();
+        }
+      }
+
+      let zScore = 0;
+      let rawZ = row['SD_INDEX_Z-SCORE'] || row.SD_INDEX_Z_SCORE || row['Z-score'] || row['Z-Score'];
+      if (typeof rawZ === 'string') rawZ = parseFloat(rawZ.replace(',', '.'));
+      if (!isNaN(Number(rawZ))) zScore = Number(rawZ);
+
+      const rawStatus = String(row.TRANG_THAI || row['Trạng thái'] || '').toLowerCase();
+      let westgardStatus: 'passed' | 'warning' | 'violation' = 'passed';
+      let westgardRule = 'none';
+
+      if (rawStatus.includes('vi phạm') || rawStatus.includes('vi pham') || rawStatus.includes('violation')) {
+        westgardStatus = 'violation';
+        const matchRule = rawStatus.match(/(\d[_\-]?\d?s|r[_\-]?4s|\d+x)/i);
+        if (matchRule) westgardRule = matchRule[0];
+      } else if (rawStatus.includes('cảnh báo') || rawStatus.includes('canh bao') || rawStatus.includes('warning')) {
+        westgardStatus = 'warning';
+        westgardRule = '1_2s';
+      }
+
+      parsedResults.push({
+        id: `sheet_${timestamp}_${idx}`,
+        testId,
+        level,
+        value: valNum,
+        timestamp,
+        zScore,
+        westgardStatus,
+        westgardRule,
+        technician: 'KTV (Google Sheets)',
+        lotNumber: 'LOT-SHEET',
+        correctiveAction: String(row.HANH_DONG_KHAC_PHUC || row['Hành động khắc phục'] || '')
+      });
+    });
+
+    return {
+      success: true,
+      results: parsedResults,
+      count: parsedResults.length
+    };
+  } catch (err: any) {
+    console.error('Lỗi tải dữ liệu từ Google Sheets:', err);
+    return {
+      success: false,
+      results: [],
+      count: 0,
+      error: err.message || 'Không thể tải dữ liệu từ Google Sheets'
+    };
+  }
+}
+

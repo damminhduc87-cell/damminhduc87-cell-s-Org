@@ -35,7 +35,7 @@ export default async function handler(req: any, res: any) {
       body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
     }
 
-    const { webhookUrl, rows, testOnly } = body || {};
+    const { webhookUrl, rows, testOnly, action } = body || {};
 
     if (!webhookUrl || typeof webhookUrl !== 'string' || !webhookUrl.startsWith('https://script.google.com/')) {
       const errRes = JSON.stringify({ error: 'URL Webhook Google Apps Script không hợp lệ.' });
@@ -55,6 +55,43 @@ export default async function handler(req: any, res: any) {
       if (isWebAPI) return new Response(okBody, { status: 200, headers: { ...headers, 'Content-Type': 'application/json' } });
       res.writeHead(200, { ...headers, 'Content-Type': 'application/json' });
       return res.end(okBody);
+    }
+
+    // Trường hợp kéo dữ liệu (Pull / Read)
+    if (action === 'pull') {
+      const readUrl = webhookUrl.includes('?') ? `${webhookUrl}&action=read` : `${webhookUrl}?action=read`;
+      const gasResponse = await fetch(readUrl, {
+        method: 'GET',
+        redirect: 'follow'
+      });
+      const responseText = await gasResponse.text();
+      let parsed: any;
+      try {
+        parsed = JSON.parse(responseText);
+      } catch (e) {
+        parsed = { raw: responseText };
+      }
+
+      if (parsed && Array.isArray(parsed.rows)) {
+        const successBody = JSON.stringify({
+          success: true,
+          count: parsed.rows.length,
+          rows: parsed.rows
+        });
+        if (isWebAPI) return new Response(successBody, { status: 200, headers: { ...headers, 'Content-Type': 'application/json' } });
+        res.writeHead(200, { ...headers, 'Content-Type': 'application/json' });
+        return res.end(successBody);
+      }
+
+      const fallbackBody = JSON.stringify({
+        success: false,
+        isOldScript: true,
+        message: 'Google Apps Script hiện tại chưa hỗ trợ đọc dữ liệu (cần cập nhật bản script v2 trong Cấu hình Google Drive).',
+        raw: parsed
+      });
+      if (isWebAPI) return new Response(fallbackBody, { status: 200, headers: { ...headers, 'Content-Type': 'application/json' } });
+      res.writeHead(200, { ...headers, 'Content-Type': 'application/json' });
+      return res.end(fallbackBody);
     }
 
     // Trường hợp gửi dữ liệu hàng

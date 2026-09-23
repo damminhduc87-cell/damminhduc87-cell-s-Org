@@ -140,8 +140,112 @@ export const LogbookTable: React.FC<LogbookTableProps> = ({
         </div>
       </div>
 
-      {/* Table Canvas */}
-      <div className="overflow-x-auto">
+      {/* Mobile Card View (md:hidden) */}
+      <div className="md:hidden divide-y divide-slate-100 p-3">
+        {filteredResults.length === 0 ? (
+          <div className="p-8 text-center text-slate-400 italic text-xs">
+            Không tìm thấy bản ghi nội kiểm nào phù hợp với bộ lọc.
+          </div>
+        ) : (
+          filteredResults.map(r => {
+            const style = getWestgardStyle(r.westgardStatus || 'passed', r.westgardRule || 'none');
+            const isViolation = r.westgardStatus === 'violation';
+
+            return (
+              <div
+                key={r.id}
+                className={`py-3 px-3 rounded-xl border transition-all mb-2 ${
+                  isViolation
+                    ? 'bg-red-50/40 border-red-200'
+                    : r.westgardStatus === 'warning'
+                    ? 'bg-amber-50/40 border-amber-200'
+                    : 'bg-white border-slate-200/80 shadow-2xs'
+                }`}
+              >
+                {/* Top Row: Date & Level & Status Badge */}
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border shrink-0 ${
+                      r.level === QCLevel.LOW ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                      r.level === QCLevel.HIGH ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                      'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    }`}>
+                      {r.level === QCLevel.LOW ? 'Thấp (L)' : r.level === QCLevel.HIGH ? 'Cao (H)' : 'Chuẩn (N)'}
+                    </span>
+                    <span className="text-[11px] font-medium text-slate-500 truncate">
+                      {new Date(r.timestamp).toLocaleDateString('vi-VN')} {new Date(r.timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border shrink-0 inline-flex items-center gap-1 ${style.badgeClass}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${style.dotClass}`}></span>
+                    {r.westgardRule === 'none' ? 'Hợp lệ' : r.westgardRule}
+                  </span>
+                </div>
+
+                {/* Middle Row: Value & Z-Score */}
+                <div className="flex items-baseline justify-between bg-slate-50/80 p-2.5 rounded-lg mb-2">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block leading-tight">
+                      Giá trị đo
+                    </span>
+                    <span className="text-base font-black text-slate-900">
+                      {r.value} <span className="text-xs text-slate-500 font-medium">{activeTest.unit}</span>
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block leading-tight">
+                      Z-score
+                    </span>
+                    <span className={`text-sm font-black ${style.textClass}`}>
+                      {r.zScore > 0 ? '+' : ''}{r.zScore} SD
+                    </span>
+                  </div>
+                </div>
+
+                {/* Sub details: Machine, Lot, Tech & Action buttons */}
+                <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+                  <div className="flex items-center gap-2 truncate">
+                    <span className="font-semibold text-slate-700">
+                      {activeTest.analyzerName || 'Máy Hóa sinh'}
+                    </span>
+                    <span>•</span>
+                    <span>Lô: {r.lotNumber || '---'}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {isViolation && !r.capaId && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenCapa(r)}
+                        className="px-2 py-1 rounded-lg bg-red-600 text-white font-bold text-[10px] flex items-center gap-1 cursor-pointer"
+                      >
+                        <i className="fas fa-plus-circle"></i> Lập CAPA
+                      </button>
+                    )}
+                    {r.capaId && (
+                      <span className="text-emerald-700 font-bold text-[10px] flex items-center gap-1">
+                        <i className="fas fa-check-circle text-emerald-600"></i> {r.capaId}
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={e => onDeleteResult(e, r.id)}
+                      className="w-7 h-7 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center cursor-pointer"
+                      title="Xóa"
+                    >
+                      <i className="fas fa-trash-alt text-xs"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop Table Canvas (hidden md:block) */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="bg-slate-50/80 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
@@ -160,7 +264,7 @@ export const LogbookTable: React.FC<LogbookTableProps> = ({
           <tbody className="divide-y divide-slate-100">
             {filteredResults.length === 0 ? (
               <tr>
-                <td colSpan={9} className="p-12 text-center text-slate-400 italic">
+                <td colSpan={10} className="p-12 text-center text-slate-400 italic">
                   Không tìm thấy bản ghi nội kiểm nào phù hợp với bộ lọc.
                 </td>
               </tr>

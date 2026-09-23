@@ -22,7 +22,9 @@ import { RegulatoryAdvisor } from './components/RegulatoryAdvisor';
 import { AddEditTestModal } from './components/AddEditTestModal';
 import { ImportDataModal } from './components/ImportDataModal';
 import { GoogleDriveSyncModal } from './components/GoogleDriveSyncModal';
-import { syncResultsToGoogleSheets } from './services/googleSheetsSync';
+import { DeviceSyncModal } from './components/DeviceSyncModal';
+import { MobileBottomNav } from './components/MobileBottomNav';
+import { syncResultsToGoogleSheets, pullResultsFromGoogleSheets } from './services/googleSheetsSync';
 
 // Hàm tự động chuẩn hóa và loại bỏ các xét nghiệm trùng lặp (ví dụ duplicate AIBUMIL từ import)
 function cleanAndDeduplicateTests(rawTests: LabTest[]): { cleanTests: LabTest[]; idMap: Record<string, string> } {
@@ -126,6 +128,8 @@ export const App: React.FC = () => {
   const [editingTestForModal, setEditingTestForModal] = useState<LabTest | null>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
   const [isDriveSyncModalOpen, setIsDriveSyncModalOpen] = useState<boolean>(false);
+  const [isDeviceSyncModalOpen, setIsDeviceSyncModalOpen] = useState<boolean>(false);
+  const [isCloudSyncing, setIsCloudSyncing] = useState<boolean>(false);
 
   // 4. Người thực hiện & Cấu hình tìm kiếm
   const [currentTechnician, setCurrentTechnician] = useState<string>(() => {
@@ -166,6 +170,17 @@ export const App: React.FC = () => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
+  // Tự động nhận diện khi mở qua quét mã QR trên điện thoại
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('sync_connect') === '1') {
+        addToast('success', 'Đã kết nối điện thoại', 'Hệ thống đã nhận diện cấu hình Google Drive và danh mục xét nghiệm!');
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, []);
+
   // Keyboard accessibility: Escape to close open modals
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -175,11 +190,12 @@ export const App: React.FC = () => {
         if (isAddEditTestModalOpen) setIsAddEditTestModalOpen(false);
         if (isImportModalOpen) setIsImportModalOpen(false);
         if (isDriveSyncModalOpen) setIsDriveSyncModalOpen(false);
+        if (isDeviceSyncModalOpen) setIsDeviceSyncModalOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isCapaModalOpen, isLotModalOpen, isAddEditTestModalOpen, isImportModalOpen, isDriveSyncModalOpen]);
+  }, [isCapaModalOpen, isLotModalOpen, isAddEditTestModalOpen, isImportModalOpen, isDriveSyncModalOpen, isDeviceSyncModalOpen]);
 
   // Lưu trữ tự động vào localStorage
   useEffect(() => { localStorage.setItem('mdlab_tests_v3', JSON.stringify(tests)); }, [tests]);
@@ -319,6 +335,72 @@ export const App: React.FC = () => {
       }
     } catch (e: any) {
       console.error('Lỗi tự động đồng bộ Google Drive:', e);
+    }
+  };
+
+  // Kéo dữ liệu mới nhất từ Google Drive về máy / điện thoại (2-way Cloud Sync)
+  const handlePullFromGoogleSheets = async () => {
+    if (!googleSheetsUrl) {
+      setIsDeviceSyncModalOpen(true);
+      return;
+    }
+    setIsCloudSyncing(true);
+    try {
+      const res = await pullResultsFromGoogleSheets(googleSheetsUrl, tests);
+      if (res.success && res.results.length > 0) {
+        setRawResults(prev => {
+          const newItems: QCResult[] = [];
+          res.results.forEach(sheetRes => {
+            const alreadyExists = prev.some(
+              local =>
+                local.testId === sheetRes.testId &&
+                local.level === sheetRes.level &&
+                Math.abs(local.value - sheetRes.value) < 0.001 &&
+                Math.abs(local.timestamp - sheetRes.timestamp) < 60000
+            );
+            if (!alreadyExists) {
+              newItems.push(sheetRes);
+            }
+          });
+
+          if (newItems.length > 0) {
+            addToast('success', 'Đồng bộ đám mây thành công', `Đã nạp thêm ${newItems.length} kết quả mới từ Google Drive!`);
+            return [...prev, ...newItems];
+          } else {
+            addToast('info', 'Dữ liệu đã mới nhất', 'Tất cả kết quả trên Google Drive đã được đồng bộ đầy đủ.');
+            return prev;
+          }
+        });
+      } else if (res.success && res.results.length === 0) {
+        addToast('info', 'Google Drive trống', 'Chưa có bản ghi kết quả nào trong sheet NhatKy_IQC.');
+      } else {
+        addToast('warning', 'Cần cập nhật Apps Script', res.error || 'Vui lòng kiểm tra lại Webhook hoặc cập nhật script v2.');
+      }
+    } catch (err: any) {
+      addToast('error', 'Lỗi đồng bộ', err.message || 'Không thể kết nối Google Drive');
+    } finally {
+      setIsCloudSyncing(false);
+    }
+  };
+
+  // Đẩy toàn bộ kết quả hiện có lên Google Drive
+  const handlePushAllToGoogleSheets = async () => {
+    if (!googleSheetsUrl) {
+      setIsDeviceSyncModalOpen(true);
+      return;
+    }
+    setIsCloudSyncing(true);
+    try {
+      const res = await syncResultsToGoogleSheets(googleSheetsUrl, rawResults, tests);
+      if (res.success) {
+        addToast('success', 'Đã lưu lên Drive', `Đã đồng bộ thành công toàn bộ ${res.count} kết quả lên Google Sheets!`);
+      } else {
+        addToast('error', 'Lỗi gửi Drive', res.error || 'Thao tác không thành công');
+      }
+    } catch (e: any) {
+      addToast('error', 'Lỗi kết nối', e.message || 'Không thể gửi dữ liệu');
+    } finally {
+      setIsCloudSyncing(false);
     }
   };
 
@@ -547,10 +629,13 @@ export const App: React.FC = () => {
           onOpenImport={() => setIsImportModalOpen(true)}
           onOpenDriveSync={() => setIsDriveSyncModalOpen(true)}
           isDriveConnected={!!googleSheetsUrl && googleSheetsUrl.startsWith('https://script.google.com/')}
+          onOpenDeviceSync={() => setIsDeviceSyncModalOpen(true)}
+          onPullFromSheets={handlePullFromGoogleSheets}
+          isSyncing={isCloudSyncing}
         />
 
         {/* Main Content Viewport */}
-        <main className="flex-1 p-4 md:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6">
+        <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6 pb-24 lg:pb-8">
           {/* TAB 1: GIÁM SÁT IQC (DASHBOARD) */}
           {activeTab === 'dashboard' && activeTest && (
             <div className="space-y-6 animate-in fade-in duration-200">
@@ -674,8 +759,63 @@ export const App: React.FC = () => {
                 </div>
               </div>
 
-              {/* Grid Form */}
-              <div className="overflow-x-auto">
+              {/* Mobile Worksheet Cards (sm:hidden) */}
+              <div className="sm:hidden space-y-3">
+                {filteredWorksheetTests.map(t => (
+                  <div key={t.id} className="p-3.5 bg-slate-50/90 rounded-2xl border border-slate-200 shadow-2xs space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-bold text-sm text-[#0F1F3D]">{t.name}</h4>
+                        <span className="text-[10px] text-slate-500 font-semibold">{t.unit} • {t.analyzerName || 'Máy Hóa sinh'}</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 pt-1">
+                      {[QCLevel.LOW, QCLevel.NORMAL, QCLevel.HIGH].map(lvl => {
+                        const cfg = t.configs[lvl];
+                        const currentVal = worksheetValues[t.id]?.[lvl] || '';
+                        const numVal = parseFloat(currentVal);
+                        const isEntered = !isNaN(numVal);
+                        const isOutOfRange = isEntered && cfg && cfg.sd > 0 && Math.abs(numVal - cfg.mean) > 2 * cfg.sd;
+
+                        return (
+                          <div key={lvl} className="text-center">
+                            <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">
+                              {lvl === QCLevel.LOW ? 'Thấp (L)' : lvl === QCLevel.NORMAL ? 'Chuẩn (N)' : 'Cao (H)'}
+                            </label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              placeholder={`M: ${cfg.mean}`}
+                              value={currentVal}
+                              onChange={e => {
+                                const val = e.target.value;
+                                setWorksheetValues(prev => ({
+                                  ...prev,
+                                  [t.id]: {
+                                    ...prev[t.id],
+                                    [lvl]: val
+                                  }
+                                }));
+                              }}
+                              className={`w-full text-center p-2 rounded-xl text-xs font-bold border outline-none transition-all ${
+                                isOutOfRange
+                                  ? 'bg-amber-50 border-amber-300 text-amber-900 focus:ring-1 focus:ring-amber-500'
+                                  : isEntered
+                                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                                  : 'bg-white border-slate-200 text-slate-800 focus:border-blue-500'
+                              }`}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Grid Form (hidden sm:block) */}
+              <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="bg-slate-50/80 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
@@ -1152,7 +1292,37 @@ export const App: React.FC = () => {
         />
       )}
 
-      {/* 4. Global Toast Notifications */}
+      {/* 4. Device Sync & Phone Pairing Modal */}
+      {isDeviceSyncModalOpen && (
+        <DeviceSyncModal
+          isOpen={isDeviceSyncModalOpen}
+          onClose={() => setIsDeviceSyncModalOpen(false)}
+          webhookUrl={googleSheetsUrl}
+          onPullFromSheets={handlePullFromGoogleSheets}
+          onPushToSheets={handlePushAllToGoogleSheets}
+          isSyncing={isCloudSyncing}
+          tests={tests}
+          results={rawResults}
+          onOpenAdvancedConfig={() => {
+            setIsDeviceSyncModalOpen(false);
+            setIsDriveSyncModalOpen(true);
+          }}
+          onAddToast={addToast}
+        />
+      )}
+
+      {/* 5. Mobile Bottom Navigation Bar (lg:hidden) */}
+      <MobileBottomNav
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onOpenSync={() => setIsDeviceSyncModalOpen(true)}
+        onOpenMobileMenu={() => setIsSidebarOpen(true)}
+        capaCount={unresolvedCapaCount}
+        isSyncing={isCloudSyncing}
+        isDriveConnected={!!googleSheetsUrl && googleSheetsUrl.startsWith('https://script.google.com/')}
+      />
+
+      {/* 6. Global Toast Notifications */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   );

@@ -10,6 +10,9 @@ interface TopbarProps {
   onOpenImport?: () => void;
   onOpenDriveSync?: () => void;
   isDriveConnected?: boolean;
+  onOpenDeviceSync?: () => void;
+  onPullFromSheets?: () => void;
+  isSyncing?: boolean;
 }
 
 export const Topbar: React.FC<TopbarProps> = ({
@@ -20,7 +23,10 @@ export const Topbar: React.FC<TopbarProps> = ({
   onOpenCapas,
   onOpenImport,
   onOpenDriveSync,
-  isDriveConnected
+  isDriveConnected,
+  onOpenDeviceSync,
+  onPullFromSheets,
+  isSyncing
 }) => {
   const [currentTime, setCurrentTime] = useState<string>('');
 
@@ -105,7 +111,34 @@ export const Topbar: React.FC<TopbarProps> = ({
         </div>
 
         {/* Right Controls */}
-        <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Quick Cloud Sync Button */}
+          {onPullFromSheets && (
+            <button
+              type="button"
+              onClick={onPullFromSheets}
+              disabled={isSyncing}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-bold transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+              title="Đồng bộ kéo dữ liệu mới nhất từ Google Drive"
+            >
+              <i className={`fas fa-cloud-arrow-down text-blue-600 ${isSyncing ? 'animate-spin' : ''}`}></i>
+              <span className="hidden sm:inline">{isSyncing ? 'Đang tải...' : 'Đồng bộ'}</span>
+            </button>
+          )}
+
+          {/* Quick Device / Phone Sync QR Button */}
+          {onOpenDeviceSync && (
+            <button
+              type="button"
+              onClick={onOpenDeviceSync}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+              title="Mở mã QR quét kết nối điện thoại"
+            >
+              <i className="fas fa-mobile-screen-button text-indigo-600"></i>
+              <span className="hidden sm:inline">Điện thoại</span>
+            </button>
+          )}
+
           {/* Drive Sync Status Button */}
           {onOpenDriveSync && (
             <button
@@ -120,7 +153,7 @@ export const Topbar: React.FC<TopbarProps> = ({
             >
               <i className={`fab fa-google-drive ${isDriveConnected ? 'text-emerald-600' : 'text-slate-400'}`}></i>
               <span className="hidden sm:inline">
-                {isDriveConnected ? 'Drive: Tự động lưu 🟢' : 'Kết nối Drive'}
+                {isDriveConnected ? 'Drive 🟢' : 'Kết nối Drive'}
               </span>
             </button>
           )}
@@ -130,11 +163,11 @@ export const Topbar: React.FC<TopbarProps> = ({
             <button
               type="button"
               onClick={onOpenImport}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-bold transition-colors cursor-pointer shadow-2xs"
+              className="hidden md:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer shadow-2xs"
               title="Đồng bộ nạp dữ liệu từ Google Drive / Excel"
             >
-              <i className="fas fa-cloud-upload-alt text-blue-600"></i>
-              <span className="hidden sm:inline">Nạp từ Drive</span>
+              <i className="fas fa-cloud-upload-alt text-slate-500"></i>
+              <span className="hidden lg:inline">Nạp Excel</span>
             </button>
           )}
 

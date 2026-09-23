@@ -279,7 +279,7 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
       </div>
 
       {/* Chart Canvas */}
-      <div ref={chartContainerRef} className="h-[380px] w-full pt-2">
+      <div ref={chartContainerRef} className="h-[310px] sm:h-[380px] w-full pt-2">
         <ResponsiveContainer width="100%" height="100%">
           {!isMultiLevelView ? (
             /* Biểu đồ Đơn mức (Single Level) */
