@@ -100,7 +100,7 @@ export interface CAPARecord {
   retestZScore?: number;
   retestStatus?: 'passed' | 'failed' | 'pending';
   patientSampleHoldStatus: 'held' | 'released_after_capa' | 'no_impact';
-  technician: string;            // Người lập biên bản (KTV)
+  technician: string;            // Người thực hiện
   approver?: string;             // Người phê duyệt (Trưởng khoa / QLCL)
   approvedAt?: number;
   status: 'draft' | 'submitted' | 'approved';

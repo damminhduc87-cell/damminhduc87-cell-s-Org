@@ -130,13 +130,13 @@ export const Topbar: React.FC<TopbarProps> = ({
           {/* User Profile avatar */}
           <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
             <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs border border-blue-200">
-              {technician.charAt(0).toUpperCase() || 'K'}
+              {technician.replace(/^KTV\.?\s*/i, '').charAt(0).toUpperCase() || 'N'}
             </div>
             <div className="hidden lg:block text-left">
               <span className="text-xs font-bold text-[#0F1F3D] block leading-none">
-                {technician || 'KTV Trực'}
+                {technician.replace(/^KTV\.?\s*/i, '') || 'Người thực hiện'}
               </span>
-              <span className="text-[10px] text-slate-400 font-medium">Quản lý chất lượng</span>
+              <span className="text-[10px] text-slate-400 font-medium">Người thực hiện</span>
             </div>
           </div>
         </div>

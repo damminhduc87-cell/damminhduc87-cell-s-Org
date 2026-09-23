@@ -76,8 +76,12 @@ export const App: React.FC = () => {
   const [isAddEditTestModalOpen, setIsAddEditTestModalOpen] = useState<boolean>(false);
   const [editingTestForModal, setEditingTestForModal] = useState<LabTest | null>(null);
 
-  // 4. Kỹ thuật viên & Cấu hình tìm kiếm
-  const [currentTechnician, setCurrentTechnician] = useState<string>('KTV. Nguyễn Văn A');
+  // 4. Người thực hiện & Cấu hình tìm kiếm
+  const [currentTechnician, setCurrentTechnician] = useState<string>(() => {
+    const saved = localStorage.getItem('mdlab_technician');
+    if (saved) return saved.replace(/^KTV\.?\s*/i, '');
+    return 'Nguyễn Văn A';
+  });
   const [selectedWorksheetAnalyzer, setSelectedWorksheetAnalyzer] = useState<string>('all');
   const [configSearchTerm, setConfigSearchTerm] = useState<string>('');
   const [capaSearchTerm, setCapaSearchTerm] = useState<string>('');
@@ -120,6 +124,7 @@ export const App: React.FC = () => {
   useEffect(() => { localStorage.setItem('mdlab_results_v3', JSON.stringify(rawResults)); }, [rawResults]);
   useEffect(() => { localStorage.setItem('mdlab_capas_v3', JSON.stringify(capas)); }, [capas]);
   useEffect(() => { localStorage.setItem('mdlab_analyzers', JSON.stringify(analyzers)); }, [analyzers]);
+  useEffect(() => { localStorage.setItem('mdlab_technician', currentTechnician); }, [currentTechnician]);
 
   // Thêm máy phân tích mới
   const handleAddAnalyzer = (newAnalyzerName: string) => {
@@ -364,7 +369,7 @@ export const App: React.FC = () => {
       'Quy tắc Westgard': r.westgardRule || 'Hợp lệ',
       'Trạng thái': r.westgardStatus === 'violation' ? 'Vi phạm' : r.westgardStatus === 'warning' ? 'Cảnh báo' : 'Hợp lệ',
       'Mã biên bản CAPA': r.capaId || '',
-      'KTV thực hiện': r.technician || currentTechnician
+      'Người thực hiện': (r.technician || currentTechnician).replace(/^KTV\.?\s*/i, '')
     }));
 
     const ws = XLSX.utils.json_to_sheet(dataToExport);
@@ -732,7 +737,7 @@ export const App: React.FC = () => {
                   <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
                   <input
                     type="text"
-                    placeholder="Tìm biên bản theo mã, quy tắc, KTV..."
+                    placeholder="Tìm biên bản theo mã, quy tắc, người thực hiện..."
                     value={capaSearchTerm}
                     onChange={e => setCapaSearchTerm(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-2 text-xs font-medium outline-none text-slate-700 focus:border-blue-500"
@@ -768,7 +773,7 @@ export const App: React.FC = () => {
                           <strong>Biện pháp:</strong> {capa.immediateCorrection}
                         </p>
                         <p className="text-[11px] text-slate-400">
-                          Người lập: <strong>{capa.technician}</strong> | Người duyệt: <strong>{capa.approver}</strong> | Chạy lại sau xử lý:{' '}
+                          Người thực hiện: <strong>{capa.technician ? capa.technician.replace(/^KTV\.?\s*/i, '') : '---'}</strong> | Người duyệt: <strong>{capa.approver}</strong> | Chạy lại sau xử lý:{' '}
                           <strong className={capa.retestStatus === 'passed' ? 'text-emerald-700' : 'text-red-600'}>
                             {capa.retestValue} {capa.unit} ({capa.retestStatus === 'passed' ? 'ĐẠT' : 'CHƯA ĐẠT'})
                           </strong>

@@ -121,17 +121,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-[#182B4F]"></span>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between">
+              <span className="text-[10px] font-semibold text-blue-400 block leading-tight">
+                Người thực hiện:
+              </span>
+              <div className="flex items-center justify-between mt-0.5">
                 <input
                   type="text"
-                  value={technician}
-                  onChange={e => setTechnician(e.target.value)}
-                  placeholder="Tên KTV..."
+                  value={technician.replace(/^KTV\.?\s*/i, '')}
+                  onChange={e => setTechnician(e.target.value.replace(/^KTV\.?\s*/i, ''))}
+                  placeholder="Nhập họ tên..."
                   className="bg-transparent text-xs font-bold text-white outline-none w-full border-b border-transparent focus:border-blue-400 transition-colors truncate"
-                  title="Nhấn để đổi tên KTV trực máy"
+                  title="Nhấn để đổi tên Người thực hiện"
                 />
               </div>
-              <div className="flex items-center gap-1.5 mt-0.5">
+              <div className="flex items-center gap-1.5 mt-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                 <span className="text-[10px] text-emerald-400 font-medium">Đang trực máy</span>
               </div>
@@ -139,7 +142,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         ) : (
           <div className="py-3 flex justify-center border-b border-[#1E2E4E]">
-            <div className="relative group cursor-pointer" title={`KTV: ${technician} (Đang trực)`}>
+            <div className="relative group cursor-pointer" title={`Người thực hiện: ${technician.replace(/^KTV\.?\s*/i, '')} (Đang trực)`}>
               <div className="w-8 h-8 rounded-full bg-blue-600/30 text-blue-400 border border-blue-500/40 flex items-center justify-center text-xs font-bold">
                 <i className="fas fa-user-md"></i>
               </div>

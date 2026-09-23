@@ -77,7 +77,7 @@ export const LogbookTable: React.FC<LogbookTableProps> = ({
           <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
           <input
             type="text"
-            placeholder="Tìm theo ngày giờ, số lô, KTV, quy tắc..."
+            placeholder="Tìm theo ngày giờ, số lô, người thực hiện, quy tắc..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             className="w-full bg-white border border-slate-200 focus:border-blue-500 rounded-xl pl-9 pr-8 py-2 text-xs font-medium text-slate-800 outline-none transition-colors"
@@ -121,7 +121,7 @@ export const LogbookTable: React.FC<LogbookTableProps> = ({
               <th className="px-4 py-3.5">Độ lệch Z-score</th>
               <th className="px-4 py-3.5">Trạng thái Westgard</th>
               <th className="px-4 py-3.5">Biên bản CAPA</th>
-              <th className="px-4 py-3.5">KTV</th>
+              <th className="px-4 py-3.5">Người thực hiện</th>
               <th className="px-4 py-3.5 text-center">Thao tác</th>
             </tr>
           </thead>
@@ -201,7 +201,7 @@ export const LogbookTable: React.FC<LogbookTableProps> = ({
 
                     {/* Technician */}
                     <td className="px-4 py-3.5 text-slate-500 font-medium">
-                      {r.technician || 'KTV'}
+                      {r.technician ? r.technician.replace(/^KTV\.?\s*/i, '') : '---'}
                     </td>
 
                     {/* Actions */}

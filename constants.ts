@@ -255,56 +255,56 @@ const dayMs = 86400000;
 
 export const MOCK_RESULTS: QCResult[] = [
   // Glucose - Normal Level chain
-  { id: 'g-n-1', testId: 'glucose', level: QCLevel.NORMAL, value: 5.62, timestamp: now - dayMs * 12, technician: 'KTV. Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-N', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'g-n-2', testId: 'glucose', level: QCLevel.NORMAL, value: 5.58, timestamp: now - dayMs * 11, technician: 'KTV. Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-N', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'g-n-3', testId: 'glucose', level: QCLevel.NORMAL, value: 5.65, timestamp: now - dayMs * 10, technician: 'KTV. Trần Thị B', lotNumber: 'LOT-2026-GLU-N', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'g-n-4', testId: 'glucose', level: QCLevel.NORMAL, value: 5.54, timestamp: now - dayMs * 9, technician: 'KTV. Trần Thị B', lotNumber: 'LOT-2026-GLU-N', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'g-n-5', testId: 'glucose', level: QCLevel.NORMAL, value: 5.72, timestamp: now - dayMs * 8, technician: 'KTV. Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-N', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'g-n-6', testId: 'glucose', level: QCLevel.NORMAL, value: 5.61, timestamp: now - dayMs * 7, technician: 'KTV. Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-N', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'g-n-7', testId: 'glucose', level: QCLevel.NORMAL, value: 5.92, timestamp: now - dayMs * 6, technician: 'KTV. Trần Thị B', lotNumber: 'LOT-2026-GLU-N', westgardRule: '1-2s', westgardStatus: 'warning', comment: 'Cảnh báo 1-2s: Z = +2.28SD' },
-  { id: 'g-n-8', testId: 'glucose', level: QCLevel.NORMAL, value: 5.64, timestamp: now - dayMs * 5, technician: 'KTV. Trần Thị B', lotNumber: 'LOT-2026-GLU-N', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'g-n-9', testId: 'glucose', level: QCLevel.NORMAL, value: 5.57, timestamp: now - dayMs * 4, technician: 'KTV. Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-N', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'g-n-10', testId: 'glucose', level: QCLevel.NORMAL, value: 5.63, timestamp: now - dayMs * 3, technician: 'KTV. Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-N', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'g-n-11', testId: 'glucose', level: QCLevel.NORMAL, value: 6.08, timestamp: now - dayMs * 2, technician: 'KTV. Lê Văn C', lotNumber: 'LOT-2026-GLU-N', westgardRule: '1-3s', westgardStatus: 'violation', comment: 'Vi phạm 1-3s: Z = +3.43SD. Đã lập CAPA.', correctiveAction: 'Thay lọ thuốc thử mới, hiệu chuẩn lại máy.' },
-  { id: 'g-n-12', testId: 'glucose', level: QCLevel.NORMAL, value: 5.61, timestamp: now - dayMs * 1, technician: 'KTV. Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-N', westgardRule: 'none', westgardStatus: 'passed', comment: 'Chạy lại sau CAPA: Đạt chuẩn' },
-  { id: 'g-n-13', testId: 'glucose', level: QCLevel.NORMAL, value: 5.62, timestamp: now, technician: 'KTV. Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-N', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'g-n-1', testId: 'glucose', level: QCLevel.NORMAL, value: 5.62, timestamp: now - dayMs * 12, technician: 'Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-N', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'g-n-2', testId: 'glucose', level: QCLevel.NORMAL, value: 5.58, timestamp: now - dayMs * 11, technician: 'Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-N', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'g-n-3', testId: 'glucose', level: QCLevel.NORMAL, value: 5.65, timestamp: now - dayMs * 10, technician: 'Trần Thị B', lotNumber: 'LOT-2026-GLU-N', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'g-n-4', testId: 'glucose', level: QCLevel.NORMAL, value: 5.54, timestamp: now - dayMs * 9, technician: 'Trần Thị B', lotNumber: 'LOT-2026-GLU-N', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'g-n-5', testId: 'glucose', level: QCLevel.NORMAL, value: 5.72, timestamp: now - dayMs * 8, technician: 'Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-N', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'g-n-6', testId: 'glucose', level: QCLevel.NORMAL, value: 5.61, timestamp: now - dayMs * 7, technician: 'Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-N', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'g-n-7', testId: 'glucose', level: QCLevel.NORMAL, value: 5.92, timestamp: now - dayMs * 6, technician: 'Trần Thị B', lotNumber: 'LOT-2026-GLU-N', westgardRule: '1-2s', westgardStatus: 'warning', comment: 'Cảnh báo 1-2s: Z = +2.28SD' },
+  { id: 'g-n-8', testId: 'glucose', level: QCLevel.NORMAL, value: 5.64, timestamp: now - dayMs * 5, technician: 'Trần Thị B', lotNumber: 'LOT-2026-GLU-N', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'g-n-9', testId: 'glucose', level: QCLevel.NORMAL, value: 5.57, timestamp: now - dayMs * 4, technician: 'Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-N', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'g-n-10', testId: 'glucose', level: QCLevel.NORMAL, value: 5.63, timestamp: now - dayMs * 3, technician: 'Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-N', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'g-n-11', testId: 'glucose', level: QCLevel.NORMAL, value: 6.08, timestamp: now - dayMs * 2, technician: 'Lê Văn C', lotNumber: 'LOT-2026-GLU-N', westgardRule: '1-3s', westgardStatus: 'violation', comment: 'Vi phạm 1-3s: Z = +3.43SD. Đã lập CAPA.', correctiveAction: 'Thay lọ thuốc thử mới, hiệu chuẩn lại máy.' },
+  { id: 'g-n-12', testId: 'glucose', level: QCLevel.NORMAL, value: 5.61, timestamp: now - dayMs * 1, technician: 'Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-N', westgardRule: 'none', westgardStatus: 'passed', comment: 'Chạy lại sau CAPA: Đạt chuẩn' },
+  { id: 'g-n-13', testId: 'glucose', level: QCLevel.NORMAL, value: 5.62, timestamp: now, technician: 'Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-N', westgardRule: 'none', westgardStatus: 'passed' },
 
   // Glucose - Low Level
-  { id: 'g-l-1', testId: 'glucose', level: QCLevel.LOW, value: 3.52, timestamp: now - dayMs * 12, technician: 'KTV. Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'g-l-2', testId: 'glucose', level: QCLevel.LOW, value: 3.48, timestamp: now - dayMs * 11, technician: 'KTV. Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'g-l-3', testId: 'glucose', level: QCLevel.LOW, value: 3.51, timestamp: now - dayMs * 10, technician: 'KTV. Trần Thị B', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'g-l-4', testId: 'glucose', level: QCLevel.LOW, value: 3.55, timestamp: now - dayMs * 9, technician: 'KTV. Trần Thị B', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'g-l-5', testId: 'glucose', level: QCLevel.LOW, value: 3.49, timestamp: now - dayMs * 8, technician: 'KTV. Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'g-l-6', testId: 'glucose', level: QCLevel.LOW, value: 3.53, timestamp: now - dayMs * 7, technician: 'KTV. Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'g-l-7', testId: 'glucose', level: QCLevel.LOW, value: 3.52, timestamp: now - dayMs * 6, technician: 'KTV. Trần Thị B', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'g-l-8', testId: 'glucose', level: QCLevel.LOW, value: 3.47, timestamp: now - dayMs * 5, technician: 'KTV. Trần Thị B', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'g-l-9', testId: 'glucose', level: QCLevel.LOW, value: 3.50, timestamp: now - dayMs * 4, technician: 'KTV. Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'g-l-10', testId: 'glucose', level: QCLevel.LOW, value: 3.54, timestamp: now - dayMs * 3, technician: 'KTV. Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'g-l-11', testId: 'glucose', level: QCLevel.LOW, value: 3.51, timestamp: now - dayMs * 2, technician: 'KTV. Lê Văn C', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'g-l-12', testId: 'glucose', level: QCLevel.LOW, value: 3.52, timestamp: now - dayMs * 1, technician: 'KTV. Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'g-l-13', testId: 'glucose', level: QCLevel.LOW, value: 3.50, timestamp: now, technician: 'KTV. Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'g-l-1', testId: 'glucose', level: QCLevel.LOW, value: 3.52, timestamp: now - dayMs * 12, technician: 'Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'g-l-2', testId: 'glucose', level: QCLevel.LOW, value: 3.48, timestamp: now - dayMs * 11, technician: 'Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'g-l-3', testId: 'glucose', level: QCLevel.LOW, value: 3.51, timestamp: now - dayMs * 10, technician: 'Trần Thị B', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'g-l-4', testId: 'glucose', level: QCLevel.LOW, value: 3.55, timestamp: now - dayMs * 9, technician: 'Trần Thị B', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'g-l-5', testId: 'glucose', level: QCLevel.LOW, value: 3.49, timestamp: now - dayMs * 8, technician: 'Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'g-l-6', testId: 'glucose', level: QCLevel.LOW, value: 3.53, timestamp: now - dayMs * 7, technician: 'Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'g-l-7', testId: 'glucose', level: QCLevel.LOW, value: 3.52, timestamp: now - dayMs * 6, technician: 'Trần Thị B', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'g-l-8', testId: 'glucose', level: QCLevel.LOW, value: 3.47, timestamp: now - dayMs * 5, technician: 'Trần Thị B', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'g-l-9', testId: 'glucose', level: QCLevel.LOW, value: 3.50, timestamp: now - dayMs * 4, technician: 'Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'g-l-10', testId: 'glucose', level: QCLevel.LOW, value: 3.54, timestamp: now - dayMs * 3, technician: 'Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'g-l-11', testId: 'glucose', level: QCLevel.LOW, value: 3.51, timestamp: now - dayMs * 2, technician: 'Lê Văn C', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'g-l-12', testId: 'glucose', level: QCLevel.LOW, value: 3.52, timestamp: now - dayMs * 1, technician: 'Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'g-l-13', testId: 'glucose', level: QCLevel.LOW, value: 3.50, timestamp: now, technician: 'Nguyễn Văn A', lotNumber: 'LOT-2026-GLU-L', westgardRule: 'none', westgardStatus: 'passed' },
 
   // Cholesterol
-  { id: 'chol-1', testId: 'cholesterol', level: QCLevel.NORMAL, value: 5.18, timestamp: now - dayMs * 2, technician: 'KTV. Nguyễn Văn A', lotNumber: 'LOT-2026-LIP-N', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'chol-2', testId: 'cholesterol', level: QCLevel.NORMAL, value: 5.22, timestamp: now - dayMs * 1, technician: 'KTV. Nguyễn Văn A', lotNumber: 'LOT-2026-LIP-N', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'chol-3', testId: 'cholesterol', level: QCLevel.NORMAL, value: 5.20, timestamp: now, technician: 'KTV. Nguyễn Văn A', lotNumber: 'LOT-2026-LIP-N', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'chol-1', testId: 'cholesterol', level: QCLevel.NORMAL, value: 5.18, timestamp: now - dayMs * 2, technician: 'Nguyễn Văn A', lotNumber: 'LOT-2026-LIP-N', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'chol-2', testId: 'cholesterol', level: QCLevel.NORMAL, value: 5.22, timestamp: now - dayMs * 1, technician: 'Nguyễn Văn A', lotNumber: 'LOT-2026-LIP-N', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'chol-3', testId: 'cholesterol', level: QCLevel.NORMAL, value: 5.20, timestamp: now, technician: 'Nguyễn Văn A', lotNumber: 'LOT-2026-LIP-N', westgardRule: 'none', westgardStatus: 'passed' },
 
   // AST sample points
-  { id: 'ast-1', testId: 'ast', level: QCLevel.NORMAL, value: 44.5, timestamp: now - dayMs * 3, technician: 'KTV. Nguyễn Văn A', lotNumber: 'LOT-2026-ENZ-N', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'ast-2', testId: 'ast', level: QCLevel.NORMAL, value: 45.2, timestamp: now - dayMs * 2, technician: 'KTV. Nguyễn Văn A', lotNumber: 'LOT-2026-ENZ-N', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'ast-3', testId: 'ast', level: QCLevel.NORMAL, value: 45.8, timestamp: now - dayMs * 1, technician: 'KTV. Trần Thị B', lotNumber: 'LOT-2026-ENZ-N', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'ast-4', testId: 'ast', level: QCLevel.NORMAL, value: 44.9, timestamp: now, technician: 'KTV. Trần Thị B', lotNumber: 'LOT-2026-ENZ-N', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'ast-1', testId: 'ast', level: QCLevel.NORMAL, value: 44.5, timestamp: now - dayMs * 3, technician: 'Nguyễn Văn A', lotNumber: 'LOT-2026-ENZ-N', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'ast-2', testId: 'ast', level: QCLevel.NORMAL, value: 45.2, timestamp: now - dayMs * 2, technician: 'Nguyễn Văn A', lotNumber: 'LOT-2026-ENZ-N', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'ast-3', testId: 'ast', level: QCLevel.NORMAL, value: 45.8, timestamp: now - dayMs * 1, technician: 'Trần Thị B', lotNumber: 'LOT-2026-ENZ-N', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'ast-4', testId: 'ast', level: QCLevel.NORMAL, value: 44.9, timestamp: now, technician: 'Trần Thị B', lotNumber: 'LOT-2026-ENZ-N', westgardRule: 'none', westgardStatus: 'passed' },
 
   // Creatinine sample points
-  { id: 'cre-1', testId: 'creatinine', level: QCLevel.NORMAL, value: 94.2, timestamp: now - dayMs * 3, technician: 'KTV. Nguyễn Văn A', lotNumber: 'LOT-2026-REN-N', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'cre-2', testId: 'creatinine', level: QCLevel.NORMAL, value: 95.8, timestamp: now - dayMs * 2, technician: 'KTV. Nguyễn Văn A', lotNumber: 'LOT-2026-REN-N', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'cre-3', testId: 'creatinine', level: QCLevel.NORMAL, value: 94.7, timestamp: now - dayMs * 1, technician: 'KTV. Trần Thị B', lotNumber: 'LOT-2026-REN-N', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'cre-4', testId: 'creatinine', level: QCLevel.NORMAL, value: 95.3, timestamp: now, technician: 'KTV. Trần Thị B', lotNumber: 'LOT-2026-REN-N', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'cre-1', testId: 'creatinine', level: QCLevel.NORMAL, value: 94.2, timestamp: now - dayMs * 3, technician: 'Nguyễn Văn A', lotNumber: 'LOT-2026-REN-N', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'cre-2', testId: 'creatinine', level: QCLevel.NORMAL, value: 95.8, timestamp: now - dayMs * 2, technician: 'Nguyễn Văn A', lotNumber: 'LOT-2026-REN-N', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'cre-3', testId: 'creatinine', level: QCLevel.NORMAL, value: 94.7, timestamp: now - dayMs * 1, technician: 'Trần Thị B', lotNumber: 'LOT-2026-REN-N', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'cre-4', testId: 'creatinine', level: QCLevel.NORMAL, value: 95.3, timestamp: now, technician: 'Trần Thị B', lotNumber: 'LOT-2026-REN-N', westgardRule: 'none', westgardStatus: 'passed' },
 
   // Albumin sample points
-  { id: 'alb-1', testId: 'albumin', level: QCLevel.NORMAL, value: 41.8, timestamp: now - dayMs * 2, technician: 'KTV. Nguyễn Văn A', lotNumber: 'LOT-2026-PRO-N', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'alb-2', testId: 'albumin', level: QCLevel.NORMAL, value: 42.1, timestamp: now - dayMs * 1, technician: 'KTV. Trần Thị B', lotNumber: 'LOT-2026-PRO-N', westgardRule: 'none', westgardStatus: 'passed' },
-  { id: 'alb-3', testId: 'albumin', level: QCLevel.NORMAL, value: 42.0, timestamp: now, technician: 'KTV. Trần Thị B', lotNumber: 'LOT-2026-PRO-N', westgardRule: 'none', westgardStatus: 'passed' }
+  { id: 'alb-1', testId: 'albumin', level: QCLevel.NORMAL, value: 41.8, timestamp: now - dayMs * 2, technician: 'Nguyễn Văn A', lotNumber: 'LOT-2026-PRO-N', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'alb-2', testId: 'albumin', level: QCLevel.NORMAL, value: 42.1, timestamp: now - dayMs * 1, technician: 'Trần Thị B', lotNumber: 'LOT-2026-PRO-N', westgardRule: 'none', westgardStatus: 'passed' },
+  { id: 'alb-3', testId: 'albumin', level: QCLevel.NORMAL, value: 42.0, timestamp: now, technician: 'Trần Thị B', lotNumber: 'LOT-2026-PRO-N', westgardRule: 'none', westgardStatus: 'passed' }
 ];
 
 export const INITIAL_CAPA_RECORDS: CAPARecord[] = [
@@ -338,7 +338,7 @@ export const INITIAL_CAPA_RECORDS: CAPARecord[] = [
     retestZScore: 0.07,
     retestStatus: 'passed',
     patientSampleHoldStatus: 'released_after_capa',
-    technician: 'KTV. Lê Văn C',
+    technician: 'Lê Văn C',
     approver: 'BS. CKII Trưởng Khoa',
     approvedAt: now - dayMs * 2 + 3600000,
     status: 'approved'
