@@ -68,7 +68,8 @@ function doGet(e) {
  */
 export function formatResultToSheetRow(result: QCResult, tests: LabTest[]): GoogleSheetRowPayload {
   const test = tests.find(t => t.id === result.testId);
-  const testName = test?.name || result.testId;
+  const rawName = test?.name || result.testId;
+  const testName = rawName.includes('(') ? rawName.split('(')[0].trim() : rawName.trim();
   const cfg = test?.configs?.[result.level];
 
   // Định dạng ngày giờ chuẩn y tế DD/MM/YYYY HH:mm

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { QCResult, LabTest } from '../types';
+import { QCResult, LabTest, QCLevel } from '../types';
 import { getWestgardStyle } from '../services/westgardEngine';
 
 interface LogbookTableProps {
@@ -21,12 +21,14 @@ export const LogbookTable: React.FC<LogbookTableProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'passed' | 'warning' | 'violation'>('all');
+  const [levelFilter, setLevelFilter] = useState<'all' | QCLevel>('all');
   const [selectedResultDetail, setSelectedResultDetail] = useState<QCResult | null>(null);
 
-  // Lọc kết quả theo tìm kiếm và trạng thái
+  // Lọc kết quả theo tìm kiếm, mức nồng độ và trạng thái
   const filteredResults = useMemo(() => {
     return results
       .filter(r => {
+        if (levelFilter !== 'all' && r.level !== levelFilter) return false;
         if (statusFilter !== 'all' && r.westgardStatus !== statusFilter) return false;
         if (!searchTerm) return true;
         const term = searchTerm.toLowerCase();
@@ -38,7 +40,7 @@ export const LogbookTable: React.FC<LogbookTableProps> = ({
       })
       .slice()
       .reverse(); // Mới nhất lên đầu
-  }, [results, searchTerm, statusFilter]);
+  }, [results, searchTerm, statusFilter, levelFilter]);
 
   return (
     <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden transition-all">
@@ -87,7 +89,7 @@ export const LogbookTable: React.FC<LogbookTableProps> = ({
       {/* Filter Toolbar */}
       <div className="p-4 bg-slate-50/60 border-b border-slate-100 grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
         {/* Search input */}
-        <div className="sm:col-span-8 relative">
+        <div className="sm:col-span-6 relative">
           <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
           <input
             type="text"
@@ -107,8 +109,23 @@ export const LogbookTable: React.FC<LogbookTableProps> = ({
           )}
         </div>
 
+        {/* Level Filter Dropdown */}
+        <div className="sm:col-span-3 relative">
+          <select
+            value={levelFilter}
+            onChange={e => setLevelFilter(e.target.value as any)}
+            className="w-full appearance-none bg-white border border-slate-200 focus:border-blue-500 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none cursor-pointer pr-8"
+          >
+            <option value="all">Tất cả mức QC (Low/Norm/High)</option>
+            <option value={QCLevel.LOW}>Mức Thấp (Low)</option>
+            <option value={QCLevel.NORMAL}>Mức Chuẩn (Normal)</option>
+            <option value={QCLevel.HIGH}>Mức Cao (High)</option>
+          </select>
+          <i className="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] pointer-events-none"></i>
+        </div>
+
         {/* Status Filter Dropdown */}
-        <div className="sm:col-span-4 relative">
+        <div className="sm:col-span-3 relative">
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value as any)}
@@ -129,6 +146,7 @@ export const LogbookTable: React.FC<LogbookTableProps> = ({
           <thead>
             <tr className="bg-slate-50/80 text-[10px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
               <th className="px-4 py-3.5">Ngày giờ đo</th>
+              <th className="px-4 py-3.5">Mức QC</th>
               <th className="px-4 py-3.5">Máy phân tích</th>
               <th className="px-4 py-3.5">Số Lô (Lot)</th>
               <th className="px-4 py-3.5">Giá trị đo</th>
@@ -164,6 +182,17 @@ export const LogbookTable: React.FC<LogbookTableProps> = ({
                         <span className="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></span>
                       )}
                       {new Date(r.timestamp).toLocaleString('vi-VN')}
+                    </td>
+
+                    {/* Level */}
+                    <td className="px-4 py-3.5">
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border inline-block ${
+                        r.level === QCLevel.LOW ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                        r.level === QCLevel.HIGH ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                        'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      }`}>
+                        {r.level === QCLevel.LOW ? 'Thấp (L)' : r.level === QCLevel.HIGH ? 'Cao (H)' : 'Chuẩn (N)'}
+                      </span>
                     </td>
 
                     {/* Machine */}

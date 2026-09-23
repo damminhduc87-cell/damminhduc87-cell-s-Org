@@ -101,11 +101,11 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
     if (payload.status === 'violation') {
       fill = '#EF4444'; // Đỏ: Vi phạm
       stroke = '#B91C1C';
-      r = 7.5;
+      r = 7;
     } else if (payload.status === 'warning') {
       fill = '#F59E0B'; // Vàng cam: Cảnh báo 1-2s
       stroke = '#D97706';
-      r = 6.5;
+      r = 6;
     }
 
     return (
@@ -117,7 +117,7 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
         fill={fill}
         stroke="#FFFFFF"
         strokeWidth={2}
-        className="cursor-pointer transition-all hover:scale-150 drop-shadow-xs"
+        className="cursor-pointer transition-opacity hover:opacity-80"
         onClick={() => onPointClick && onPointClick(payload.rawResult)}
       />
     );
@@ -348,9 +348,8 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
                 stroke="#2563EB"
                 strokeWidth={2.5}
                 dot={renderCustomDot}
-                activeDot={{ r: 8, stroke: '#FFFFFF', strokeWidth: 2 }}
-                isAnimationActive={true}
-                animationDuration={600}
+                activeDot={{ r: 7.5, stroke: '#FFFFFF', strokeWidth: 2, fill: '#1D4ED8' }}
+                isAnimationActive={false}
               />
             </LineChart>
           ) : (
@@ -396,9 +395,9 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
               <ReferenceLine y={3} stroke="#EF4444" strokeDasharray="5 5" strokeWidth={1.5} label={{ position: 'right', value: '+3.0 SD (Vi phạm)', fontSize: 9, fill: '#DC2626', fontWeight: 700 }} />
               <ReferenceLine y={-3} stroke="#EF4444" strokeDasharray="5 5" strokeWidth={1.5} label={{ position: 'right', value: '-3.0 SD (Vi phạm)', fontSize: 9, fill: '#DC2626', fontWeight: 700 }} />
 
-              <Line type="monotone" dataKey="z_Low" name="Mức Thấp" stroke="#2563EB" strokeWidth={2} dot={{ r: 4 }} connectNulls />
-              <Line type="monotone" dataKey="z_Normal" name="Mức Bình thường" stroke="#10B981" strokeWidth={2} dot={{ r: 4 }} connectNulls />
-              <Line type="monotone" dataKey="z_High" name="Mức Cao" stroke="#F59E0B" strokeWidth={2} dot={{ r: 4 }} connectNulls />
+              <Line type="monotone" dataKey="z_Low" name="Mức Thấp" stroke="#2563EB" strokeWidth={2} dot={{ r: 4 }} connectNulls isAnimationActive={false} />
+              <Line type="monotone" dataKey="z_Normal" name="Mức Bình thường" stroke="#10B981" strokeWidth={2} dot={{ r: 4 }} connectNulls isAnimationActive={false} />
+              <Line type="monotone" dataKey="z_High" name="Mức Cao" stroke="#F59E0B" strokeWidth={2} dot={{ r: 4 }} connectNulls isAnimationActive={false} />
             </LineChart>
           )}
         </ResponsiveContainer>

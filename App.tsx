@@ -24,26 +24,72 @@ import { ImportDataModal } from './components/ImportDataModal';
 import { GoogleDriveSyncModal } from './components/GoogleDriveSyncModal';
 import { syncResultsToGoogleSheets } from './services/googleSheetsSync';
 
+// Hàm tự động chuẩn hóa và loại bỏ các xét nghiệm trùng lặp (ví dụ duplicate AIBUMIL từ import)
+function cleanAndDeduplicateTests(rawTests: LabTest[]): { cleanTests: LabTest[]; idMap: Record<string, string> } {
+  const seenNorms = new Map<string, string>(); // normName -> canonicalId
+  const cleanTests: LabTest[] = [];
+  const idMap: Record<string, string> = {};
+
+  const standardIds = new Set(INITIAL_TESTS.map(t => t.id));
+
+  // Ưu tiên giữ lại các xét nghiệm chuẩn trước
+  const sorted = [...rawTests].sort((a, b) => {
+    const aIsStd = standardIds.has(a.id) ? 0 : 1;
+    const bIsStd = standardIds.has(b.id) ? 0 : 1;
+    return aIsStd - bIsStd;
+  });
+
+  sorted.forEach(t => {
+    let norm = t.name.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+    // Nhận diện đồng nhất các biến thể Albumin
+    if (norm.includes('aibumil') || norm.includes('albumin') || norm === 'alb') {
+      norm = 'albumin';
+    } else if (norm.includes('creatinin') || norm === 'cre') {
+      norm = 'creatinine';
+    } else if (norm.includes('protein') || norm === 'pro') {
+      norm = 'protein';
+    } else if (norm.includes('glucose') || norm === 'glu') {
+      norm = 'glucose';
+    } else if (norm.includes('triglycerid')) {
+      norm = 'triglycerides';
+    } else if (norm.includes('cholesterol') && !norm.includes('hdl') && !norm.includes('ldl')) {
+      norm = 'cholesterol';
+    }
+
+    if (seenNorms.has(norm)) {
+      // Đã tồn tại xét nghiệm này: Gom ID vào xét nghiệm chính
+      const canonicalId = seenNorms.get(norm)!;
+      idMap[t.id] = canonicalId;
+    } else {
+      seenNorms.set(norm, t.id);
+      const cleanTest = { ...t };
+      if (norm === 'albumin') {
+        cleanTest.name = 'Albumin (AIBUMIL)';
+        cleanTest.unit = 'g/L';
+      }
+      cleanTests.push(cleanTest);
+    }
+  });
+
+  return { cleanTests, idMap };
+}
+
 export const App: React.FC = () => {
-  // 1. Quản lý trạng thái dữ liệu (đồng bộ với localStorage)
+  // 1. Quản lý trạng thái dữ liệu (đồng bộ với localStorage & tự động dọn trùng)
   const [tests, setTests] = useState<LabTest[]>(() => {
+    let list = INITIAL_TESTS;
     const saved = localStorage.getItem('mdlab_tests_v3');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) list = parsed;
       } catch (e) {
         console.error(e);
       }
     }
-    const savedV2 = localStorage.getItem('mdlab_tests_v2');
-    if (savedV2) {
-      try {
-        const parsedV2 = JSON.parse(savedV2);
-        if (Array.isArray(parsedV2) && parsedV2.length >= INITIAL_TESTS.length) return parsedV2;
-      } catch (e) {}
-    }
-    return INITIAL_TESTS;
+    const { cleanTests } = cleanAndDeduplicateTests(list);
+    return cleanTests;
   });
 
   const [rawResults, setRawResults] = useState<QCResult[]>(() => {
@@ -308,6 +354,10 @@ export const App: React.FC = () => {
     setRawResults(prev => [...prev, newRes]);
     setSingleValue('');
 
+    // Đảm bảo Dashboard chuyển đúng về xét nghiệm và mức nồng độ vừa nhập
+    setSelectedTestId(newRes.testId);
+    setSelectedLevel(newRes.level);
+
     // Tự động đồng bộ lên Google Sheets nếu đã bật
     triggerGoogleSheetsSync([newRes]);
 
@@ -379,6 +429,12 @@ export const App: React.FC = () => {
 
     setRawResults(prev => [...prev, ...newResultsToAdd]);
     setWorksheetValues({});
+
+    // Chuyển Dashboard về xét nghiệm đầu tiên vừa lưu
+    if (newResultsToAdd.length > 0) {
+      setSelectedTestId(newResultsToAdd[0].testId);
+      setSelectedLevel(newResultsToAdd[0].level);
+    }
 
     // Tự động đồng bộ lên Google Sheets nếu đã bật
     triggerGoogleSheetsSync(newResultsToAdd);
@@ -555,7 +611,7 @@ export const App: React.FC = () => {
 
               {/* IQC Logbook Table */}
               <LogbookTable
-                results={activeLevelResults}
+                results={evaluatedResults}
                 activeTest={activeTest}
                 onOpenCapa={handleOpenCapa}
                 onDeleteResult={handleDeleteResult}

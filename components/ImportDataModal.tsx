@@ -289,24 +289,33 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
     tests.forEach(t => updatedTestsMap.set(t.id, { ...t }));
 
     previewRows.forEach((row, idx) => {
+      // 1. Tìm theo testId hoặc theo tên xét nghiệm
       let t = updatedTestsMap.get(row.testId);
-
-      // Nếu chỉ số chưa tồn tại trong danh mục, tự động tạo mới dựa trên tên từ Google Sheet
       if (!t) {
-        const newId = `test_imp_${Date.now()}_${idx}`;
+        t = Array.from(updatedTestsMap.values()).find(x => 
+          x.id.toLowerCase() === row.testId.toLowerCase() ||
+          x.name.toLowerCase() === (row.rawTestName || '').toLowerCase() ||
+          (row.testId === 'albumin' && (x.id === 'albumin' || x.name.toLowerCase().includes('albumin') || x.name.toLowerCase().includes('aibumil')))
+        );
+      }
+
+      // Nếu chỉ số chưa tồn tại trong danh mục, tự động tạo mới DUY NHẤT 1 lần
+      if (!t) {
+        const canonicalId = row.testId && row.testId !== 'unknown' ? row.testId : `test_imp_${Date.now()}_${idx}`;
         const newTest: LabTest = {
-          id: newId,
-          name: row.rawTestName || 'Xét nghiệm mới',
-          unit: 'mmol/L',
+          id: canonicalId,
+          name: row.testId === 'albumin' ? 'Albumin (AIBUMIL)' : (row.rawTestName || 'Xét nghiệm mới'),
+          unit: 'g/L',
           tea: 10,
           analyzerName: row.analyzerName || 'Máy Hóa sinh 1',
           configs: {
-            [QCLevel.LOW]: { mean: row.level === QCLevel.LOW && row.targetMean ? row.targetMean : 50, sd: row.level === QCLevel.LOW && row.targetSd ? row.targetSd : 5, bias: 2, currentLot: 'LOT-2026' },
-            [QCLevel.NORMAL]: { mean: row.level === QCLevel.NORMAL && row.targetMean ? row.targetMean : 100, sd: row.level === QCLevel.NORMAL && row.targetSd ? row.targetSd : 10, bias: 1.5, currentLot: 'LOT-2026' },
-            [QCLevel.HIGH]: { mean: row.level === QCLevel.HIGH && row.targetMean ? row.targetMean : 200, sd: row.level === QCLevel.HIGH && row.targetSd ? row.targetSd : 20, bias: 2, currentLot: 'LOT-2026' }
+            [QCLevel.LOW]: { mean: row.level === QCLevel.LOW && row.targetMean ? row.targetMean : 25, sd: row.level === QCLevel.LOW && row.targetSd ? row.targetSd : 1.5, bias: 2, currentLot: 'LOT-2026' },
+            [QCLevel.NORMAL]: { mean: row.level === QCLevel.NORMAL && row.targetMean ? row.targetMean : 40, sd: row.level === QCLevel.NORMAL && row.targetSd ? row.targetSd : 2.5, bias: 1.5, currentLot: 'LOT-2026' },
+            [QCLevel.HIGH]: { mean: row.level === QCLevel.HIGH && row.targetMean ? row.targetMean : 55, sd: row.level === QCLevel.HIGH && row.targetSd ? row.targetSd : 3.5, bias: 2, currentLot: 'LOT-2026' }
           }
         };
-        updatedTestsMap.set(newId, newTest);
+        updatedTestsMap.set(canonicalId, newTest);
+        if (row.testId) updatedTestsMap.set(row.testId, newTest);
         t = newTest;
       } else {
         // Nếu file có Mean / SD tùy biến, có thể đồng bộ cập nhật vào test
