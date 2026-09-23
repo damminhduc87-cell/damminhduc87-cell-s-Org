@@ -339,9 +339,9 @@ export const App: React.FC = () => {
   };
 
   // Kéo dữ liệu mới nhất từ Google Drive về máy / điện thoại (2-way Cloud Sync)
-  const handlePullFromGoogleSheets = async () => {
+  const handlePullFromGoogleSheets = async (silent = false) => {
     if (!googleSheetsUrl) {
-      setIsDeviceSyncModalOpen(true);
+      if (!silent) setIsDeviceSyncModalOpen(true);
       return;
     }
     setIsCloudSyncing(true);
@@ -364,24 +364,51 @@ export const App: React.FC = () => {
           });
 
           if (newItems.length > 0) {
-            addToast('success', 'Đồng bộ đám mây thành công', `Đã nạp thêm ${newItems.length} kết quả mới từ Google Drive!`);
+            addToast('success', 'Đồng bộ thiết bị', `Đã nạp thêm ${newItems.length} kết quả mới từ Google Drive!`);
+            const lastItem = newItems[newItems.length - 1];
+            setSelectedTestId(lastItem.testId);
+            setSelectedLevel(lastItem.level);
             return [...prev, ...newItems];
           } else {
-            addToast('info', 'Dữ liệu đã mới nhất', 'Tất cả kết quả trên Google Drive đã được đồng bộ đầy đủ.');
+            if (!silent) addToast('info', 'Dữ liệu đã mới nhất', 'Tất cả kết quả trên Google Drive đã được đồng bộ đầy đủ.');
             return prev;
           }
         });
       } else if (res.success && res.results.length === 0) {
-        addToast('info', 'Google Drive trống', 'Chưa có bản ghi kết quả nào trong sheet NhatKy_IQC.');
+        if (!silent) addToast('info', 'Google Drive trống', 'Chưa có bản ghi kết quả nào trong sheet NhatKy_IQC.');
       } else {
-        addToast('warning', 'Cần cập nhật Apps Script', res.error || 'Vui lòng kiểm tra lại Webhook hoặc cập nhật script v2.');
+        if (!silent) {
+          addToast('warning', 'Cần cập nhật mã Apps Script', res.error || 'Vui lòng cập nhật bản script v2 để Google Sheets mở quyền đọc dữ liệu về máy tính.');
+          setIsDriveSyncModalOpen(true);
+        }
       }
     } catch (err: any) {
-      addToast('error', 'Lỗi đồng bộ', err.message || 'Không thể kết nối Google Drive');
+      if (!silent) addToast('error', 'Lỗi đồng bộ', err.message || 'Không thể kết nối Google Drive');
     } finally {
       setIsCloudSyncing(false);
     }
   };
+
+  // Tự động kiểm tra và đồng bộ dữ liệu mới khi mở tab hoặc quay lại tab (window focus & interval)
+  useEffect(() => {
+    if (!googleSheetsUrl) return;
+    // Đồng bộ ngầm khi mở ứng dụng
+    handlePullFromGoogleSheets(true);
+
+    const onFocus = () => {
+      handlePullFromGoogleSheets(true);
+    };
+
+    window.addEventListener('focus', onFocus);
+    const interval = setInterval(() => {
+      handlePullFromGoogleSheets(true);
+    }, 30000);
+
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      clearInterval(interval);
+    };
+  }, [googleSheetsUrl, tests]);
 
   // Đẩy toàn bộ kết quả hiện có lên Google Drive
   const handlePushAllToGoogleSheets = async () => {
