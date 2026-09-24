@@ -1,0 +1,18 @@
+{
+  "name": "MinhDucLab QC - Quản Lý Nội Kiểm Xét Nghiệm Y Học",
+  "short_name": "MinhDucLab QC",
+  "description": "Hệ thống giám sát nội kiểm IQC & Westgard Rules chuẩn QĐ 2429/QĐ-BYT",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F1F3D",
+  "theme_color": "#0F1F3D",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
