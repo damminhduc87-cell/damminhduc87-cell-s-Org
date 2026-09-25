@@ -305,7 +305,7 @@ export async function pullResultsFromGoogleSheets(
     }
 
     const parsedResults: QCResult[] = [];
-    const latestConfigsMap = new Map<string, { mean: number; sd: number }>();
+    const configCounter = new Map<string, Map<string, { count: number; mean: number; sd: number }>>();
     const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
     const testMap = new Map<string, LabTest>();
     tests.forEach(t => {
@@ -343,10 +343,23 @@ export async function pullResultsFromGoogleSheets(
       let rowSD = row.SD_DOLECHCHUAN ?? row.SD ?? row['Độ lệch chuẩn'];
       if (typeof rowMean === 'string') rowMean = parseFloat(rowMean.replace(',', '.'));
       if (typeof rowSD === 'string') rowSD = parseFloat(rowSD.replace(',', '.'));
-      const meanNum = Number(rowMean);
-      const sdNum = Number(rowSD);
+      let meanNum = Number(rowMean);
+      let sdNum = Number(rowSD);
       if (!isNaN(meanNum) && meanNum > 0 && !isNaN(sdNum) && sdNum > 0) {
-        latestConfigsMap.set(`${testId}_${level}`, { mean: meanNum, sd: sdNum });
+        // Tự động nhận diện nếu KTV nhập CV% vào cột SD (ví dụ Glucose High ghi 5.3% -> SD = 17.5 * 5.3% = 0.93)
+        if (sdNum > meanNum * 0.2) {
+          sdNum = Number((meanNum * (sdNum / 100)).toFixed(2));
+        }
+
+        const configKey = `${testId}_${level}`;
+        if (!configCounter.has(configKey)) {
+          configCounter.set(configKey, new Map());
+        }
+        const innerMap = configCounter.get(configKey)!;
+        const valKey = `${meanNum.toFixed(2)}_${sdNum.toFixed(2)}`;
+        const existing = innerMap.get(valKey) || { count: 0, mean: meanNum, sd: sdNum };
+        existing.count++;
+        innerMap.set(valKey, existing);
       }
 
       let rawVal = row.GIA_TRI_DO_LUONG ?? row['Giá trị đo'] ?? row['Giá trị'];
@@ -409,6 +422,20 @@ export async function pullResultsFromGoogleSheets(
         lotNumber: 'LOT-SHEET',
         correctiveAction: String(row.HANH_DONG_KHAC_PHUC || row['Hành động khắc phục'] || '')
       });
+    });
+
+    // Xác định cấu hình áp đảo (dominant config - xuất hiện nhiều nhất trong lịch sử lab)
+    const latestConfigsMap = new Map<string, { mean: number; sd: number }>();
+    configCounter.forEach((innerMap, configKey) => {
+      let dominant: { count: number; mean: number; sd: number } | null = null;
+      innerMap.forEach(item => {
+        if (!dominant || item.count > dominant.count) {
+          dominant = item;
+        }
+      });
+      if (dominant) {
+        latestConfigsMap.set(configKey, { mean: (dominant as any).mean, sd: (dominant as any).sd });
+      }
     });
 
     // Tạo danh mục xét nghiệm cập nhật theo Mean & SD thực tế từ Google Sheet

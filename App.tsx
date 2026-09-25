@@ -72,6 +72,14 @@ function cleanAndDeduplicateTests(rawTests: LabTest[]): { cleanTests: LabTest[];
       }
 
       // Tự động nâng cấp các xét nghiệm đang mang giá trị cấu hình mẫu cũ sang thông số thực tế của phòng xét nghiệm
+      if (norm === 'glucose') {
+        if (cleanTest.configs?.[QCLevel.NORMAL]?.mean === 5.6 || cleanTest.configs?.[QCLevel.NORMAL]?.sd === 0.14) {
+          cleanTest.configs[QCLevel.NORMAL] = { ...cleanTest.configs[QCLevel.NORMAL], mean: 5.51, sd: 0.41 };
+        }
+        if (cleanTest.configs?.[QCLevel.HIGH]?.mean === 15.2 || cleanTest.configs?.[QCLevel.HIGH]?.sd === 0.45) {
+          cleanTest.configs[QCLevel.HIGH] = { ...cleanTest.configs[QCLevel.HIGH], mean: 17.5, sd: 1.05 };
+        }
+      }
       if (norm === 'cholesterol') {
         if (cleanTest.configs?.[QCLevel.NORMAL]?.mean === 5.2) {
           cleanTest.configs[QCLevel.NORMAL] = { ...cleanTest.configs[QCLevel.NORMAL], mean: 3.52, sd: 0.26 };

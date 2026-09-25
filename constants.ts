@@ -15,9 +15,9 @@ export const INITIAL_TESTS: LabTest[] = [
     tea: 8,
     analyzerName: 'Máy Hóa sinh 1',
     configs: {
-      [QCLevel.LOW]: { mean: 3.5, sd: 0.12, bias: 2.0, eqaTarget: 3.6, eqaResult: 3.67, currentLot: 'LOT-2026-GLU-L' },
-      [QCLevel.NORMAL]: { mean: 5.6, sd: 0.14, bias: 1.5, eqaTarget: 5.5, eqaResult: 5.61, currentLot: 'LOT-2026-GLU-N' },
-      [QCLevel.HIGH]: { mean: 15.2, sd: 0.45, bias: 2.2, eqaTarget: 15.0, eqaResult: 15.33, currentLot: 'LOT-2026-GLU-H' },
+      [QCLevel.LOW]: { mean: 3.5, sd: 0.15, bias: 2.0, eqaTarget: 3.6, eqaResult: 3.67, currentLot: 'LOT-2026-GLU-L' },
+      [QCLevel.NORMAL]: { mean: 5.51, sd: 0.41, bias: 1.5, eqaTarget: 5.5, eqaResult: 5.61, currentLot: 'LOT-2026-GLU-N' },
+      [QCLevel.HIGH]: { mean: 17.5, sd: 1.05, bias: 2.2, eqaTarget: 17.5, eqaResult: 17.45, currentLot: 'LOT-2026-GLU-H' },
     }
   },
   {
