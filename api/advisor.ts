@@ -88,38 +88,123 @@ YÊU CẦU TRẢ LỜI:
 
     const fullPrompt = `${prompt}${contextStr}`;
 
-    // Gọi Google Gemini REST API với model gemini-2.0-flash
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const candidateModels = [
+      'gemini-2.5-flash',
+      'gemini-flash-latest',
+      'gemini-1.5-flash',
+      'gemini-1.5-flash-latest',
+      'gemini-2.0-flash',
+      'gemini-2.5-pro',
+      'gemini-pro-latest'
+    ];
 
-    const geminiResponse = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: fullPrompt }]
-          }
-        ],
-        systemInstruction: {
-          parts: [{ text: systemInstruction }]
-        },
-        generationConfig: {
-          temperature: 0.3,
-          topP: 0.95,
-          maxOutputTokens: 2048
+    const requestPayload = {
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: fullPrompt }]
         }
-      })
-    });
+      ],
+      systemInstruction: {
+        parts: [{ text: systemInstruction }]
+      },
+      generationConfig: {
+        temperature: 0.3,
+        topP: 0.95,
+        maxOutputTokens: 2048
+      }
+    };
 
-    if (!geminiResponse.ok) {
-      const errText = await geminiResponse.text();
-      console.error('Gemini API Error:', geminiResponse.status, errText);
-      const errMsg = JSON.stringify({ 
-        error: `Máy chủ AI phản hồi mã lỗi ${geminiResponse.status}. Vui lòng kiểm tra lại khóa API hoặc thử lại.` 
-      });
-      if (isWebAPI) return new Response(errMsg, { status: geminiResponse.status, headers });
-      res.writeHead(geminiResponse.status, { ...headers, 'Content-Type': 'application/json' });
+    let geminiResponse: any = null;
+    let successfulModel = '';
+    let lastErrorStatus = 0;
+    let lastErrorText = '';
+
+    // Thử lần lượt các mô hình Flash / Pro phổ biến nhất
+    for (const model of candidateModels) {
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      try {
+        const resp = await fetch(geminiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestPayload)
+        });
+
+        if (resp.ok) {
+          geminiResponse = resp;
+          successfulModel = model;
+          break;
+        }
+
+        lastErrorStatus = resp.status;
+        lastErrorText = await resp.text();
+        console.warn(`Model ${model} returned HTTP ${resp.status}:`, lastErrorText);
+
+        // Nếu mã lỗi 404 (mô hình không tồn tại/bị tắt ở phiên bản API này), tiếp tục thử model khác
+        if (resp.status === 404) {
+          continue;
+        }
+
+        // Nếu lỗi do xác thực (400, 401, 403) hoặc quá tải (429), không cần thử thêm model khác
+        if (resp.status === 400 || resp.status === 401 || resp.status === 403 || resp.status === 429) {
+          geminiResponse = resp;
+          break;
+        }
+      } catch (fetchErr: any) {
+        console.warn(`Fetch error for model ${model}:`, fetchErr);
+      }
+    }
+
+    // Nếu vẫn chưa thành công và lỗi là 404, tự động truy vấn danh sách models mà khóa API này được cấp quyền
+    if ((!geminiResponse || lastErrorStatus === 404) && !successfulModel) {
+      try {
+        const listResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+        if (listResp.ok) {
+          const listData = await listResp.json();
+          const availableModels: string[] = (listData?.models || [])
+            .filter((m: any) => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+            .map((m: any) => m.name.replace(/^models\//, ''));
+
+          console.log('Discovered available models for key:', availableModels);
+
+          for (const dynamicModel of availableModels) {
+            const dynamicUrl = `https://generativelanguage.googleapis.com/v1beta/models/${dynamicModel}:generateContent?key=${apiKey}`;
+            const dynResp = await fetch(dynamicUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(requestPayload)
+            });
+
+            if (dynResp.ok) {
+              geminiResponse = dynResp;
+              successfulModel = dynamicModel;
+              break;
+            }
+          }
+        }
+      } catch (listErr) {
+        console.warn('Could not query dynamic models list:', listErr);
+      }
+    }
+
+    if (!geminiResponse || !geminiResponse.ok) {
+      const status = geminiResponse?.status || lastErrorStatus || 500;
+      let detailedMsg = `Máy chủ AI phản hồi mã lỗi ${status}.`;
+
+      if (status === 400 || status === 401) {
+        detailedMsg = 'Khóa Gemini API Key không hợp lệ hoặc đã bị vô hiệu hóa. Vui lòng kiểm tra và dán lại mã khóa chính xác từ Google AI Studio.';
+      } else if (status === 403) {
+        detailedMsg = 'Khóa API không có quyền truy cập hoặc tài khoản bị giới hạn khu vực (Geographic restriction).';
+      } else if (status === 429) {
+        detailedMsg = 'Hệ thống AI đạt hạn mức yêu cầu tạm thời (Quota limit). Vui lòng đợi 30 giây và gửi lại câu hỏi.';
+      } else if (status === 404) {
+        detailedMsg = 'Không tìm thấy mô hình AI tương thích với khóa API hiện tại. Vui lòng kiểm tra lại dịch vụ Generative AI trên Google Cloud.';
+      }
+
+      console.error('Final Gemini API failure:', status, lastErrorText);
+      const errMsg = JSON.stringify({ error: detailedMsg, rawStatus: status });
+      if (isWebAPI) return new Response(errMsg, { status: status >= 400 && status < 600 ? status : 500, headers });
+      res.writeHead(status >= 400 && status < 600 ? status : 500, { ...headers, 'Content-Type': 'application/json' });
       return res.end(errMsg);
     }
 
@@ -128,7 +213,7 @@ YÊU CẦU TRẢ LỜI:
 
     const responsePayload = JSON.stringify({
       text: replyText,
-      model: 'gemini-2.0-flash',
+      model: successfulModel || 'gemini-flash',
       timestamp: Date.now()
     });
 
