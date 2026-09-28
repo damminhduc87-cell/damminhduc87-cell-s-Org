@@ -48,11 +48,12 @@ export default async function handler(req: any, res: any) {
 
     // Ưu tiên API key từ biến môi trường hệ thống (Server-side), cho phép fallback qua header nếu có
     const headerKey = req.headers?.['x-gemini-api-key'] || (typeof req.headers?.get === 'function' ? req.headers.get('x-gemini-api-key') : null);
-    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || headerKey;
+    const envKey = (process.env.GEMINI_API_KEY || process.env.API_KEY || '').trim();
+    const apiKey = envKey || (typeof headerKey === 'string' ? headerKey.trim() : '');
 
     if (!apiKey) {
       const err = JSON.stringify({ 
-        error: 'Chưa cấu hình GEMINI_API_KEY trên máy chủ Vercel. Vui lòng thêm biến môi trường GEMINI_API_KEY trong Project Settings của Vercel.' 
+        error: 'Chưa cấu hình GEMINI_API_KEY trên máy chủ Vercel. Bạn có thể bấm nút "🔑 Nhập API Key trực tiếp" trên màn hình Cố vấn AI để dùng ngay, hoặc thêm biến GEMINI_API_KEY trong Project Settings của Vercel.' 
       });
       if (isWebAPI) return new Response(err, { status: 500, headers });
       res.writeHead(500, { ...headers, 'Content-Type': 'application/json' });
