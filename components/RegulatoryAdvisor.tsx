@@ -93,17 +93,24 @@ Hãy nhập câu hỏi hoặc chọn các câu hỏi gợi ý bên dưới!`,
       // Đính kèm ngữ cảnh xét nghiệm nếu có
       let context;
       if (currentTest) {
-        const config = latestViolation ? currentTest.configs[latestViolation.level] : currentTest.configs['Normal'];
-        context = {
-          testName: currentTest.name,
-          level: latestViolation?.level,
-          value: latestViolation?.value,
-          mean: config?.mean,
-          sd: config?.sd,
-          zScore: latestViolation?.zScore,
-          violatedRule: latestViolation?.westgardRule,
-          analyzerName: currentTest.analyzerName
-        };
+        if (latestViolation && typeof latestViolation.value === 'number') {
+          const config = currentTest.configs[latestViolation.level];
+          context = {
+            testName: currentTest.name,
+            level: latestViolation.level,
+            value: latestViolation.value,
+            mean: config?.mean,
+            sd: config?.sd,
+            zScore: latestViolation.zScore,
+            violatedRule: latestViolation.westgardRule,
+            analyzerName: currentTest.analyzerName
+          };
+        } else {
+          context = {
+            testName: currentTest.name,
+            analyzerName: currentTest.analyzerName
+          };
+        }
       }
 
       const res = await askAdvisorApi(userMsg.text, context);
@@ -143,7 +150,7 @@ Hãy nhập câu hỏi hoặc chọn các câu hỏi gợi ý bên dưới!`,
           </div>
           <div>
             <h3 className="font-black text-sm uppercase tracking-wide">Cố Vấn AI Quản Lý Chất Lượng 2429</h3>
-            <p className="text-[10px] text-slate-400 font-bold">Mô hình: Gemini 2.0 Flash • Bảo mật Vercel Serverless</p>
+            <p className="text-[10px] text-slate-400 font-bold">Mô hình: Gemini AI • Bảo mật Vercel Serverless</p>
           </div>
         </div>
 
@@ -163,8 +170,12 @@ Hãy nhập câu hỏi hoặc chọn các câu hỏi gợi ý bên dưới!`,
           </button>
 
           {currentTest && (
-            <span className="hidden sm:inline-block px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-blue-400 border border-slate-700">
-              Ngữ cảnh: {currentTest.name}
+            <span className={`hidden sm:inline-block px-3 py-1 rounded-full text-xs font-bold border ${
+              latestViolation && typeof latestViolation.value === 'number'
+                ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                : 'bg-slate-800 text-blue-400 border border-slate-700'
+            }`}>
+              Ngữ cảnh: {currentTest.name} {latestViolation?.westgardRule ? `(Vi phạm ${latestViolation.westgardRule})` : ''}
             </span>
           )}
         </div>

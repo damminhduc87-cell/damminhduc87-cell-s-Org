@@ -60,18 +60,23 @@ export default async function handler(req: any, res: any) {
       return res.end(err);
     }
 
-    // Xây dựng System Instruction chuyên biệt
+    // Xây dựng Ngữ cảnh sự cố hoặc chỉ số đang chọn (tránh lỗi undefined)
     let contextStr = '';
     if (context) {
-      contextStr = `\n\n[BỐI CẢNH SỰ CỐ QC ĐANG XẢY RA]:
+      const hasActualViolation = context.value !== undefined && context.value !== null && !isNaN(Number(context.value)) && Boolean(context.violatedRule);
+      if (hasActualViolation) {
+        contextStr = `\n\n[BỐI CẢNH SỰ CỐ QC ĐANG XẢY RA]:
 - Tên xét nghiệm: ${context.testName || 'Chưa rõ'}
 - Mức nồng độ: ${context.level || 'Chưa rõ'}
-- Giá trị đo: ${context.value} (Mean đích: ${context.mean}, SD: ${context.sd})
-- Chỉ số Z-score (SD Index): ${context.zScore} SD
-- Quy tắc Westgard vi phạm: ${context.violatedRule || 'Không có'}
+- Giá trị đo QC: ${context.value} (Mean đích: ${context.mean ?? 'N/A'}, SD: ${context.sd ?? 'N/A'})
+- Chỉ số Z-score (SD Index): ${context.zScore !== undefined && context.zScore !== null ? context.zScore + ' SD' : 'Chưa rõ'}
+- Quy tắc Westgard vi phạm: ${context.violatedRule}
 - Loại lỗi dự kiến: ${context.errorType || 'Chưa rõ'}
 - Thiết bị/Máy xét nghiệm: ${context.analyzerName || 'Máy sinh hóa/huyết học tự động'}
 - Số Lô chứng (Lot): ${context.lotNumber || 'Chưa rõ'}`;
+      } else if (context.testName) {
+        contextStr = `\n\n[THÔNG TIN THAM KHẢO]: Đang theo dõi chỉ số ${context.testName} trên ${context.analyzerName || 'Máy xét nghiệm'}. Không có vi phạm QC tại thời điểm này. Trả lời trực tiếp và đầy đủ câu hỏi của người dùng, không tự tạo hay suy đoán sự cố lỗi QC.`;
+      }
     }
 
     const systemInstruction = `Bạn là một Cố Vấn Chuyên Gia Cấp Cao về Quản Lý Chất Lượng Phòng Xét Nghiệm Y Học tại Việt Nam (Laboratory Quality Management Specialist).
@@ -83,7 +88,9 @@ Bạn am hiểu sâu sắc:
 
 YÊU CẦU TRẢ LỜI:
 - Trả lời bằng tiếng Việt chuyên nghiệp, ngôn ngữ chuẩn y khoa dùng trong bệnh viện.
-- Nếu có bối cảnh sự cố QC vi phạm: Hãy chỉ rõ bản chất lỗi (Ngẫu nhiên hay Hệ thống), phân tích 3-5 nguyên nhân khả dĩ nhất theo 5M, và hướng dẫn KTV từng bước xử lý khắc phục (CAPA) cụ thể trước khi được phép trả kết quả bệnh nhân.
+- Nếu người dùng nhập câu chào hỏi, lời nhắn ngắn, hoặc ký tự '/', hãy chào hỏi lịch sự và tóm tắt ngắn gọn các chủ đề bạn có thể hỗ trợ (Westgard, 5M, QĐ 2429, Six Sigma/TEa), tuyệt đối không tự bịa ra sự cố không có thật.
+- Nếu có [BỐI CẢNH SỰ CỐ QC ĐANG XẢY RA]: Hãy chỉ rõ bản chất lỗi (Ngẫu nhiên hay Hệ thống), phân tích 3-5 nguyên nhân khả dĩ nhất theo 5M, và hướng dẫn KTV từng bước xử lý khắc phục (CAPA) cụ thể trước khi được phép trả kết quả bệnh nhân.
+- Nếu người dùng hỏi lý thuyết (ví dụ cách tính Six Sigma, TEa, CV, Mean/SD): Trình bày đầy đủ công thức, ví dụ số liệu minh họa cụ thể từng bước, không bỏ lửng câu trả lời giữa chừng.
 - Trình bày định dạng Markdown rõ ràng, dùng bullet points, bảng biểu hoặc in đậm các lưu ý an toàn.`;
 
     const fullPrompt = `${prompt}${contextStr}`;
@@ -111,7 +118,7 @@ YÊU CẦU TRẢ LỜI:
       generationConfig: {
         temperature: 0.3,
         topP: 0.95,
-        maxOutputTokens: 2048
+        maxOutputTokens: 8192
       }
     };
 
@@ -209,7 +216,13 @@ YÊU CẦU TRẢ LỜI:
     }
 
     const data = await geminiResponse.json();
-    const replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Xin lỗi, tôi không thể tìm thấy câu trả lời phù hợp.';
+    const candidate = data?.candidates?.[0];
+    const parts = candidate?.content?.parts || [];
+    const replyText = parts
+      .map((p: any) => p.text || '')
+      .filter(Boolean)
+      .join('')
+      .trim() || 'Xin lỗi, tôi không thể tìm thấy câu trả lời phù hợp.';
 
     const responsePayload = JSON.stringify({
       text: replyText,
