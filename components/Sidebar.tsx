@@ -92,7 +92,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {!isCollapsed && (
               <div className="min-w-0">
                 <h1 className="text-white font-black text-sm tracking-tight truncate leading-tight">
-                  MinhDucLab QC
+                  LabQC-AI
                 </h1>
                 <span className="text-[10px] text-blue-400 font-semibold tracking-wider uppercase block">
                   QĐ 2429/QĐ-BYT

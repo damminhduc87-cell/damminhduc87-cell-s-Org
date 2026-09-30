@@ -1,6 +1,6 @@
 {
-  "name": "MinhDucLab QC - Quản Lý Nội Kiểm Xét Nghiệm Y Học",
-  "short_name": "MinhDucLab QC",
+  "name": "LabQC-AI - Quản Lý Nội Kiểm Xét Nghiệm Y Học",
+  "short_name": "LabQC-AI",
   "description": "Hệ thống giám sát nội kiểm IQC & Westgard Rules chuẩn QĐ 2429/QĐ-BYT",
   "start_url": "/",
   "display": "standalone",

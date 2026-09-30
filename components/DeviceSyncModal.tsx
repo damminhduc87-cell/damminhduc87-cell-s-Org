@@ -284,7 +284,7 @@ export const DeviceSyncModal: React.FC<DeviceSyncModalProps> = ({
 
         {/* Footer */}
         <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 shrink-0">
-          <span>MinhDucLab QC v3.0 • QĐ 2429/QĐ-BYT</span>
+          <span>LabQC-AI v3.0 • QĐ 2429/QĐ-BYT</span>
           <button
             type="button"
             onClick={onClose}

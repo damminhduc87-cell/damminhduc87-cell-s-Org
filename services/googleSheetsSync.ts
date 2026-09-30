@@ -114,7 +114,7 @@ export const APPS_SCRIPT_TEMPLATE = `function doPost(e) {
 function doGet(e) {
   var action = (e && e.parameter && e.parameter.action) || "read";
   if (action === "ping") {
-    return ContentService.createTextOutput(JSON.stringify({ status: "ok", message: "MinhDucLab QC Webhook đang hoạt động" }))
+    return ContentService.createTextOutput(JSON.stringify({ status: "ok", message: "LabQC-AI Webhook đang hoạt động" }))
       .setMimeType(ContentService.MimeType.JSON);
   }
   
