@@ -27,7 +27,11 @@ export const AddEditTestModal: React.FC<AddEditTestModalProps> = ({
   onAddNewAnalyzer
 }) => {
   const activeEditingTest = editingTest !== undefined ? editingTest : initialTest;
-  const currentAnalyzers = availableAnalyzers ?? analyzers ?? [];
+  const currentAnalyzers = (availableAnalyzers && availableAnalyzers.length > 0)
+    ? availableAnalyzers
+    : (analyzers && analyzers.length > 0)
+      ? analyzers
+      : ['Máy Hóa sinh 1', 'Máy Hóa sinh 2', 'Máy Miễn dịch 1', 'Máy Điện giải & Khí máu'];
   const currentOnSave = onSaveTest ?? onSave;
   const currentOnAddAnalyzer = onAddAnalyzer ?? onAddNewAnalyzer;
   const [name, setName] = useState('');
@@ -51,25 +55,25 @@ export const AddEditTestModal: React.FC<AddEditTestModalProps> = ({
 
   useEffect(() => {
     if (activeEditingTest) {
-      setName(activeEditingTest.name);
-      setUnit(activeEditingTest.unit);
-      setAnalyzerName(activeEditingTest.analyzerName || 'Máy Hóa sinh 1');
-      setTea(String(activeEditingTest.tea));
+      setName(activeEditingTest.name || '');
+      setUnit(activeEditingTest.unit || '');
+      setAnalyzerName(activeEditingTest.analyzerName || currentAnalyzers[0] || 'Máy Hóa sinh 1');
+      setTea(String(activeEditingTest.tea ?? 10));
 
-      const l = activeEditingTest.configs[QCLevel.LOW];
-      setLowMean(String(l.mean));
-      setLowSd(String(l.sd));
-      setLowLot(l.currentLot || 'LOT-2026-L');
+      const l = activeEditingTest.configs?.[QCLevel.LOW];
+      setLowMean(l?.mean !== undefined ? String(l.mean) : '');
+      setLowSd(l?.sd !== undefined ? String(l.sd) : '');
+      setLowLot(l?.currentLot || 'LOT-2026-L');
 
-      const n = activeEditingTest.configs[QCLevel.NORMAL];
-      setNormMean(String(n.mean));
-      setNormSd(String(n.sd));
-      setNormLot(n.currentLot || 'LOT-2026-N');
+      const n = activeEditingTest.configs?.[QCLevel.NORMAL];
+      setNormMean(n?.mean !== undefined ? String(n.mean) : '');
+      setNormSd(n?.sd !== undefined ? String(n.sd) : '');
+      setNormLot(n?.currentLot || 'LOT-2026-N');
 
-      const h = activeEditingTest.configs[QCLevel.HIGH];
-      setHighMean(String(h.mean));
-      setHighSd(String(h.sd));
-      setHighLot(h.currentLot || 'LOT-2026-H');
+      const h = activeEditingTest.configs?.[QCLevel.HIGH];
+      setHighMean(h?.mean !== undefined ? String(h.mean) : '');
+      setHighSd(h?.sd !== undefined ? String(h.sd) : '');
+      setHighLot(h?.currentLot || 'LOT-2026-H');
     } else {
       setName('');
       setUnit('mmol/L');
@@ -79,7 +83,7 @@ export const AddEditTestModal: React.FC<AddEditTestModalProps> = ({
       setNormMean(''); setNormSd(''); setNormLot('LOT-2026-N');
       setHighMean(''); setHighSd(''); setHighLot('LOT-2026-H');
     }
-  }, [activeEditingTest, isOpen, currentAnalyzers]);
+  }, [activeEditingTest, isOpen]);
 
   if (!isOpen) return null;
 
@@ -194,16 +198,19 @@ export const AddEditTestModal: React.FC<AddEditTestModalProps> = ({
               </label>
               <div className="flex gap-2">
                 <select
-                  value={analyzerName}
+                  value={currentAnalyzers.includes(analyzerName) ? analyzerName : (analyzerName && analyzerName !== 'custom' ? analyzerName : 'custom')}
                   onChange={e => {
                     setAnalyzerName(e.target.value);
                     if (e.target.value !== 'custom') setCustomAnalyzer('');
                   }}
                   className="bg-white dark:bg-slate-800 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-xs cursor-pointer flex-1"
                 >
-                  {availableAnalyzers.map(a => (
+                  {currentAnalyzers.map(a => (
                     <option key={a} value={a}>{a}</option>
                   ))}
+                  {!currentAnalyzers.includes(analyzerName) && analyzerName && analyzerName !== 'custom' && (
+                    <option value={analyzerName}>{analyzerName}</option>
+                  )}
                   <option value="custom">+ Thêm máy phân tích khác...</option>
                 </select>
 

@@ -1443,9 +1443,13 @@ export const App: React.FC = () => {
           isOpen={isAddEditTestModalOpen}
           onClose={() => setIsAddEditTestModalOpen(false)}
           initialTest={editingTestForModal}
+          editingTest={editingTestForModal}
           analyzers={analyzers}
+          availableAnalyzers={analyzers}
           onSave={handleSaveTest}
+          onSaveTest={handleSaveTest}
           onAddNewAnalyzer={handleAddAnalyzer}
+          onAddAnalyzer={handleAddAnalyzer}
         />
       )}
 
