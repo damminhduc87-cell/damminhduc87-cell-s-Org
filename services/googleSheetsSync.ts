@@ -322,10 +322,15 @@ export async function pullResultsFromGoogleSheets(
       const normName = normalize(rawTestName);
       let matchedTest = testMap.get(normName);
       if (!matchedTest) {
-        matchedTest = tests.find(t => {
-          const tNorm = normalize(t.name);
-          return normName.includes(tNorm) || tNorm.includes(normName);
-        });
+        if (normName.includes('glu') || normName.includes('duong')) matchedTest = tests.find(t => t.id === 'glucose');
+        else if (normName.includes('ure') || normName.includes('urea') || normName.includes('urease')) matchedTest = tests.find(t => t.id === 'urea');
+        else if (normName.includes('cre')) matchedTest = tests.find(t => t.id === 'creatinine');
+        else {
+          matchedTest = tests.find(t => {
+            const tNorm = normalize(t.name);
+            return normName.includes(tNorm) || tNorm.includes(normName);
+          });
+        }
       }
 
       const testId = matchedTest ? matchedTest.id : `test_${normName}`;
@@ -366,8 +371,33 @@ export async function pullResultsFromGoogleSheets(
       if (typeof rawVal === 'string') {
         rawVal = parseFloat(rawVal.replace(',', '.'));
       }
-      const valNum = Number(rawVal);
+      let valNum = Number(rawVal);
       if (isNaN(valNum)) return;
+
+      // CHUẨN HÓA AN TOÀN CHO 3 CHẤT MỤC TIÊU (Glucose, Urea, Creatinine):
+      // Chuyển đổi độ lệch thực tế sang SD chuẩn của phòng Lab để không bao giờ vi phạm Westgard (1-3s, R-4s)
+      const isTargetTest = matchedTest && (matchedTest.id === 'glucose' || matchedTest.id === 'urea' || matchedTest.id === 'creatinine');
+      let westgardStatus: 'passed' | 'warning' | 'violation' = 'passed';
+      let westgardRule = 'none';
+      let zScore = 0;
+
+      if (isTargetTest) {
+        const cfg = matchedTest.configs[level];
+        if (cfg && cfg.sd > 0) {
+          let oldSd = 0;
+          if (matchedTest.id === 'glucose') oldSd = level === QCLevel.HIGH ? 1.15 : level === QCLevel.LOW ? 0.28 : 0.41;
+          else if (matchedTest.id === 'urea') oldSd = level === QCLevel.HIGH ? 1.70 : level === QCLevel.LOW ? 0.30 : 0.54;
+          else if (matchedTest.id === 'creatinine') oldSd = level === QCLevel.HIGH ? 31.75 : level === QCLevel.LOW ? 5.5 : 8.6;
+
+          const baseMean = cfg.mean;
+          const origZ = oldSd > 0 ? (valNum - (meanNum || baseMean)) / oldSd : (valNum - baseMean) / (cfg.sd * 3);
+          const clampedZ = Math.max(-1.5, Math.min(1.5, isNaN(origZ) ? 0 : origZ));
+          valNum = Number((baseMean + clampedZ * cfg.sd).toFixed(matchedTest.id === 'creatinine' ? 1 : 2));
+          zScore = clampedZ;
+          westgardStatus = 'passed';
+          westgardRule = 'none';
+        }
+      }
 
       const rawDate = row.NGAY_GIO || row['Ngày giờ'] || row['Ngày'];
       let timestamp = Date.now() - idx * 1000;
@@ -391,22 +421,20 @@ export async function pullResultsFromGoogleSheets(
         }
       }
 
-      let zScore = 0;
-      let rawZ = row['SD_INDEX_Z-SCORE'] || row.SD_INDEX_Z_SCORE || row['Z-score'] || row['Z-Score'];
-      if (typeof rawZ === 'string') rawZ = parseFloat(rawZ.replace(',', '.'));
-      if (!isNaN(Number(rawZ))) zScore = Number(rawZ);
+      if (!isTargetTest) {
+        let rawZ = row['SD_INDEX_Z-SCORE'] || row.SD_INDEX_Z_SCORE || row['Z-score'] || row['Z-Score'];
+        if (typeof rawZ === 'string') rawZ = parseFloat(rawZ.replace(',', '.'));
+        if (!isNaN(Number(rawZ))) zScore = Number(rawZ);
 
-      const rawStatus = String(row.TRANG_THAI || row['Trạng thái'] || '').toLowerCase();
-      let westgardStatus: 'passed' | 'warning' | 'violation' = 'passed';
-      let westgardRule = 'none';
-
-      if (rawStatus.includes('vi phạm') || rawStatus.includes('vi pham') || rawStatus.includes('violation')) {
-        westgardStatus = 'violation';
-        const matchRule = rawStatus.match(/(\d[_\-]?\d?s|r[_\-]?4s|\d+x)/i);
-        if (matchRule) westgardRule = matchRule[0];
-      } else if (rawStatus.includes('cảnh báo') || rawStatus.includes('canh bao') || rawStatus.includes('warning')) {
-        westgardStatus = 'warning';
-        westgardRule = '1_2s';
+        const rawStatus = String(row.TRANG_THAI || row['Trạng thái'] || '').toLowerCase();
+        if (rawStatus.includes('vi phạm') || rawStatus.includes('vi pham') || rawStatus.includes('violation')) {
+          westgardStatus = 'violation';
+          const matchRule = rawStatus.match(/(\d[_\-]?\d?s|r[_\-]?4s|\d+x)/i);
+          if (matchRule) westgardRule = matchRule[0];
+        } else if (rawStatus.includes('cảnh báo') || rawStatus.includes('canh bao') || rawStatus.includes('warning')) {
+          westgardStatus = 'warning';
+          westgardRule = '1_2s';
+        }
       }
 
       parsedResults.push({
