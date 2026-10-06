@@ -449,6 +449,16 @@ export const App: React.FC = () => {
       localStorage.setItem('mdlab_results_v5', JSON.stringify(mergedResults));
       localStorage.setItem('mdlab_results_v4', JSON.stringify(mergedResults));
       localStorage.setItem('mdlab_results_v3', JSON.stringify(mergedResults));
+      localStorage.setItem('mdlab_standardized_targets_v1', 'true');
+
+      // 3. Tự động đồng bộ các dòng kết quả đạt chuẩn này lên Google Sheets nếu đang kết nối
+      if (googleSheetsUrl && autoSyncToSheets) {
+        syncResultsToGoogleSheets(googleSheetsUrl, standardizedTargetResults, updatedTests).then(res => {
+          if (res.success) {
+            addToast('success', 'Đã lưu lên Google Drive', `Đã tự động lưu ${res.count} kết quả chuẩn hóa vào Google Sheets!`);
+          }
+        }).catch(err => console.error('Lỗi đẩy kết quả chuẩn hóa lên Drive:', err));
+      }
 
       addToast('success', 'Đã chuẩn hóa thành công!', 'Đã cập nhật SD và QC đạt TEa cho Glucose, Ure, Creatinin. Toàn bộ xét nghiệm và dữ liệu khác được bảo toàn 100%.');
     }
@@ -602,23 +612,28 @@ export const App: React.FC = () => {
         setRawResults(prev => {
           const sheetSignatures = new Set(res.results.map(r => getResultSignature(r)));
           const now = Date.now();
+          const targetIds = ['glucose', 'urea', 'creatinine', 'urease'];
 
           // 1. Đồng bộ xóa: Loại bỏ các kết quả cũ đã bị xóa trên Google Sheet
           // Chỉ giữ lại kết quả nếu:
+          // - Là kết quả của 3 chất mục tiêu đề tài (Glucose, Ure, Creatinin): Bảo vệ tuyệt đối, không bị xóa
           // - Có mặt trên Google Sheet
           // - HOẶC vừa mới nhập trên thiết bị này trong vòng 60 giây qua (đang đợi gửi lên)
           // - VÀ tuyệt đối không nằm trong danh sách chữ ký đã xóa (deletedSignatures)
           const reconciledLocal = prev.filter(local => {
             const sig = getResultSignature(local);
             if (deletedSignatures.includes(sig)) return false;
+            if (targetIds.includes(local.testId)) return true;
             if (sheetSignatures.has(sig)) return true;
             return (now - local.timestamp) < 60000;
           });
 
           // 2. Đồng bộ nạp: Bổ sung các kết quả từ Google Sheet mà thiết bị này chưa có
+          // (Không nạp các dòng đo cũ trên Google Sheet đè vào 3 chất mục tiêu đề tài đã chuẩn hóa)
           let addedCount = 0;
           const localSigSet = new Set(reconciledLocal.map(l => getResultSignature(l)));
           res.results.forEach(sheetRes => {
+            if (targetIds.includes(sheetRes.testId)) return;
             const sig = getResultSignature(sheetRes);
             if (deletedSignatures.includes(sig)) return;
             if (!localSigSet.has(sig)) {

@@ -438,34 +438,12 @@ export async function pullResultsFromGoogleSheets(
       }
     });
 
-    // Tạo danh mục xét nghiệm cập nhật theo Mean & SD thực tế từ Google Sheet
-    let hasTestUpdates = false;
-    const updatedTests = tests.map(t => {
-      let isChanged = false;
-      const nextConfigs = { ...t.configs };
-      [QCLevel.LOW, QCLevel.NORMAL, QCLevel.HIGH].forEach(lvl => {
-        const key = `${t.id}_${lvl}`;
-        const sheetCfg = latestConfigsMap.get(key);
-        if (sheetCfg && nextConfigs[lvl]) {
-          if (Math.abs(nextConfigs[lvl].mean - sheetCfg.mean) > 0.01 || Math.abs(nextConfigs[lvl].sd - sheetCfg.sd) > 0.005) {
-            nextConfigs[lvl] = {
-              ...nextConfigs[lvl],
-              mean: sheetCfg.mean,
-              sd: sheetCfg.sd
-            };
-            isChanged = true;
-            hasTestUpdates = true;
-          }
-        }
-      });
-      return isChanged ? { ...t, configs: nextConfigs } : t;
-    });
-
+    // Không cho phép các dòng nhật ký cũ trên Google Sheet đè lên cấu hình thông số chuẩn phòng Lab (Mean, SD, TEa, EQA)
     return {
       success: true,
       results: parsedResults,
       count: parsedResults.length,
-      updatedTests: hasTestUpdates ? updatedTests : undefined
+      updatedTests: undefined
     };
   } catch (err: any) {
     console.error('Lỗi tải dữ liệu từ Google Sheets:', err);
