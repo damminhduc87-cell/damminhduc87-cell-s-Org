@@ -44,14 +44,20 @@ export const AddEditTestModal: React.FC<AddEditTestModalProps> = ({
   const [lowMean, setLowMean] = useState('');
   const [lowSd, setLowSd] = useState('');
   const [lowLot, setLowLot] = useState('LOT-2026-L');
+  const [lowEqaTarget, setLowEqaTarget] = useState('');
+  const [lowEqaResult, setLowEqaResult] = useState('');
 
   const [normMean, setNormMean] = useState('');
   const [normSd, setNormSd] = useState('');
   const [normLot, setNormLot] = useState('LOT-2026-N');
+  const [normEqaTarget, setNormEqaTarget] = useState('');
+  const [normEqaResult, setNormEqaResult] = useState('');
 
   const [highMean, setHighMean] = useState('');
   const [highSd, setHighSd] = useState('');
   const [highLot, setHighLot] = useState('LOT-2026-H');
+  const [highEqaTarget, setHighEqaTarget] = useState('');
+  const [highEqaResult, setHighEqaResult] = useState('');
 
   useEffect(() => {
     if (activeEditingTest) {
@@ -64,24 +70,33 @@ export const AddEditTestModal: React.FC<AddEditTestModalProps> = ({
       setLowMean(l?.mean !== undefined ? String(l.mean) : '');
       setLowSd(l?.sd !== undefined ? String(l.sd) : '');
       setLowLot(l?.currentLot || 'LOT-2026-L');
+      setLowEqaTarget(l?.eqaTarget !== undefined ? String(l.eqaTarget) : '');
+      setLowEqaResult(l?.eqaResult !== undefined ? String(l.eqaResult) : '');
 
       const n = activeEditingTest.configs?.[QCLevel.NORMAL];
       setNormMean(n?.mean !== undefined ? String(n.mean) : '');
       setNormSd(n?.sd !== undefined ? String(n.sd) : '');
       setNormLot(n?.currentLot || 'LOT-2026-N');
+      setNormEqaTarget(n?.eqaTarget !== undefined ? String(n.eqaTarget) : '');
+      setNormEqaResult(n?.eqaResult !== undefined ? String(n.eqaResult) : '');
 
       const h = activeEditingTest.configs?.[QCLevel.HIGH];
       setHighMean(h?.mean !== undefined ? String(h.mean) : '');
       setHighSd(h?.sd !== undefined ? String(h.sd) : '');
       setHighLot(h?.currentLot || 'LOT-2026-H');
+      setHighEqaTarget(h?.eqaTarget !== undefined ? String(h.eqaTarget) : '');
+      setHighEqaResult(h?.eqaResult !== undefined ? String(h.eqaResult) : '');
     } else {
       setName('');
       setUnit('mmol/L');
       setAnalyzerName(currentAnalyzers[0] || 'Máy Hóa sinh 1');
       setTea('10');
       setLowMean(''); setLowSd(''); setLowLot('LOT-2026-L');
+      setLowEqaTarget(''); setLowEqaResult('');
       setNormMean(''); setNormSd(''); setNormLot('LOT-2026-N');
+      setNormEqaTarget(''); setNormEqaResult('');
       setHighMean(''); setHighSd(''); setHighLot('LOT-2026-H');
+      setHighEqaTarget(''); setHighEqaResult('');
     }
   }, [activeEditingTest, isOpen]);
 
@@ -111,20 +126,26 @@ export const AddEditTestModal: React.FC<AddEditTestModalProps> = ({
         [QCLevel.LOW]: {
           mean: parseFloat(lowMean) || 0,
           sd: parseFloat(lowSd) || 0,
-          bias: 2.0,
-          currentLot: lowLot.trim()
+          bias: activeEditingTest?.configs?.[QCLevel.LOW]?.bias ?? 2.0,
+          currentLot: lowLot.trim(),
+          eqaTarget: lowEqaTarget.trim() ? parseFloat(lowEqaTarget) : undefined,
+          eqaResult: lowEqaResult.trim() ? parseFloat(lowEqaResult) : undefined
         },
         [QCLevel.NORMAL]: {
           mean: parseFloat(normMean) || 0,
           sd: parseFloat(normSd) || 0,
-          bias: 1.5,
-          currentLot: normLot.trim()
+          bias: activeEditingTest?.configs?.[QCLevel.NORMAL]?.bias ?? 1.5,
+          currentLot: normLot.trim(),
+          eqaTarget: normEqaTarget.trim() ? parseFloat(normEqaTarget) : undefined,
+          eqaResult: normEqaResult.trim() ? parseFloat(normEqaResult) : undefined
         },
         [QCLevel.HIGH]: {
           mean: parseFloat(highMean) || 0,
           sd: parseFloat(highSd) || 0,
-          bias: 2.0,
-          currentLot: highLot.trim()
+          bias: activeEditingTest?.configs?.[QCLevel.HIGH]?.bias ?? 2.0,
+          currentLot: highLot.trim(),
+          eqaTarget: highEqaTarget.trim() ? parseFloat(highEqaTarget) : undefined,
+          eqaResult: highEqaResult.trim() ? parseFloat(highEqaResult) : undefined
         }
       }
     };
@@ -249,7 +270,7 @@ export const AddEditTestModal: React.FC<AddEditTestModalProps> = ({
             </h4>
 
             {/* Mức Thấp */}
-            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
               <span className="font-black text-blue-600 uppercase text-[11px] block">Mức 1: Thấp (Low)</span>
               <div className="grid grid-cols-3 gap-3">
                 <div>
@@ -284,10 +305,61 @@ export const AddEditTestModal: React.FC<AddEditTestModalProps> = ({
                   />
                 </div>
               </div>
+
+              {/* Ô nhập Ngoại kiểm EQA */}
+              <div className="p-2.5 bg-blue-50/50 dark:bg-blue-950/20 rounded-xl border border-blue-100 dark:border-blue-900/60 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-blue-900 dark:text-blue-300 flex items-center gap-1.5">
+                    <i className="fas fa-bullseye text-blue-600"></i> Ngoại kiểm EQA (Tùy chọn - Dùng tính Bias% & Six Sigma thật)
+                  </span>
+                  {(() => {
+                    const tgt = parseFloat(lowEqaTarget);
+                    const res = parseFloat(lowEqaResult);
+                    if (!isNaN(tgt) && !isNaN(res) && tgt > 0) {
+                      const dev = ((res - tgt) / tgt) * 100;
+                      const limit = parseFloat(tea) || 10;
+                      return (
+                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                          Math.abs(dev) > limit
+                            ? 'bg-red-100 text-red-700 border border-red-300'
+                            : 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                        }`}>
+                          %DeV: {dev > 0 ? '+' : ''}{dev.toFixed(2)}% {Math.abs(dev) > limit ? '⚠️ Vượt TEa' : '✓ Đạt'}
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[9px] text-slate-500 font-semibold block">🎯 Giá trị Đích EQA (Target/Mean nhóm)</label>
+                    <input
+                      type="number"
+                      step="0.001"
+                      placeholder="VD: 3.6 (từ phiếu EQA)"
+                      value={lowEqaTarget}
+                      onChange={e => setLowEqaTarget(e.target.value)}
+                      className="w-full bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] text-slate-500 font-semibold block">🔬 Kết quả Lab đo được (Lab Result)</label>
+                    <input
+                      type="number"
+                      step="0.001"
+                      placeholder="VD: 3.67 (kết quả máy bạn)"
+                      value={lowEqaResult}
+                      onChange={e => setLowEqaResult(e.target.value)}
+                      className="w-full bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Mức Bình thường */}
-            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
               <span className="font-black text-indigo-600 uppercase text-[11px] block">Mức 2: Bình thường (Normal)</span>
               <div className="grid grid-cols-3 gap-3">
                 <div>
@@ -322,10 +394,61 @@ export const AddEditTestModal: React.FC<AddEditTestModalProps> = ({
                   />
                 </div>
               </div>
+
+              {/* Ô nhập Ngoại kiểm EQA */}
+              <div className="p-2.5 bg-indigo-50/50 dark:bg-indigo-950/20 rounded-xl border border-indigo-100 dark:border-indigo-900/60 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
+                    <i className="fas fa-bullseye text-indigo-600"></i> Ngoại kiểm EQA (Tùy chọn - Dùng tính Bias% & Six Sigma thật)
+                  </span>
+                  {(() => {
+                    const tgt = parseFloat(normEqaTarget);
+                    const res = parseFloat(normEqaResult);
+                    if (!isNaN(tgt) && !isNaN(res) && tgt > 0) {
+                      const dev = ((res - tgt) / tgt) * 100;
+                      const limit = parseFloat(tea) || 10;
+                      return (
+                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                          Math.abs(dev) > limit
+                            ? 'bg-red-100 text-red-700 border border-red-300'
+                            : 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                        }`}>
+                          %DeV: {dev > 0 ? '+' : ''}{dev.toFixed(2)}% {Math.abs(dev) > limit ? '⚠️ Vượt TEa' : '✓ Đạt'}
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[9px] text-slate-500 font-semibold block">🎯 Giá trị Đích EQA (Target/Mean nhóm)</label>
+                    <input
+                      type="number"
+                      step="0.001"
+                      placeholder="VD: 6.45 (từ phiếu EQA)"
+                      value={normEqaTarget}
+                      onChange={e => setNormEqaTarget(e.target.value)}
+                      className="w-full bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] text-slate-500 font-semibold block">🔬 Kết quả Lab đo được (Lab Result)</label>
+                    <input
+                      type="number"
+                      step="0.001"
+                      placeholder="VD: 6.3 (kết quả máy bạn)"
+                      value={normEqaResult}
+                      onChange={e => setNormEqaResult(e.target.value)}
+                      className="w-full bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Mức Cao */}
-            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
               <span className="font-black text-purple-600 uppercase text-[11px] block">Mức 3: Cao (High)</span>
               <div className="grid grid-cols-3 gap-3">
                 <div>
@@ -358,6 +481,57 @@ export const AddEditTestModal: React.FC<AddEditTestModalProps> = ({
                     onChange={e => setHighLot(e.target.value)}
                     className="w-full bg-white dark:bg-slate-900 p-2 rounded-xl border font-bold"
                   />
+                </div>
+              </div>
+
+              {/* Ô nhập Ngoại kiểm EQA */}
+              <div className="p-2.5 bg-purple-50/50 dark:bg-purple-950/20 rounded-xl border border-purple-100 dark:border-purple-900/60 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-purple-900 dark:text-purple-300 flex items-center gap-1.5">
+                    <i className="fas fa-bullseye text-purple-600"></i> Ngoại kiểm EQA (Tùy chọn - Dùng tính Bias% & Six Sigma thật)
+                  </span>
+                  {(() => {
+                    const tgt = parseFloat(highEqaTarget);
+                    const res = parseFloat(highEqaResult);
+                    if (!isNaN(tgt) && !isNaN(res) && tgt > 0) {
+                      const dev = ((res - tgt) / tgt) * 100;
+                      const limit = parseFloat(tea) || 10;
+                      return (
+                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                          Math.abs(dev) > limit
+                            ? 'bg-red-100 text-red-700 border border-red-300'
+                            : 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                        }`}>
+                          %DeV: {dev > 0 ? '+' : ''}{dev.toFixed(2)}% {Math.abs(dev) > limit ? '⚠️ Vượt TEa' : '✓ Đạt'}
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[9px] text-slate-500 font-semibold block">🎯 Giá trị Đích EQA (Target/Mean nhóm)</label>
+                    <input
+                      type="number"
+                      step="0.001"
+                      placeholder="VD: 10.2 (từ phiếu EQA)"
+                      value={highEqaTarget}
+                      onChange={e => setHighEqaTarget(e.target.value)}
+                      className="w-full bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] text-slate-500 font-semibold block">🔬 Kết quả Lab đo được (Lab Result)</label>
+                    <input
+                      type="number"
+                      step="0.001"
+                      placeholder="VD: 11.1 (kết quả máy bạn)"
+                      value={highEqaResult}
+                      onChange={e => setHighEqaResult(e.target.value)}
+                      className="w-full bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold"
+                    />
+                  </div>
                 </div>
               </div>
             </div>

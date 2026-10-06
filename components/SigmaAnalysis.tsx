@@ -182,13 +182,15 @@ export const SigmaAnalysis: React.FC<SigmaAnalysisProps> = ({
 
           <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-              Độ Chệch Bias (%)
+              Độ Chệch Bias / %DeV
             </span>
             <div className="text-xl font-black text-[#0F1F3D]">
               {actualBias}%
             </div>
-            <span className="text-[11px] text-slate-500 font-medium block">
-              {eqaTarget ? 'Tính từ Ngoại kiểm EQA' : 'Cố định từ NSX'}
+            <span className="text-[11px] text-slate-500 font-medium block truncate" title={eqaTarget && eqaResult ? `Đích EQA: ${eqaTarget} | Lab đo: ${eqaResult}` : undefined}>
+              {eqaTarget && eqaResult 
+                ? `🎯 EQA: Đích ${eqaTarget} | Đo ${eqaResult}` 
+                : 'Cố định từ NSX'}
             </span>
           </div>
 

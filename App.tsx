@@ -1385,9 +1385,16 @@ export const App: React.FC = () => {
                         const cfg = test.configs[lvl];
                         return (
                           <div key={lvl} className="p-2.5 bg-slate-50 rounded-xl flex items-center justify-between">
-                            <span className="font-semibold text-slate-600">
-                              Mức {lvl} ({cfg.currentLot || 'LOT-2026'})
-                            </span>
+                            <div>
+                              <span className="font-semibold text-slate-600 block">
+                                Mức {lvl} ({cfg.currentLot || 'LOT-2026'})
+                              </span>
+                              {cfg.eqaTarget && cfg.eqaResult ? (
+                                <span className="text-[10px] text-blue-600 font-bold block mt-0.5">
+                                  🎯 EQA: Đích {cfg.eqaTarget} | Đo {cfg.eqaResult} (Bias: {Math.abs(((cfg.eqaResult - cfg.eqaTarget)/cfg.eqaTarget)*100).toFixed(2)}%)
+                                </span>
+                              ) : null}
+                            </div>
                             <span className="font-bold text-[#0F1F3D]">
                               Mean: {cfg.mean} | SD: {cfg.sd} | CV: {cfg.mean > 0 ? ((cfg.sd / cfg.mean) * 100).toFixed(2) : 0}%
                             </span>
