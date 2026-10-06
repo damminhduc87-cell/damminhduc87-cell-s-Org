@@ -13,6 +13,7 @@ interface TopbarProps {
   onOpenDeviceSync?: () => void;
   onPullFromSheets?: () => void;
   isSyncing?: boolean;
+  onStandardizeQc?: () => void;
 }
 
 export const Topbar: React.FC<TopbarProps> = ({
@@ -26,7 +27,8 @@ export const Topbar: React.FC<TopbarProps> = ({
   isDriveConnected,
   onOpenDeviceSync,
   onPullFromSheets,
-  isSyncing
+  isSyncing,
+  onStandardizeQc
 }) => {
   const [currentTime, setCurrentTime] = useState<string>('');
 
@@ -112,6 +114,19 @@ export const Topbar: React.FC<TopbarProps> = ({
 
         {/* Right Controls */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Quick Standardize In-House SD & EQA Button */}
+          {onStandardizeQc && (
+            <button
+              type="button"
+              onClick={onStandardizeQc}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+              title="Đồng bộ toàn bộ thông số SD thực tế và EQA chuẩn cho Glucose, Ure, Creatinin đạt TEa"
+            >
+              <i className="fas fa-wand-magic-sparkles text-amber-600"></i>
+              <span className="hidden sm:inline">Chuẩn hóa SD (Đạt TEa)</span>
+            </button>
+          )}
+
           {/* Quick Cloud Sync Button */}
           {onPullFromSheets && (
             <button

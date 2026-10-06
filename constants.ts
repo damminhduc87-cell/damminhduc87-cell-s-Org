@@ -123,7 +123,7 @@ export const INITIAL_TESTS: LabTest[] = [
     tea: 12,
     analyzerName: 'Máy Hóa sinh 1',
     configs: {
-      [QCLevel.LOW]: { mean: 3.0, sd: 0.08, bias: 1.33, eqaTarget: 3.0, eqaResult: 3.04, currentLot: 'LOT-2026-REN-L' },
+      [QCLevel.LOW]: { mean: 3.0, sd: 0.08, bias: 2.77, eqaTarget: 3.97, eqaResult: 4.08, currentLot: 'LOT-2026-REN-L' },
       [QCLevel.NORMAL]: { mean: 7.19, sd: 0.18, bias: 1.53, eqaTarget: 7.20, eqaResult: 7.31, currentLot: 'LOT-2026-REN-N' },
       [QCLevel.HIGH]: { mean: 22.66, sd: 0.55, bias: 1.56, eqaTarget: 22.50, eqaResult: 22.85, currentLot: 'LOT-2026-REN-H' },
     }

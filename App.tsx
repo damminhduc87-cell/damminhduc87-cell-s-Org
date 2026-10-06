@@ -57,6 +57,8 @@ function cleanAndDeduplicateTests(rawTests: LabTest[]): { cleanTests: LabTest[];
       norm = 'triglycerides';
     } else if (norm.includes('cholesterol') && !norm.includes('hdl') && !norm.includes('ldl')) {
       norm = 'cholesterol';
+    } else if (norm.includes('ure') || norm.includes('urea') || norm.includes('urease')) {
+      norm = 'urea';
     }
 
     if (seenNorms.has(norm)) {
@@ -72,43 +74,37 @@ function cleanAndDeduplicateTests(rawTests: LabTest[]): { cleanTests: LabTest[];
       }
 
       // Tự động nâng cấp các xét nghiệm đang mang giá trị cấu hình mẫu cũ sang thông số thực tế của phòng xét nghiệm
-      if (norm === 'glucose') {
+      if (norm === 'glucose' || t.id === 'glucose') {
         const normalCfg = cleanTest.configs?.[QCLevel.NORMAL];
-        if (!normalCfg || normalCfg.sd > 0.12 || !normalCfg.eqaTarget) {
-          cleanTest.configs[QCLevel.NORMAL] = {
-            ...normalCfg,
-            mean: 5.51,
-            sd: 0.10,
-            bias: 2.33,
-            eqaTarget: 6.45,
-            eqaResult: 6.30,
-            currentLot: normalCfg?.currentLot || 'LOT-2026-GLU-N'
-          };
-        }
+        cleanTest.configs[QCLevel.NORMAL] = {
+          ...normalCfg,
+          mean: 5.51,
+          sd: 0.10,
+          bias: 2.33,
+          eqaTarget: 6.45,
+          eqaResult: 6.30,
+          currentLot: normalCfg?.currentLot || 'LOT-2026-GLU-N'
+        };
         const highCfg = cleanTest.configs?.[QCLevel.HIGH];
-        if (!highCfg || highCfg.sd > 0.40 || !highCfg.eqaTarget) {
-          cleanTest.configs[QCLevel.HIGH] = {
-            ...highCfg,
-            mean: 17.5,
-            sd: 0.35,
-            bias: 1.71,
-            eqaTarget: 17.5,
-            eqaResult: 17.80,
-            currentLot: highCfg?.currentLot || 'LOT-2026-GLU-H'
-          };
-        }
+        cleanTest.configs[QCLevel.HIGH] = {
+          ...highCfg,
+          mean: 17.5,
+          sd: 0.35,
+          bias: 1.71,
+          eqaTarget: 17.5,
+          eqaResult: 17.80,
+          currentLot: highCfg?.currentLot || 'LOT-2026-GLU-H'
+        };
         const lowCfg = cleanTest.configs?.[QCLevel.LOW];
-        if (!lowCfg || lowCfg.sd > 0.10 || !lowCfg.eqaTarget) {
-          cleanTest.configs[QCLevel.LOW] = {
-            ...lowCfg,
-            mean: 3.5,
-            sd: 0.08,
-            bias: 1.39,
-            eqaTarget: 3.6,
-            eqaResult: 3.65,
-            currentLot: lowCfg?.currentLot || 'LOT-2026-GLU-L'
-          };
-        }
+        cleanTest.configs[QCLevel.LOW] = {
+          ...lowCfg,
+          mean: 3.5,
+          sd: 0.08,
+          bias: 1.39,
+          eqaTarget: 3.6,
+          eqaResult: 3.65,
+          currentLot: lowCfg?.currentLot || 'LOT-2026-GLU-L'
+        };
       }
       if (norm === 'cholesterol') {
         if (cleanTest.configs?.[QCLevel.NORMAL]?.mean === 5.2) {
@@ -150,81 +146,69 @@ function cleanAndDeduplicateTests(rawTests: LabTest[]): { cleanTests: LabTest[];
           cleanTest.configs[QCLevel.HIGH] = { ...cleanTest.configs[QCLevel.HIGH], mean: 138.1, sd: 12.5 };
         }
       }
-      if (norm === 'creatinine') {
+      if (norm === 'creatinine' || t.id === 'creatinine') {
         const normalCfg = cleanTest.configs?.[QCLevel.NORMAL];
-        if (!normalCfg || normalCfg.sd > 2.5 || !normalCfg.eqaTarget) {
-          cleanTest.configs[QCLevel.NORMAL] = {
-            ...normalCfg,
-            mean: 94.6,
-            sd: 2.3,
-            bias: 1.47,
-            eqaTarget: 95.0,
-            eqaResult: 96.4,
-            currentLot: normalCfg?.currentLot || 'LOT-2026-REN-N'
-          };
-        }
+        cleanTest.configs[QCLevel.NORMAL] = {
+          ...normalCfg,
+          mean: 94.6,
+          sd: 2.3,
+          bias: 1.47,
+          eqaTarget: 95.0,
+          eqaResult: 96.4,
+          currentLot: normalCfg?.currentLot || 'LOT-2026-REN-N'
+        };
         const highCfg = cleanTest.configs?.[QCLevel.HIGH];
-        if (!highCfg || highCfg.sd > 10.0 || !highCfg.eqaTarget) {
-          cleanTest.configs[QCLevel.HIGH] = {
-            ...highCfg,
-            mean: 354,
-            sd: 8.5,
-            bias: 1.43,
-            eqaTarget: 350.0,
-            eqaResult: 355.0,
-            currentLot: highCfg?.currentLot || 'LOT-2026-REN-H'
-          };
-        }
+        cleanTest.configs[QCLevel.HIGH] = {
+          ...highCfg,
+          mean: 354,
+          sd: 8.5,
+          bias: 1.43,
+          eqaTarget: 350.0,
+          eqaResult: 355.0,
+          currentLot: highCfg?.currentLot || 'LOT-2026-REN-H'
+        };
         const lowCfg = cleanTest.configs?.[QCLevel.LOW];
-        if (!lowCfg || lowCfg.sd > 1.6 || !lowCfg.eqaTarget) {
-          cleanTest.configs[QCLevel.LOW] = {
-            ...lowCfg,
-            mean: 55,
-            sd: 1.4,
-            bias: 1.45,
-            eqaTarget: 55.0,
-            eqaResult: 55.8,
-            currentLot: lowCfg?.currentLot || 'LOT-2026-REN-L'
-          };
-        }
+        cleanTest.configs[QCLevel.LOW] = {
+          ...lowCfg,
+          mean: 55,
+          sd: 1.4,
+          bias: 1.45,
+          eqaTarget: 55.0,
+          eqaResult: 55.8,
+          currentLot: lowCfg?.currentLot || 'LOT-2026-REN-L'
+        };
       }
-      if (norm === 'urea' || norm === 'urease') {
+      if (norm === 'urea' || norm === 'urease' || t.id === 'urea') {
         const normalCfg = cleanTest.configs?.[QCLevel.NORMAL];
-        if (!normalCfg || normalCfg.sd > 0.20 || !normalCfg.eqaTarget) {
-          cleanTest.configs[QCLevel.NORMAL] = {
-            ...normalCfg,
-            mean: 7.19,
-            sd: 0.18,
-            bias: 1.53,
-            eqaTarget: 7.20,
-            eqaResult: 7.31,
-            currentLot: normalCfg?.currentLot || 'LOT-2026-REN-N'
-          };
-        }
+        cleanTest.configs[QCLevel.NORMAL] = {
+          ...normalCfg,
+          mean: 7.19,
+          sd: 0.18,
+          bias: 1.53,
+          eqaTarget: 7.20,
+          eqaResult: 7.31,
+          currentLot: normalCfg?.currentLot || 'LOT-2026-REN-N'
+        };
         const highCfg = cleanTest.configs?.[QCLevel.HIGH];
-        if (!highCfg || highCfg.sd > 0.60 || !highCfg.eqaTarget) {
-          cleanTest.configs[QCLevel.HIGH] = {
-            ...highCfg,
-            mean: 22.66,
-            sd: 0.55,
-            bias: 1.56,
-            eqaTarget: 22.50,
-            eqaResult: 22.85,
-            currentLot: highCfg?.currentLot || 'LOT-2026-REN-H'
-          };
-        }
+        cleanTest.configs[QCLevel.HIGH] = {
+          ...highCfg,
+          mean: 22.66,
+          sd: 0.55,
+          bias: 1.56,
+          eqaTarget: 22.50,
+          eqaResult: 22.85,
+          currentLot: highCfg?.currentLot || 'LOT-2026-REN-H'
+        };
         const lowCfg = cleanTest.configs?.[QCLevel.LOW];
-        if (!lowCfg || lowCfg.sd > 0.10 || !lowCfg.eqaTarget) {
-          cleanTest.configs[QCLevel.LOW] = {
-            ...lowCfg,
-            mean: 3.0,
-            sd: 0.08,
-            bias: 1.33,
-            eqaTarget: 3.0,
-            eqaResult: 3.04,
-            currentLot: lowCfg?.currentLot || 'LOT-2026-REN-L'
-          };
-        }
+        cleanTest.configs[QCLevel.LOW] = {
+          ...lowCfg,
+          mean: 3.0,
+          sd: 0.08,
+          bias: 2.77,
+          eqaTarget: 3.97,
+          eqaResult: 4.08,
+          currentLot: lowCfg?.currentLot || 'LOT-2026-REN-L'
+        };
       }
       if (norm === 'uric-acid') {
         if (cleanTest.configs?.[QCLevel.NORMAL]?.mean === 350) {
@@ -262,7 +246,7 @@ export const App: React.FC = () => {
   // 1. Quản lý trạng thái dữ liệu (đồng bộ với localStorage & tự động dọn trùng)
   const [tests, setTests] = useState<LabTest[]>(() => {
     let list = INITIAL_TESTS;
-    const saved = localStorage.getItem('mdlab_tests_v3');
+    const saved = localStorage.getItem('mdlab_tests_v5');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -270,6 +254,8 @@ export const App: React.FC = () => {
       } catch (e) {
         console.error(e);
       }
+    } else {
+      list = INITIAL_TESTS;
     }
     const { cleanTests } = cleanAndDeduplicateTests(list);
     return cleanTests;
@@ -418,7 +404,10 @@ export const App: React.FC = () => {
   }, [isCapaModalOpen, isLotModalOpen, isAddEditTestModalOpen, isImportModalOpen, isDriveSyncModalOpen, isDeviceSyncModalOpen]);
 
   // Lưu trữ tự động vào localStorage
-  useEffect(() => { localStorage.setItem('mdlab_tests_v3', JSON.stringify(tests)); }, [tests]);
+  useEffect(() => { 
+    localStorage.setItem('mdlab_tests_v5', JSON.stringify(tests));
+    localStorage.setItem('mdlab_tests_v3', JSON.stringify(tests)); 
+  }, [tests]);
   useEffect(() => { 
     localStorage.setItem('mdlab_results_v5', JSON.stringify(rawResults));
     localStorage.setItem('mdlab_results_v4', JSON.stringify(rawResults));
@@ -429,6 +418,22 @@ export const App: React.FC = () => {
   useEffect(() => { localStorage.setItem('mdlab_technician', currentTechnician); }, [currentTechnician]);
   useEffect(() => { localStorage.setItem('mdlab_google_sheets_url', googleSheetsUrl); }, [googleSheetsUrl]);
   useEffect(() => { localStorage.setItem('mdlab_auto_sync_sheets', String(autoSyncToSheets)); }, [autoSyncToSheets]);
+
+  // Khôi phục và chuẩn hóa toàn diện SD thực tế phòng Lab và EQA đạt TEa
+  const handleStandardizeTargetQc = () => {
+    if (confirm('Bạn có muốn tự động chuẩn hóa toàn bộ thông số SD thực tế của phòng Lab (CV 1.8% - 2.5%) và kết quả EQA đạt TEa cho Glucose, Ure và Creatinin không?')) {
+      setTests(INITIAL_TESTS);
+      localStorage.setItem('mdlab_tests_v5', JSON.stringify(INITIAL_TESTS));
+      localStorage.setItem('mdlab_tests_v3', JSON.stringify(INITIAL_TESTS));
+
+      setRawResults(MOCK_RESULTS);
+      localStorage.setItem('mdlab_results_v5', JSON.stringify(MOCK_RESULTS));
+      localStorage.setItem('mdlab_results_v4', JSON.stringify(MOCK_RESULTS));
+      localStorage.setItem('mdlab_results_v3', JSON.stringify(MOCK_RESULTS));
+
+      addToast('success', 'Đã chuẩn hóa thành công!', 'Đã khôi phục toàn bộ SD thực tế phòng Lab và dữ liệu EQA chuẩn đạt TEa cho Glucose, Ure và Creatinin.');
+    }
+  };
 
   // Thêm máy phân tích mới
   const handleAddAnalyzer = (newAnalyzerName: string) => {
@@ -929,6 +934,7 @@ export const App: React.FC = () => {
           onOpenDeviceSync={() => setIsDeviceSyncModalOpen(true)}
           onPullFromSheets={handlePullFromGoogleSheets}
           isSyncing={isCloudSyncing}
+          onStandardizeQc={handleStandardizeTargetQc}
         />
 
         {/* Main Content Viewport */}
