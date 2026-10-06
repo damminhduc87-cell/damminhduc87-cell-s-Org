@@ -276,7 +276,7 @@ export const App: React.FC = () => {
   });
 
   const [rawResults, setRawResults] = useState<QCResult[]>(() => {
-    const saved = localStorage.getItem('mdlab_results_v4');
+    const saved = localStorage.getItem('mdlab_results_v5');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -285,8 +285,8 @@ export const App: React.FC = () => {
         console.error(e);
       }
     }
-    // Nâng cấp dữ liệu cũ sang bộ số liệu thực tế chuẩn hóa chất lượng cao
-    const oldSaved = localStorage.getItem('mdlab_results_v3') || localStorage.getItem('mdlab_results_v2');
+    // Nâng cấp dữ liệu cũ sang bộ số liệu thực tế chuẩn hóa chất lượng cao (cả Normal và High)
+    const oldSaved = localStorage.getItem('mdlab_results_v4') || localStorage.getItem('mdlab_results_v3') || localStorage.getItem('mdlab_results_v2');
     if (oldSaved) {
       try {
         const parsed: QCResult[] = JSON.parse(oldSaved);
@@ -420,6 +420,7 @@ export const App: React.FC = () => {
   // Lưu trữ tự động vào localStorage
   useEffect(() => { localStorage.setItem('mdlab_tests_v3', JSON.stringify(tests)); }, [tests]);
   useEffect(() => { 
+    localStorage.setItem('mdlab_results_v5', JSON.stringify(rawResults));
     localStorage.setItem('mdlab_results_v4', JSON.stringify(rawResults));
     localStorage.setItem('mdlab_results_v3', JSON.stringify(rawResults)); 
   }, [rawResults]);
