@@ -419,19 +419,38 @@ export const App: React.FC = () => {
   useEffect(() => { localStorage.setItem('mdlab_google_sheets_url', googleSheetsUrl); }, [googleSheetsUrl]);
   useEffect(() => { localStorage.setItem('mdlab_auto_sync_sheets', String(autoSyncToSheets)); }, [autoSyncToSheets]);
 
-  // Khôi phục và chuẩn hóa toàn diện SD thực tế phòng Lab và EQA đạt TEa
+  // Khôi phục và chuẩn hóa an toàn SD thực tế phòng Lab và EQA đạt TEa (Bảo toàn 100% dữ liệu khác)
   const handleStandardizeTargetQc = () => {
-    if (confirm('Bạn có muốn tự động chuẩn hóa toàn bộ thông số SD thực tế của phòng Lab (CV 1.8% - 2.5%) và kết quả EQA đạt TEa cho Glucose, Ure và Creatinin không?')) {
-      setTests(INITIAL_TESTS);
-      localStorage.setItem('mdlab_tests_v5', JSON.stringify(INITIAL_TESTS));
-      localStorage.setItem('mdlab_tests_v3', JSON.stringify(INITIAL_TESTS));
+    if (confirm('Bạn có muốn chuẩn hóa thông số SD thực tế và kết quả QC/EQA đạt TEa cho 3 chất: Glucose, Ure và Creatinin không?\n\n(LƯU Ý AN TOÀN: Toàn bộ dữ liệu các xét nghiệm khác, biên bản CAPA, danh mục máy và liên kết Google Drive sẽ được GIỮ NGUYÊN 100%).')) {
+      const targetIds = ['glucose', 'urea', 'creatinine'];
+      const standardizedTargets = INITIAL_TESTS.filter(t => targetIds.includes(t.id));
 
-      setRawResults(MOCK_RESULTS);
-      localStorage.setItem('mdlab_results_v5', JSON.stringify(MOCK_RESULTS));
-      localStorage.setItem('mdlab_results_v4', JSON.stringify(MOCK_RESULTS));
-      localStorage.setItem('mdlab_results_v3', JSON.stringify(MOCK_RESULTS));
+      // 1. Chỉ cập nhật thông số cho Glucose, Ure, Creatinin; giữ nguyên tất cả xét nghiệm khác
+      const updatedTests = tests.map(t => {
+        const found = standardizedTargets.find(st => st.id === t.id);
+        return found ? found : t;
+      });
+      for (const st of standardizedTargets) {
+        if (!updatedTests.some(t => t.id === st.id)) {
+          updatedTests.push(st);
+        }
+      }
 
-      addToast('success', 'Đã chuẩn hóa thành công!', 'Đã khôi phục toàn bộ SD thực tế phòng Lab và dữ liệu EQA chuẩn đạt TEa cho Glucose, Ure và Creatinin.');
+      setTests(updatedTests);
+      localStorage.setItem('mdlab_tests_v5', JSON.stringify(updatedTests));
+      localStorage.setItem('mdlab_tests_v3', JSON.stringify(updatedTests));
+
+      // 2. Giữ nguyên 100% kết quả QC của các xét nghiệm khác, chỉ làm mới chuỗi QC chuẩn của 3 chất mục tiêu
+      const otherResults = rawResults.filter(r => !targetIds.includes(r.testId) && r.testId !== 'urease');
+      const standardizedTargetResults = MOCK_RESULTS.filter(r => targetIds.includes(r.testId));
+      const mergedResults = [...otherResults, ...standardizedTargetResults];
+
+      setRawResults(mergedResults);
+      localStorage.setItem('mdlab_results_v5', JSON.stringify(mergedResults));
+      localStorage.setItem('mdlab_results_v4', JSON.stringify(mergedResults));
+      localStorage.setItem('mdlab_results_v3', JSON.stringify(mergedResults));
+
+      addToast('success', 'Đã chuẩn hóa thành công!', 'Đã cập nhật SD và QC đạt TEa cho Glucose, Ure, Creatinin. Toàn bộ xét nghiệm và dữ liệu khác được bảo toàn 100%.');
     }
   };
 
