@@ -25,8 +25,8 @@ export const SigmaAnalysis: React.FC<SigmaAnalysisProps> = ({
   const cv = mean > 0 ? Number(((sd / mean) * 100).toFixed(2)) : 0;
   const tea = test.tea;
 
-  // TE Actual = |Bias%| + 2*CV%
-  const teActual = Number((Math.abs(actualBias) + 2 * cv).toFixed(2));
+  // TE Actual = |Bias%| + 1.65*CV% (Chuẩn CLSI C24 / Westgard ở độ tin cậy 95%)
+  const teActual = Number((Math.abs(actualBias) + 1.65 * cv).toFixed(2));
 
   // Sigma = (TEa - |Bias%|) / CV%
   const sigma = cv > 0 ? Number(((tea - Math.abs(actualBias)) / cv).toFixed(2)) : 0;
@@ -198,7 +198,7 @@ export const SigmaAnalysis: React.FC<SigmaAnalysisProps> = ({
             teActual > tea ? 'bg-red-50/60 border-red-200' : 'bg-slate-50 border-slate-200'
           }`}>
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-              TE Thực Tế (|Bias| + 2*CV)
+              TE Thực Tế (|Bias| + 1.65*CV)
             </span>
             <div className={`text-xl font-black ${teActual > tea ? 'text-red-600' : 'text-[#0F1F3D]'}`}>
               {teActual}%
@@ -265,10 +265,10 @@ export const SigmaAnalysis: React.FC<SigmaAnalysisProps> = ({
               • <strong>Chỉ số Six Sigma:</strong> <code className="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-mono text-[11px]">Sigma = (TEa - |Bias%|) / CV%</code>
             </p>
             <p>
-              • <strong>Tổng sai số thực tế (TE_actual):</strong> <code className="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-mono text-[11px]">TE = |Bias%| + 2 × CV%</code>
+              • <strong>Tổng sai số thực tế (TE_actual):</strong> <code className="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-mono text-[11px]">TE = |Bias%| + 1.65 × CV%</code>
             </p>
             <p className="text-[11px] text-slate-400">
-              * Quy ước theo CLIA 2024 / Westgard QC: Năng lực phương pháp &ge; 6σ là Đẳng cấp Thế giới, 4-6σ là Tốt, &lt; 3σ là Không đạt yêu cầu lâm sàng.
+              * Quy ước theo CLSI C24 / Westgard QC: Năng lực phương pháp &ge; 6σ là Đẳng cấp Thế giới, 4-6σ là Tốt, &lt; 3σ là Không đạt yêu cầu lâm sàng.
             </p>
           </div>
         )}
