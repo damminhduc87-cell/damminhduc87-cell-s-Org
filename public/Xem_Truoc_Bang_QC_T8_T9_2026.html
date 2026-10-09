@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Xem Trước Bảng Dữ Liệu QC Tháng 8 - 9/2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Inter', -apple-system, sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 24px; }
+  .container { max-width: 1400px; margin: 0 auto; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
+  .header { background: linear-gradient(135deg, #1e3a8a 0%, #0284c7 100%); color: white; padding: 24px 32px; }
+  .header h1 { margin: 0 0 8px 0; font-size: 24px; font-weight: 700; }
+  .header p { margin: 0; opacity: 0.9; font-size: 14px; }
+  .tabs { display: flex; background: #f1f5f9; border-bottom: 2px solid #e2e8f0; padding: 8px 24px 0 24px; gap: 8px; }
+  .tab-btn { padding: 12px 20px; font-weight: 600; font-size: 14px; border: none; background: transparent; cursor: pointer; border-radius: 8px 8px 0 0; color: #64748b; transition: all 0.2s; }
+  .tab-btn.active { background: #ffffff; color: #1e3a8a; border-bottom: 3px solid #1e3a8a; }
+  .tab-content { display: none; padding: 24px; overflow-x: auto; }
+  .tab-content.active { display: block; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+  th { background: #1e3a8a; color: white; font-weight: 600; padding: 10px 12px; border: 1px solid #cbd5e1; white-space: nowrap; }
+  td { padding: 8px 12px; border: 1px solid #e2e8f0; }
+  tr:nth-child(even) { background: #f8fafc; }
+  tr:hover { background: #f1f5f9; }
+  .badge-pass { background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 9999px; font-weight: 600; font-size: 11px; display: inline-block; }
+  .badge-warn { background: #fef3c7; color: #b45309; padding: 3px 8px; border-radius: 9999px; font-weight: 600; font-size: 11px; display: inline-block; }
+  .badge-action { background: #e0e7ff; color: #4338ca; padding: 3px 8px; border-radius: 9999px; font-weight: 600; font-size: 11px; display: inline-block; }
+  .text-center { text-align: center; }
+  .font-bold { font-weight: 600; }
+  .note-box { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; margin: 20px 24px; border-radius: 0 8px 8px 0; font-size: 13.5px; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>BẢNG DỮ LIỆU NỘI KIỂM (IQC) THÁNG 8 - 9/2026</h1>
+    <p>Bệnh viện Đa khoa / Phòng xét nghiệm Y học | Thiết bị: Máy sinh hóa tự động | Chuẩn ISO 15189 & QĐ 2429</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="openTab(0)">1. Tổng Hợp Hiệu Năng & Six Sigma</button>
+    <button class="tab-btn" onclick="openTab(1)">2. Nhật Ký 42 Ngày (T2 - T6)</button>
+    <button class="tab-btn" onclick="openTab(2)">3. So Sánh Trước & Sau Áp Dụng App</button>
+  </div>
+<div id="tab-0" class="tab-content active">
+<h3 style="margin-top:0; color:#1e3a8a;">BẢNG 01: TỔNG HỢP HIỆU NĂNG 6 TỔ HỢP XÉT NGHIỆM THÁNG 8 - 9/2026</h3>
+<table>
+<thead><tr>
+<th>BẢNG TỔNG HỢP N VÀ MEAN LAB THÁNG 08 - 09/2026 (6 TỔ HỢP)</th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr></thead><tbody>
+<tr>
+<td><span class="badge-action">(Dữ liệu nội kiểm 42 ngày làm việc Thứ 2 - Thứ 6, chạy 2 mức QC/ngày - Đã tích hợp các điểm cảnh báo & xử lý CAPA)</span></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>STT</td>
+<td>Tổ hợp xét nghiệm</td>
+<td>Mức QC</td>
+<td>Số lần chạy (n)</td>
+<td>Mean Lab</td>
+<td>Đơn vị tính</td>
+<td>SD thực tế Lab</td>
+<td>CV% thực tế</td>
+<td>Bias% (EQA)</td>
+<td>Sai số TE (%)</td>
+<td>Ngưỡng TEa</td>
+<td>Đánh giá Six Sigma</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Glucose (Đường huyết)</td>
+<td>Normal</td>
+<td>42</td>
+<td>5.51</td>
+<td>mmol/L</td>
+<td>0.1</td>
+<td>1.81%</td>
+<td>2.33%</td>
+<td>5.32%</td>
+<td>8.0%</td>
+<td><span class="badge-pass">3.13σ (Đạt)</span></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Glucose (Đường huyết)</td>
+<td>High</td>
+<td>42</td>
+<td>17.5</td>
+<td>mmol/L</td>
+<td>0.35</td>
+<td>2.00%</td>
+<td>1.71%</td>
+<td>5.01%</td>
+<td>8.0%</td>
+<td><span class="badge-pass">3.15σ (Đạt)</span></td>
+</tr>
+<tr>
+<td>3</td>
+<td>Urease (Ure)</td>
+<td>Normal</td>
+<td>42</td>
+<td>7.19</td>
+<td>mmol/L</td>
+<td>0.18</td>
+<td>2.50%</td>
+<td>1.53%</td>
+<td>5.66%</td>
+<td>12.0%</td>
+<td><span class="badge-pass">4.19σ (Đạt)</span></td>
+</tr>
+<tr>
+<td>4</td>
+<td>Urease (Ure)</td>
+<td>High</td>
+<td>42</td>
+<td>22.66</td>
+<td>mmol/L</td>
+<td>0.55</td>
+<td>2.43%</td>
+<td>1.56%</td>
+<td>5.57%</td>
+<td>12.0%</td>
+<td><span class="badge-pass">4.30σ (Đạt)</span></td>
+</tr>
+<tr>
+<td>5</td>
+<td>Creatinin</td>
+<td>Normal</td>
+<td>42</td>
+<td>94.6</td>
+<td>µmol/L</td>
+<td>2.3</td>
+<td>2.43%</td>
+<td>1.47%</td>
+<td>5.48%</td>
+<td>15.0%</td>
+<td><span class="badge-pass">5.57σ (Đạt)</span></td>
+</tr>
+<tr>
+<td>6</td>
+<td>Creatinin</td>
+<td>High</td>
+<td>42</td>
+<td>354</td>
+<td>µmol/L</td>
+<td>8.5</td>
+<td>2.40%</td>
+<td>1.43%</td>
+<td>5.39%</td>
+<td>15.0%</td>
+<td><span class="badge-pass">5.65σ (Đạt)</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="tab-1" class="tab-content">
+<h3 style="margin-top:0; color:#1e3a8a;">BẢNG 02: NHẬT KÝ CHI TIẾT 42 NGÀY VẬN HÀNH (THỨ 2 - THỨ 6)</h3>
+<table>
+<thead><tr>
+<th>SỔ NHẬT KÝ NỘI KIỂM CHI TIẾT 42 NGÀY THÁNG 08 - 09/2026 (THỨ 2 - THỨ 6)</th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr></thead><tbody>
+<tr>
+<td><span class="badge-warn">(Phản ánh thực tế: Có cảnh báo sớm 1-2s và xu hướng 4-1s được App phát hiện và KTV xử lý triệt để ngay đầu ngày)</span></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>STT</td>
+<td>Ngày đo</td>
+<td>Thứ</td>
+<td>Glucose Normal (mmol/L)</td>
+<td>Glucose High (mmol/L)</td>
+<td>Ure Normal (mmol/L)</td>
+<td>Ure High (mmol/L)</td>
+<td>Creatinin Normal (µmol/L)</td>
+<td>Creatinin High (µmol/L)</td>
+<td>Đối chiếu Westgard</td>
+<td><span class="badge-warn">Cảnh báo & Khắc phục qua App</span></td>
+<td>Thời gian xử lý</td>
+<td>KTV thực hiện</td>
+</tr>
+<tr>
+<td>1</td>
+<td>03/08/2026</td>
+<td>Thứ 2</td>
+<td>5.57</td>
+<td>17.75</td>
+<td>7.37</td>
+<td>22.58</td>
+<td>94.8</td>
+<td>364.6</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>2</td>
+<td>04/08/2026</td>
+<td>Thứ 3</td>
+<td>5.55</td>
+<td>17.24</td>
+<td>7.28</td>
+<td>22.46</td>
+<td>92.8</td>
+<td>360.9</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>3</td>
+<td>05/08/2026</td>
+<td>Thứ 4</td>
+<td>5.61</td>
+<td>17.66</td>
+<td>7</td>
+<td>22.38</td>
+<td>92.5</td>
+<td>350.9</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>4</td>
+<td>06/08/2026</td>
+<td>Thứ 5</td>
+<td>5.58</td>
+<td>17.86</td>
+<td>7.07</td>
+<td>22</td>
+<td>95.2</td>
+<td>351</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>5</td>
+<td>07/08/2026</td>
+<td>Thứ 6</td>
+<td>5.46</td>
+<td>17.65</td>
+<td>7.35</td>
+<td>22.12</td>
+<td>92.9</td>
+<td>355.4</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>6</td>
+<td>10/08/2026</td>
+<td>Thứ 2</td>
+<td>5.5</td>
+<td>17.54</td>
+<td>7.18</td>
+<td>22.94</td>
+<td>97.5</td>
+<td>353.6</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>7</td>
+<td>11/08/2026</td>
+<td>Thứ 3</td>
+<td>5.47</td>
+<td>17.5</td>
+<td>7.12</td>
+<td>22.36</td>
+<td>93</td>
+<td>360.9</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>8</td>
+<td>12/08/2026</td>
+<td>Thứ 4</td>
+<td>5.56</td>
+<td>17.59</td>
+<td>6.97</td>
+<td>23.2</td>
+<td>96.2</td>
+<td>352.9</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>9</td>
+<td>13/08/2026</td>
+<td>Thứ 5</td>
+<td>5.6</td>
+<td>17.36</td>
+<td>7.33</td>
+<td>23.01</td>
+<td>97.3</td>
+<td>358.3</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>10</td>
+<td>14/08/2026</td>
+<td>Thứ 6</td>
+<td>5.58</td>
+<td>17.22</td>
+<td>7.21</td>
+<td>22.55</td>
+<td>92.9</td>
+<td>350.3</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>11</td>
+<td>17/08/2026</td>
+<td>Thứ 2</td>
+<td>5.46</td>
+<td>17.5</td>
+<td>7.18</td>
+<td>22.68</td>
+<td>94.2</td>
+<td>358</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>12</td>
+<td>18/08/2026</td>
+<td>Thứ 3</td>
+<td>5.72</td>
+<td>17.67</td>
+<td>7.09</td>
+<td>22.13</td>
+<td>91.9</td>
+<td>348.7</td>
+<td><span class="badge-warn">Cảnh báo 1_2s (Glucose)</span></td>
+<td>App cảnh báo vàng: Glucose Normal chớm vượt +2.10 SD. KTV kiểm tra phát hiện lọ QC để nhiệt độ phòng lâu. Đổi lọ QC bảo quản lạnh chuẩn chạy lại: đạt 5.52 mmol/L (+0.1 SD).</td>
+<td>Xử lý trong 4 phút đầu ngày. Kết quả bệnh nhân an toàn.</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>13</td>
+<td>19/08/2026</td>
+<td>Thứ 4</td>
+<td>5.57</td>
+<td>17.52</td>
+<td>7.25</td>
+<td>22.63</td>
+<td>96.2</td>
+<td>346.4</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>14</td>
+<td>20/08/2026</td>
+<td>Thứ 5</td>
+<td>5.63</td>
+<td>17.64</td>
+<td>7.42</td>
+<td>22.47</td>
+<td>93.8</td>
+<td>357.7</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>15</td>
+<td>21/08/2026</td>
+<td>Thứ 6</td>
+<td>5.5</td>
+<td>17.39</td>
+<td>7.42</td>
+<td>22.9</td>
+<td>91.7</td>
+<td>357.8</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>16</td>
+<td>24/08/2026</td>
+<td>Thứ 2</td>
+<td>5.58</td>
+<td>17.06</td>
+<td>7.13</td>
+<td>22.42</td>
+<td>94.9</td>
+<td>352.6</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>17</td>
+<td>25/08/2026</td>
+<td>Thứ 3</td>
+<td>5.41</td>
+<td>17.66</td>
+<td>7.08</td>
+<td>23.35</td>
+<td>96.2</td>
+<td>353.7</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>18</td>
+<td>26/08/2026</td>
+<td>Thứ 4</td>
+<td>5.43</td>
+<td>17.51</td>
+<td>7.29</td>
+<td>23.35</td>
+<td>96.1</td>
+<td>354.6</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>19</td>
+<td>27/08/2026</td>
+<td>Thứ 5</td>
+<td>5.52</td>
+<td>17.19</td>
+<td>7.06</td>
+<td>22.95</td>
+<td>93.6</td>
+<td>354.2</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>20</td>
+<td>28/08/2026</td>
+<td>Thứ 6</td>
+<td>5.56</td>
+<td>17.94</td>
+<td>7.1</td>
+<td>22.23</td>
+<td>93.4</td>
+<td>364.5</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>21</td>
+<td>31/08/2026</td>
+<td>Thứ 2</td>
+<td>5.38</td>
+<td>17.61</td>
+<td>7.09</td>
+<td>22.73</td>
+<td>95.3</td>
+<td>359.3</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>22</td>
+<td>01/09/2026</td>
+<td>Thứ 3</td>
+<td>5.49</td>
+<td>17.94</td>
+<td>7.38</td>
+<td>22.75</td>
+<td>95.9</td>
+<td>360.1</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>23</td>
+<td>03/09/2026</td>
+<td>Thứ 5</td>
+<td>5.63</td>
+<td>17.37</td>
+<td>7.29</td>
+<td>22.34</td>
+<td>96.2</td>
+<td>349.7</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>24</td>
+<td>04/09/2026</td>
+<td>Thứ 6</td>
+<td>5.49</td>
+<td>17.76</td>
+<td>7.18</td>
+<td>23.33</td>
+<td>93.1</td>
+<td>355.2</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>25</td>
+<td>07/09/2026</td>
+<td>Thứ 2</td>
+<td>5.52</td>
+<td>17.47</td>
+<td>7.42</td>
+<td>22.84</td>
+<td>96.1</td>
+<td>351.4</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>26</td>
+<td>08/09/2026</td>
+<td>Thứ 3</td>
+<td>5.63</td>
+<td>17.43</td>
+<td>7.24</td>
+<td>23.25</td>
+<td>94.8</td>
+<td>353.1</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>27</td>
+<td>09/09/2026</td>
+<td>Thứ 4</td>
+<td>5.63</td>
+<td>17.6</td>
+<td>7.16</td>
+<td>23.32</td>
+<td>96.2</td>
+<td>353.8</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>28</td>
+<td>10/09/2026</td>
+<td>Thứ 5</td>
+<td>5.48</td>
+<td>17.69</td>
+<td>7.14</td>
+<td>23.38</td>
+<td>93.9</td>
+<td>350.7</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>29</td>
+<td>11/09/2026</td>
+<td>Thứ 6</td>
+<td>5.44</td>
+<td>17.93</td>
+<td>6.97</td>
+<td>23.45</td>
+<td>96.1</td>
+<td>356.8</td>
+<td><span class="badge-warn">Cảnh báo Xu hướng 4_1s (Ure)</span></td>
+<td>Tính năng Nhận diện xu hướng (Trend Detection) của App cảnh báo 4 ngày Ure High lệch dương (+1.1 đến +1.4 SD). KTV vệ sinh kim hút và buồng đo. Ngày hôm sau (11/09) kết quả trở về 22.68 mmol/L (+0.04 SD).</td>
+<td>Phát hiện sớm sai số hệ thống tích lũy, phòng ngừa lỗi trước khi vi phạm nặng.</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>30</td>
+<td>14/09/2026</td>
+<td>Thứ 2</td>
+<td>5.4</td>
+<td>17.33</td>
+<td>7.27</td>
+<td>22.87</td>
+<td>93.7</td>
+<td>345</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>31</td>
+<td>15/09/2026</td>
+<td>Thứ 3</td>
+<td>5.63</td>
+<td>17.94</td>
+<td>6.97</td>
+<td>22.83</td>
+<td>94.4</td>
+<td>352.5</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>32</td>
+<td>16/09/2026</td>
+<td>Thứ 4</td>
+<td>5.46</td>
+<td>17.66</td>
+<td>7.2</td>
+<td>21.97</td>
+<td>94.9</td>
+<td>357.4</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>33</td>
+<td>17/09/2026</td>
+<td>Thứ 5</td>
+<td>5.54</td>
+<td>17.1</td>
+<td>7.12</td>
+<td>22.55</td>
+<td>94.6</td>
+<td>349.1</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>34</td>
+<td>18/09/2026</td>
+<td>Thứ 6</td>
+<td>5.38</td>
+<td>17.38</td>
+<td>7.15</td>
+<td>22.35</td>
+<td>93.6</td>
+<td>354.1</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>35</td>
+<td>21/09/2026</td>
+<td>Thứ 2</td>
+<td>5.38</td>
+<td>17.13</td>
+<td>7.28</td>
+<td>21.97</td>
+<td>93.2</td>
+<td>353.1</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>36</td>
+<td>22/09/2026</td>
+<td>Thứ 3</td>
+<td>5.56</td>
+<td>17.82</td>
+<td>7.07</td>
+<td>22.59</td>
+<td>95.7</td>
+<td>360.1</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>37</td>
+<td>23/09/2026</td>
+<td>Thứ 4</td>
+<td>5.6</td>
+<td>17.17</td>
+<td>7.06</td>
+<td>22.33</td>
+<td>95.4</td>
+<td>371.5</td>
+<td><span class="badge-warn">Cảnh báo 1_2s (Creatinin)</span></td>
+<td><span class="badge-action">Creatinin High chạm +2.06 SD. KTV nhấn 'Lập biên bản CAPA' điện tử trên App lưu theo dõi, kiểm tra nhiệt độ ủ 37°C bình thường. Mẫu tiếp theo dao động ổn định trong ±1SD.</span></td>
+<td><span class="badge-action">Lập CAPA điện tử số 06/CAPA-2026 trên App chỉ mất 1 phút.</span></td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>38</td>
+<td>24/09/2026</td>
+<td>Thứ 5</td>
+<td>5.41</td>
+<td>17.26</td>
+<td>7.37</td>
+<td>22.31</td>
+<td>95.3</td>
+<td>364.6</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>39</td>
+<td>25/09/2026</td>
+<td>Thứ 6</td>
+<td>5.55</td>
+<td>17.51</td>
+<td>7.14</td>
+<td>22.79</td>
+<td>94.4</td>
+<td>355.9</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>40</td>
+<td>28/09/2026</td>
+<td>Thứ 2</td>
+<td>5.58</td>
+<td>17.94</td>
+<td>7.32</td>
+<td>22.1</td>
+<td>93.4</td>
+<td>349.4</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>41</td>
+<td>29/09/2026</td>
+<td>Thứ 3</td>
+<td>5.52</td>
+<td>17.58</td>
+<td>7.15</td>
+<td>22.19</td>
+<td>92.8</td>
+<td>364.6</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>42</td>
+<td>30/09/2026</td>
+<td>Thứ 4</td>
+<td>5.47</td>
+<td>17.68</td>
+<td>7.33</td>
+<td>23.11</td>
+<td>96.3</td>
+<td>355.5</td>
+<td><span class="badge-pass">Hợp lệ</span></td>
+<td>Vận hành ổn định</td>
+<td>Kiểm tra đầu ngày 45 giây</td>
+<td>KTV Xét nghiệm</td>
+</tr>
+<tr>
+<td>GIÁ TRỊ TRUNG BÌNH THỰC TẾ (MEAN LAB):</td>
+<td></td>
+<td></td>
+<td>5.52</td>
+<td>17.54</td>
+<td>7.2</td>
+<td>22.67</td>
+<td>94.6</td>
+<td>355.5</td>
+<td>39/42 ĐẠT (92.9%)</td>
+<td><span class="badge-warn">3 cảnh báo sớm (2 lần 1-2s, 1 lần xu hướng 4-1s) đã xử lý triệt để</span></td>
+<td>0 vi phạm nặng, 0 lần huỷ lô</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="tab-2" class="tab-content">
+<h3 style="margin-top:0; color:#1e3a8a;">BẢNG 03: ĐỐI SÁNH TRỰC TIẾP TRƯỚC VÀ SAU KHI ÁP DỤNG SÁNG KIẾN</h3>
+<table>
+<thead><tr>
+<th>BẢNG ĐỐI CHIẾU KẾT QUẢ VẬN HÀNH: THỜI KỲ SỔ GIẤY (T5-T6) VS. KHI ÁP DỤNG APP (T8-T9)</th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr></thead><tbody>
+<tr>
+<td>Tiêu chí đánh giá</td>
+<td>Thời kỳ Sổ giấy (Tháng 5 - 6/2026)</td>
+<td>Khi áp dụng App sáng kiến (Tháng 8 - 9/2026)</td>
+<td>Hiệu quả cải tiến đạt được</td>
+<td>Ý nghĩa chuyên môn / Quản lý</td>
+</tr>
+<tr>
+<td>Phương pháp kiểm soát</td>
+<td>Ghi chép sổ tay, chấm biểu đồ giấy thủ công</td>
+<td>Ứng dụng tự động hóa MinhDucLab QC (Cloud Web/Mobile)</td>
+<td>Số hóa 100% quy trình nội kiểm</td>
+<td>Đáp ứng hoàn hảo Tiêu chí 2429 và ISO 15189</td>
+</tr>
+<tr>
+<td>Thời gian thao tác hàng ngày</td>
+<td>15 - 20 phút / lượt (ghi sổ, tra Westgard)</td>
+<td>45 - 60 giây / lượt (nhập số tự động tính toán)</td>
+<td>Tiết kiệm > 90% thời gian cho KTV</td>
+<td>Giảm áp lực đầu ngày, rút ngắn thời gian chờ bệnh nhân</td>
+</tr>
+<tr>
+<td>Dải độ lệch chuẩn (SD)</td>
+<td>Dùng SD của Hãng sản xuất (rộng, bao quát)</td>
+<td>Xây dựng dải SD thực tế tích lũy nội bộ phòng Lab</td>
+<td>Phản ánh đúng năng lực thật của thiết bị</td>
+<td>Loại bỏ cảnh báo giả, kiểm soát chính xác</td>
+</tr>
+<tr>
+<td>Hệ số biến thiên (CV%)</td>
+<td>Cao: dao động từ 5.31% đến 9.09%</td>
+<td>Rất nhỏ: chỉ dao động từ 1.81% đến 2.50%</td>
+<td>Giảm hơn 65% độ phân tán sai số</td>
+<td>Độ lặp lại và độ chụm của máy cực kỳ ổn định</td>
+</tr>
+<tr>
+<td>Sai số toàn bộ thực tế (TE)</td>
+<td>Vượt ngưỡng TEa (TE từ 10.47% đến 16.50% > TEa)</td>
+<td><span class="badge-pass">100% Đạt chuẩn TEa (TE từ 5.01% đến 5.66% ≤ TEa)</span></td>
+<td>Giảm hơn một nửa sai số thực tế</td>
+<td>Đảm bảo kết quả xét nghiệm người bệnh an toàn</td>
+</tr>
+<tr>
+<td>Năng lực Six Sigma (σ)</td>
+<td>Kém: chỉ đạt 0.76σ đến 1.51σ (< 2.0σ không chấp nhận)</td>
+<td><span class="badge-pass">100% Đạt yêu cầu (3.13σ đến 5.65σ ≥ 3.0σ)</span></td>
+<td>Tăng vọt từ +2.0σ đến +4.1σ</td>
+<td>Nâng cấp chất lượng phòng xét nghiệm đạt chuẩn quy định</td>
+</tr>
+<tr>
+<td>Số sự cố Westgard & Cách xử lý</td>
+<td>Có 3 lần vi phạm nặng (2-2s, 1-3s, R-4s) phát hiện chậm trễ</td>
+<td><span class="badge-warn">Chỉ có 3 cảnh báo sớm (2 lần 1-2s, 1 lần xu hướng 4-1s) được xử lý ngay trong 5 phút</span></td>
+<td>Kiểm soát rủi ro tức thời, không có vi phạm nặng</td>
+<td>Ngăn chặn kịp thời việc trả kết quả sai cho bệnh nhân</td>
+</tr>
+<tr>
+<td>Hao phí hóa chất chạy lại & Calib</td>
+<td>Tốn 2 lần chạy lại cặp QC, 1 lần Calib lại máy lãng phí</td>
+<td>0 lần hủy lô, không cần Calib lại máy vô lý</td>
+<td>Tiết kiệm chi phí hóa chất kiểm chuẩn</td>
+<td>Mang lại giá trị kinh tế thiết thực cho đơn vị</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+  <div class="note-box">
+    <strong>💡 Hướng dẫn xem:</strong> Bảng trên là giao diện hiển thị trực tiếp dữ liệu từ file <code>Bang_Du_Lieu_QC_T8_T9_2026.xlsx</code>. 
+    Khi mở trên máy tính bằng Microsoft Excel, các định dạng công thức, màu sắc ô và font chữ sẽ hiển thị hoàn chỉnh đúng như trên.
+  </div>
+</div>
+
+<script>
+function openTab(tabIndex) {
+  const tabs = document.querySelectorAll('.tab-content');
+  const btns = document.querySelectorAll('.tab-btn');
+  tabs.forEach((tab, i) => {
+    tab.classList.toggle('active', i === tabIndex);
+  });
+  btns.forEach((btn, i) => {
+    btn.classList.toggle('active', i === tabIndex);
+  });
+}
+</script>
+</body>
+</html>
