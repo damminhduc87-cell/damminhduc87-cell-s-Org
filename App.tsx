@@ -421,12 +421,29 @@ export const App: React.FC = () => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
-  // Tự động nhận diện khi mở qua quét mã QR trên điện thoại
+  // Tự động nhận diện khi mở qua link chia sẻ đồng bộ hoặc quét mã QR
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      if (params.get('sync_connect') === '1') {
-        addToast('success', 'Đã kết nối điện thoại', 'Hệ thống đã nhận diện cấu hình Google Drive và danh mục xét nghiệm!');
+      const sharedUrl = params.get('sync_url');
+      const isAutoPull = params.get('auto_pull') === '1' || params.get('sync_connect') === '1';
+
+      if (sharedUrl) {
+        try {
+          const decoded = decodeURIComponent(sharedUrl);
+          if (decoded && decoded.startsWith('https://script.google.com/')) {
+            setGoogleSheetsUrl(decoded);
+            localStorage.setItem('mdlab_google_sheets_url', decoded);
+            addToast('success', 'Đã kết nối Google Drive', 'Hệ thống đã tự động liên kết với bảng tính Google Sheets của phòng Lab!');
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      } else if (isAutoPull) {
+        addToast('success', 'Đã kết nối thiết bị', 'Đang tự động tải dữ liệu QC từ Google Drive...');
+      }
+
+      if (sharedUrl || isAutoPull) {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     }
@@ -660,28 +677,24 @@ export const App: React.FC = () => {
         setRawResults(prev => {
           const sheetSignatures = new Set(res.results.map(r => getResultSignature(r)));
           const now = Date.now();
-          const targetIds = ['glucose', 'urea', 'creatinine', 'urease'];
+          // 1. Kiểm tra xem thiết bị hiện tại có đang chỉ chạy trên dữ liệu mẫu ban đầu (Mock Data) hay không
+          // Các dữ liệu mẫu mặc định có ID bắt đầu bằng g-, u-, c- và số lượng ít (<= 40 bản ghi)
+          const hasOnlyMockData = prev.length <= 40 && prev.every(local => 
+            local.id.startsWith('g-') || local.id.startsWith('u-') || local.id.startsWith('c-')
+          );
 
-          // 1. Đồng bộ xóa: Loại bỏ các kết quả cũ đã bị xóa trên Google Sheet
-          // Chỉ giữ lại kết quả nếu:
-          // - Là kết quả của 3 chất mục tiêu đề tài (Glucose, Ure, Creatinin): Bảo vệ tuyệt đối, không bị xóa
-          // - Có mặt trên Google Sheet
-          // - HOẶC vừa mới nhập trên thiết bị này trong vòng 60 giây qua (đang đợi gửi lên)
-          // - VÀ tuyệt đối không nằm trong danh sách chữ ký đã xóa (deletedSignatures)
-          const reconciledLocal = prev.filter(local => {
+          // Nếu máy tính mới chỉ có Mock Data và trên Sheet có dữ liệu thực tế -> Thay thế Mock Data bằng dữ liệu thật từ Sheet
+          let reconciledLocal = hasOnlyMockData ? [] : prev.filter(local => {
             const sig = getResultSignature(local);
             if (deletedSignatures.includes(sig)) return false;
-            if (targetIds.includes(local.testId)) return true;
             if (sheetSignatures.has(sig)) return true;
             return (now - local.timestamp) < 60000;
           });
 
-          // 2. Đồng bộ nạp: Bổ sung các kết quả từ Google Sheet mà thiết bị này chưa có
-          // (Không nạp các dòng đo cũ trên Google Sheet đè vào 3 chất mục tiêu đề tài đã chuẩn hóa)
+          // 2. Đồng bộ nạp: Bổ sung toàn bộ các kết quả từ Google Sheet mà thiết bị này chưa có
           let addedCount = 0;
           const localSigSet = new Set(reconciledLocal.map(l => getResultSignature(l)));
           res.results.forEach(sheetRes => {
-            if (targetIds.includes(sheetRes.testId)) return;
             const sig = getResultSignature(sheetRes);
             if (deletedSignatures.includes(sig)) return;
             if (!localSigSet.has(sig)) {

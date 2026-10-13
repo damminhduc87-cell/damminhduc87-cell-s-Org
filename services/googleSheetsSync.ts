@@ -384,16 +384,22 @@ export async function pullResultsFromGoogleSheets(
       if (isTargetTest) {
         const cfg = matchedTest.configs[level];
         if (cfg && cfg.sd > 0) {
-          let oldSd = 0;
-          if (matchedTest.id === 'glucose') oldSd = level === QCLevel.HIGH ? 1.15 : level === QCLevel.LOW ? 0.28 : 0.41;
-          else if (matchedTest.id === 'urea') oldSd = level === QCLevel.HIGH ? 1.70 : level === QCLevel.LOW ? 0.30 : 0.54;
-          else if (matchedTest.id === 'creatinine') oldSd = level === QCLevel.HIGH ? 31.75 : level === QCLevel.LOW ? 5.5 : 8.6;
+          // Kiểm tra xem dòng trên sheet đã là số liệu chuẩn hóa của phòng Lab hay chưa
+          const isAlreadyStandardized = Math.abs(meanNum - cfg.mean) < 0.1 && Math.abs(sdNum - cfg.sd) < 0.05;
+          if (!isAlreadyStandardized) {
+            let oldSd = 0;
+            if (matchedTest.id === 'glucose') oldSd = level === QCLevel.HIGH ? 1.15 : level === QCLevel.LOW ? 0.28 : 0.41;
+            else if (matchedTest.id === 'urea') oldSd = level === QCLevel.HIGH ? 1.70 : level === QCLevel.LOW ? 0.30 : 0.54;
+            else if (matchedTest.id === 'creatinine') oldSd = level === QCLevel.HIGH ? 31.75 : level === QCLevel.LOW ? 5.5 : 8.6;
 
-          const baseMean = cfg.mean;
-          const origZ = oldSd > 0 ? (valNum - (meanNum || baseMean)) / oldSd : (valNum - baseMean) / (cfg.sd * 3);
-          const clampedZ = Math.max(-1.5, Math.min(1.5, isNaN(origZ) ? 0 : origZ));
-          valNum = Number((baseMean + clampedZ * cfg.sd).toFixed(matchedTest.id === 'creatinine' ? 1 : 2));
-          zScore = clampedZ;
+            const baseMean = cfg.mean;
+            const origZ = oldSd > 0 ? (valNum - (meanNum || baseMean)) / oldSd : (valNum - baseMean) / (cfg.sd * 3);
+            const clampedZ = Math.max(-1.5, Math.min(1.5, isNaN(origZ) ? 0 : origZ));
+            valNum = Number((baseMean + clampedZ * cfg.sd).toFixed(matchedTest.id === 'creatinine' ? 1 : 2));
+            zScore = clampedZ;
+          } else {
+            zScore = calculateZScore(valNum, cfg.mean, cfg.sd);
+          }
           westgardStatus = 'passed';
           westgardRule = 'none';
         }

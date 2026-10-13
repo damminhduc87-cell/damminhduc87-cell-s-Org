@@ -32,13 +32,16 @@ export const DeviceSyncModal: React.FC<DeviceSyncModalProps> = ({
   if (!isOpen) return null;
 
   const currentHost = typeof window !== 'undefined' ? window.location.origin : 'https://damminhduc87-cell-s-org.vercel.app';
-  const shareableUrl = `${currentHost}?sync_connect=1`;
+  const encodedWebhook = webhookUrl ? encodeURIComponent(webhookUrl) : '';
+  const shareableUrl = encodedWebhook
+    ? `${currentHost}?sync_url=${encodedWebhook}&auto_pull=1`
+    : `${currentHost}?sync_connect=1`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=${encodeURIComponent(shareableUrl)}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareableUrl);
     setCopiedLink(true);
-    onAddToast('success', 'Đã sao chép link', 'Bạn có thể gửi link này qua Zalo để mở ngay trên điện thoại.');
+    onAddToast('success', 'Đã sao chép link đồng bộ', 'Mở link này trên máy tính xét nghiệm để tự động đồng bộ dữ liệu từ Google Drive.');
     setTimeout(() => setCopiedLink(false), 3000);
   };
 
