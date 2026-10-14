@@ -283,24 +283,69 @@ export async function pullResultsFromGoogleSheets(
   }
 
   try {
-    const res = await fetch('/api/sheets-sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ webhookUrl, action: 'pull' })
-    });
+    let rawRows: any[] | null = null;
+    let lastError = '';
 
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || `HTTP ${res.status}`);
+    // Chiến lược 1: Gọi qua endpoint Serverless proxy cục bộ /api/sheets-sync
+    try {
+      const res = await fetch('/api/sheets-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ webhookUrl, action: 'pull' })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.rows)) {
+          rawRows = data.rows;
+        } else if (data.error || data.message) {
+          lastError = data.error || data.message;
+        }
+      }
+    } catch (proxyErr: any) {
+      console.warn('Proxy /api/sheets-sync nội bộ không khả dụng, chuyển sang gọi trực tiếp...', proxyErr);
     }
 
-    const data = await res.json();
-    if (!data.success || !Array.isArray(data.rows)) {
+    // Chiến lược 2: Gọi trực tiếp tới Google Apps Script (Google Apps Script hỗ trợ CORS Access-Control-Allow-Origin: *)
+    if (!rawRows) {
+      try {
+        const readUrl = webhookUrl.includes('?') ? `${webhookUrl}&action=read` : `${webhookUrl}?action=read`;
+        const directRes = await fetch(readUrl, { method: 'GET' });
+        if (directRes.ok) {
+          const directData = await directRes.json();
+          if (directData && Array.isArray(directData.rows)) {
+            rawRows = directData.rows;
+          }
+        }
+      } catch (directErr: any) {
+        console.warn('Gọi trực tiếp Google Apps Script không thành công, thử proxy dự phòng...', directErr);
+      }
+    }
+
+    // Chiến lược 3: Gọi qua proxy chính thức của hệ thống Vercel (đảm bảo hoạt động kể cả khi mở ở localhost hoặc domain khác)
+    if (!rawRows) {
+      try {
+        const fallbackRes = await fetch('https://damminhduc87-cell-s-org.vercel.app/api/sheets-sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ webhookUrl, action: 'pull' })
+        });
+        if (fallbackRes.ok) {
+          const fbData = await fallbackRes.json();
+          if (fbData.success && Array.isArray(fbData.rows)) {
+            rawRows = fbData.rows;
+          }
+        }
+      } catch (fbErr: any) {
+        console.error('Tất cả phương thức tải dữ liệu từ Google Sheets đều không khả dụng:', fbErr);
+      }
+    }
+
+    if (!rawRows || !Array.isArray(rawRows)) {
       return {
         success: false,
         results: [],
         count: 0,
-        error: data.error || 'Dữ liệu từ Google Sheets không đúng định dạng hoặc script chưa hỗ trợ đọc.'
+        error: lastError || 'Không thể tải dữ liệu từ Google Sheets. Vui lòng kiểm tra lại đường truyền mạng hoặc Webhook URL.'
       };
     }
 
@@ -315,7 +360,7 @@ export async function pullResultsFromGoogleSheets(
       testMap.set(normalize(t.id), t);
     });
 
-    data.rows.forEach((row: any, idx: number) => {
+    rawRows.forEach((row: any, idx: number) => {
       const rawTestName = String(row.XET_NGHIEM || row['Xét nghiệm'] || row['Tên xét nghiệm'] || '').trim();
       if (!rawTestName) return;
 

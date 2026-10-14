@@ -748,7 +748,7 @@ export const App: React.FC = () => {
     window.addEventListener('focus', onFocus);
     const interval = setInterval(() => {
       handlePullFromGoogleSheets(true);
-    }, 30000);
+    }, 15000);
 
     return () => {
       window.removeEventListener('focus', onFocus);
