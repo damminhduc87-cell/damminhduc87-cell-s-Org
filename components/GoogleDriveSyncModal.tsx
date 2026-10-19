@@ -11,6 +11,8 @@ interface GoogleDriveSyncModalProps {
   onToggleAutoSync: (enabled: boolean) => void;
   tests: LabTest[];
   results: QCResult[];
+  onPullFromSheets?: () => Promise<void>;
+  isSyncing?: boolean;
   onAddToast: (type: 'success' | 'warning' | 'error' | 'info', title: string, message: string) => void;
 }
 
@@ -23,6 +25,8 @@ export const GoogleDriveSyncModal: React.FC<GoogleDriveSyncModalProps> = ({
   onToggleAutoSync,
   tests,
   results,
+  onPullFromSheets,
+  isSyncing,
   onAddToast
 }) => {
   const [inputUrl, setInputUrl] = useState(webhookUrl);
@@ -249,6 +253,38 @@ export const GoogleDriveSyncModal: React.FC<GoogleDriveSyncModalProps> = ({
                   </label>
                 </div>
               </div>
+
+              {/* Pull from Google Drive */}
+              {onPullFromSheets && (
+                <div className="p-4 bg-emerald-50/60 rounded-xl border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <span className="text-xs font-bold text-emerald-900 block">
+                      Tải dữ liệu mới nhất từ Google Drive về máy
+                    </span>
+                    <span className="text-[11px] text-emerald-700/80 block mt-0.5">
+                      Kéo các kết quả vừa đo từ máy tính khác hoặc điện thoại về máy này ngay lập tức.
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onPullFromSheets}
+                    disabled={isSyncing || !isConnected}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-xs"
+                  >
+                    {isSyncing ? (
+                      <>
+                        <i className="fas fa-spinner fa-spin text-xs"></i>
+                        <span>Đang tải về...</span>
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-cloud-download-alt text-xs"></i>
+                        <span>Tải về máy này</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
 
               {/* Bulk sync historical data */}
               <div className="p-4 bg-blue-50/60 rounded-xl border border-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">

@@ -7,6 +7,7 @@ interface DeviceSyncModalProps {
   webhookUrl: string;
   onPullFromSheets: () => Promise<void>;
   onPushToSheets: () => Promise<void>;
+  onForceReloadFromSheets?: () => Promise<void>;
   isSyncing: boolean;
   tests: LabTest[];
   results: QCResult[];
@@ -20,6 +21,7 @@ export const DeviceSyncModal: React.FC<DeviceSyncModalProps> = ({
   webhookUrl,
   onPullFromSheets,
   onPushToSheets,
+  onForceReloadFromSheets,
   isSyncing,
   tests,
   results,
@@ -31,7 +33,10 @@ export const DeviceSyncModal: React.FC<DeviceSyncModalProps> = ({
 
   if (!isOpen) return null;
 
-  const currentHost = typeof window !== 'undefined' ? window.location.origin : 'https://damminhduc87-cell-s-org.vercel.app';
+  const officialHost = 'https://damminhduc87-cell-s-org.vercel.app';
+  const currentHost = (typeof window !== 'undefined' && !window.location.origin.includes('localhost') && !window.location.origin.includes('phan-tich-xet-nghiem')) 
+    ? window.location.origin 
+    : officialHost;
   const encodedWebhook = webhookUrl ? encodeURIComponent(webhookUrl) : '';
   const shareableUrl = encodedWebhook
     ? `${currentHost}?sync_url=${encodedWebhook}&auto_pull=1`
@@ -232,6 +237,21 @@ export const DeviceSyncModal: React.FC<DeviceSyncModalProps> = ({
                   </p>
                 </button>
               </div>
+
+              {onForceReloadFromSheets && (
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    disabled={isSyncing}
+                    onClick={onForceReloadFromSheets}
+                    className="w-full py-2.5 px-3 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 shadow-2xs disabled:opacity-50"
+                    title="Nạp sạch toàn bộ kết quả từ Google Drive, giải quyết triệt để lỗi không đồng bộ giữa 2 máy"
+                  >
+                    <i className={`fas fa-rotate text-amber-600 ${isSyncing ? 'animate-spin' : ''}`}></i>
+                    <span>Tải mới sạch toàn bộ từ Google Drive (Làm mới bộ nhớ đệm)</span>
+                  </button>
+                </div>
+              )}
 
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-1">
                 <span className="font-bold block text-slate-700">💡 Cơ chế đồng bộ thông minh:</span>

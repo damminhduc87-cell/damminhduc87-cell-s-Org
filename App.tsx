@@ -357,7 +357,8 @@ export const App: React.FC = () => {
     const val = Number(r.value.toFixed(2));
     const d = new Date(r.timestamp);
     const dayStr = `${d.getDate()}-${d.getMonth() + 1}-${d.getFullYear()}`;
-    return `${cleanName}_${r.level}_${val}_${dayStr}`;
+    const timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    return `${cleanName}_${r.level}_${val}_${dayStr}_${timeStr}`;
   };
 
   // 2. Điều hướng & Bộ lọc
@@ -662,7 +663,8 @@ export const App: React.FC = () => {
   };
 
   // Kéo dữ liệu mới nhất từ Google Drive về máy / điện thoại (2-way Cloud Sync)
-  const handlePullFromGoogleSheets = async (silent = false) => {
+  const handlePullFromGoogleSheets = async (silentParam: boolean | any = false) => {
+    const silent = silentParam === true;
     if (!googleSheetsUrl) {
       if (!silent) setIsDeviceSyncModalOpen(true);
       return;
@@ -674,13 +676,19 @@ export const App: React.FC = () => {
         if (res.updatedTests && res.updatedTests.length > 0) {
           setTests(res.updatedTests);
         }
+
+        let addedCount = 0;
+        let lastTargetTestId: string | null = null;
+        let lastTargetLevel: QCLevel | null = null;
+
         setRawResults(prev => {
           const sheetSignatures = new Set(res.results.map(r => getResultSignature(r)));
           const now = Date.now();
+
           // 1. Kiểm tra xem thiết bị hiện tại có đang chỉ chạy trên dữ liệu mẫu ban đầu (Mock Data) hay không
-          // Các dữ liệu mẫu mặc định có ID bắt đầu bằng g-, u-, c- và số lượng ít (<= 40 bản ghi)
-          const hasOnlyMockData = prev.length <= 40 && prev.every(local => 
-            local.id.startsWith('g-') || local.id.startsWith('u-') || local.id.startsWith('c-')
+          const hasOnlyMockData = prev.length <= 150 && prev.every(local => 
+            local.id.startsWith('g-') || local.id.startsWith('u-') || local.id.startsWith('c-') ||
+            local.id.startsWith('cre-') || local.id.startsWith('chol-') || local.id.startsWith('ast-') || local.id.startsWith('alb-')
           );
 
           // Nếu máy tính mới chỉ có Mock Data và trên Sheet có dữ liệu thực tế -> Thay thế Mock Data bằng dữ liệu thật từ Sheet
@@ -692,7 +700,6 @@ export const App: React.FC = () => {
           });
 
           // 2. Đồng bộ nạp: Bổ sung toàn bộ các kết quả từ Google Sheet mà thiết bị này chưa có
-          let addedCount = 0;
           const localSigSet = new Set(reconciledLocal.map(l => getResultSignature(l)));
           res.results.forEach(sheetRes => {
             const sig = getResultSignature(sheetRes);
@@ -706,30 +713,66 @@ export const App: React.FC = () => {
 
           // Sắp xếp lại theo thời gian
           reconciledLocal.sort((a, b) => a.timestamp - b.timestamp);
-
-          if (addedCount > 0) {
-            addToast('success', 'Đồng bộ thiết bị', `Đã nạp thêm ${addedCount} kết quả mới từ Google Drive!`);
-            const lastItem = reconciledLocal[reconciledLocal.length - 1];
-            if (lastItem) {
-              setSelectedTestId(lastItem.testId);
-              setSelectedLevel(lastItem.level);
-            }
-          } else if (!silent) {
-            addToast('info', 'Dữ liệu đã mới nhất', 'Tất cả kết quả trên Google Drive đã được đồng bộ đầy đủ.');
+          const lastItem = reconciledLocal[reconciledLocal.length - 1];
+          if (lastItem) {
+            lastTargetTestId = lastItem.testId;
+            lastTargetLevel = lastItem.level;
           }
 
           return standardizeResultsList(reconciledLocal, tests);
         });
+
+        if (addedCount > 0) {
+          addToast('success', 'Đồng bộ thiết bị thành công', `Đã nạp thêm ${addedCount} kết quả mới từ Google Drive!`);
+          if (lastTargetTestId && lastTargetLevel) {
+            setSelectedTestId(lastTargetTestId);
+            setSelectedLevel(lastTargetLevel);
+          }
+        } else if (!silent) {
+          addToast('info', 'Dữ liệu đã mới nhất', `Tất cả ${res.results.length} kết quả trên Google Drive đã được đồng bộ đầy đủ.`);
+        }
       } else if (res.success && res.results.length === 0) {
         if (!silent) addToast('info', 'Google Drive trống', 'Chưa có bản ghi kết quả nào trong sheet NhatKy_IQC.');
       } else {
         if (!silent) {
-          addToast('warning', 'Cần cập nhật mã Apps Script', res.error || 'Vui lòng cập nhật bản script v2 để Google Sheets mở quyền đọc dữ liệu về máy tính.');
+          addToast('warning', 'Chưa tải được dữ liệu', res.error || 'Vui lòng kiểm tra lại quyền truy cập hoặc kết nối mạng.');
           setIsDriveSyncModalOpen(true);
         }
       }
     } catch (err: any) {
       if (!silent) addToast('error', 'Lỗi đồng bộ', err.message || 'Không thể kết nối Google Drive');
+    } finally {
+      setIsCloudSyncing(false);
+    }
+  };
+
+  // Làm mới sạch toàn bộ dữ liệu từ Google Drive (Xóa bộ nhớ đệm cục bộ)
+  const handleForceReloadFromGoogleSheets = async () => {
+    if (!googleSheetsUrl) {
+      setIsDeviceSyncModalOpen(true);
+      return;
+    }
+    setIsCloudSyncing(true);
+    try {
+      const res = await pullResultsFromGoogleSheets(googleSheetsUrl, tests);
+      if (res.success && res.results.length > 0) {
+        if (res.updatedTests && res.updatedTests.length > 0) {
+          setTests(res.updatedTests);
+        }
+        const sorted = res.results.slice().sort((a, b) => a.timestamp - b.timestamp);
+        const standardized = standardizeResultsList(sorted, tests);
+        setRawResults(standardized);
+        addToast('success', 'Đã làm mới sạch toàn bộ', `Đã đồng bộ sạch toàn bộ ${standardized.length} kết quả từ Google Drive!`);
+        const lastItem = standardized[standardized.length - 1];
+        if (lastItem) {
+          setSelectedTestId(lastItem.testId);
+          setSelectedLevel(lastItem.level);
+        }
+      } else {
+        addToast('warning', 'Không có dữ liệu', res.error || 'Google Drive trống hoặc chưa tải được.');
+      }
+    } catch (err: any) {
+      addToast('error', 'Lỗi làm mới', err.message || 'Không thể kết nối Google Drive');
     } finally {
       setIsCloudSyncing(false);
     }
@@ -1027,7 +1070,7 @@ export const App: React.FC = () => {
           onOpenDriveSync={() => setIsDriveSyncModalOpen(true)}
           isDriveConnected={!!googleSheetsUrl && googleSheetsUrl.startsWith('https://script.google.com/')}
           onOpenDeviceSync={() => setIsDeviceSyncModalOpen(true)}
-          onPullFromSheets={handlePullFromGoogleSheets}
+          onPullFromSheets={() => handlePullFromGoogleSheets(false)}
           isSyncing={isCloudSyncing}
           onStandardizeQc={handleStandardizeTargetQc}
         />
@@ -1697,6 +1740,8 @@ export const App: React.FC = () => {
           onToggleAutoSync={setAutoSyncToSheets}
           tests={tests}
           results={rawResults}
+          onPullFromSheets={() => handlePullFromGoogleSheets(false)}
+          isSyncing={isCloudSyncing}
           onAddToast={addToast}
         />
       )}
@@ -1707,8 +1752,9 @@ export const App: React.FC = () => {
           isOpen={isDeviceSyncModalOpen}
           onClose={() => setIsDeviceSyncModalOpen(false)}
           webhookUrl={googleSheetsUrl}
-          onPullFromSheets={handlePullFromGoogleSheets}
+          onPullFromSheets={() => handlePullFromGoogleSheets(false)}
           onPushToSheets={handlePushAllToGoogleSheets}
+          onForceReloadFromSheets={handleForceReloadFromGoogleSheets}
           isSyncing={isCloudSyncing}
           tests={tests}
           results={rawResults}
