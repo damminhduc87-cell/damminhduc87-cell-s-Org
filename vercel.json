@@ -2,12 +2,19 @@
   "functions": {
     "api/advisor.ts": {
       "maxDuration": 60
+    },
+    "api/sheets-sync.ts": {
+      "maxDuration": 30
     }
   },
   "rewrites": [
     {
       "source": "/api/advisor",
       "destination": "/api/advisor"
+    },
+    {
+      "source": "/api/sheets-sync",
+      "destination": "/api/sheets-sync"
     },
     {
       "source": "/(.*)",
