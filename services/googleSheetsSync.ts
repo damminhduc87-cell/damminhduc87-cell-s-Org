@@ -419,36 +419,9 @@ export async function pullResultsFromGoogleSheets(
       let valNum = Number(rawVal);
       if (isNaN(valNum)) return;
 
-      // CHUẨN HÓA AN TOÀN CHO 3 CHẤT MỤC TIÊU (Glucose, Urea, Creatinine):
-      // Chuyển đổi độ lệch thực tế sang SD chuẩn của phòng Lab để không bao giờ vi phạm Westgard (1-3s, R-4s)
-      const isTargetTest = matchedTest && (matchedTest.id === 'glucose' || matchedTest.id === 'urea' || matchedTest.id === 'creatinine');
       let westgardStatus: 'passed' | 'warning' | 'violation' = 'passed';
       let westgardRule = 'none';
       let zScore = 0;
-
-      if (isTargetTest) {
-        const cfg = matchedTest.configs[level];
-        if (cfg && cfg.sd > 0) {
-          // Kiểm tra xem dòng trên sheet đã là số liệu chuẩn hóa của phòng Lab hay chưa
-          const isAlreadyStandardized = Math.abs(meanNum - cfg.mean) < 0.1 && Math.abs(sdNum - cfg.sd) < 0.05;
-          if (!isAlreadyStandardized) {
-            let oldSd = 0;
-            if (matchedTest.id === 'glucose') oldSd = level === QCLevel.HIGH ? 1.15 : level === QCLevel.LOW ? 0.28 : 0.41;
-            else if (matchedTest.id === 'urea') oldSd = level === QCLevel.HIGH ? 1.70 : level === QCLevel.LOW ? 0.30 : 0.54;
-            else if (matchedTest.id === 'creatinine') oldSd = level === QCLevel.HIGH ? 31.75 : level === QCLevel.LOW ? 5.5 : 8.6;
-
-            const baseMean = cfg.mean;
-            const origZ = oldSd > 0 ? (valNum - (meanNum || baseMean)) / oldSd : (valNum - baseMean) / (cfg.sd * 3);
-            const clampedZ = Math.max(-1.5, Math.min(1.5, isNaN(origZ) ? 0 : origZ));
-            valNum = Number((baseMean + clampedZ * cfg.sd).toFixed(matchedTest.id === 'creatinine' ? 1 : 2));
-            zScore = clampedZ;
-          } else {
-            zScore = calculateZScore(valNum, cfg.mean, cfg.sd);
-          }
-          westgardStatus = 'passed';
-          westgardRule = 'none';
-        }
-      }
 
       const rawDate = row.NGAY_GIO || row['Ngày giờ'] || row['Ngày'];
       let timestamp = Date.now() - idx * 1000;
@@ -472,20 +445,25 @@ export async function pullResultsFromGoogleSheets(
         }
       }
 
-      if (!isTargetTest) {
-        let rawZ = row['SD_INDEX_Z-SCORE'] || row.SD_INDEX_Z_SCORE || row['Z-score'] || row['Z-Score'];
-        if (typeof rawZ === 'string') rawZ = parseFloat(rawZ.replace(',', '.'));
-        if (!isNaN(Number(rawZ))) zScore = Number(rawZ);
-
-        const rawStatus = String(row.TRANG_THAI || row['Trạng thái'] || '').toLowerCase();
-        if (rawStatus.includes('vi phạm') || rawStatus.includes('vi pham') || rawStatus.includes('violation')) {
-          westgardStatus = 'violation';
-          const matchRule = rawStatus.match(/(\d[_\-]?\d?s|r[_\-]?4s|\d+x)/i);
-          if (matchRule) westgardRule = matchRule[0];
-        } else if (rawStatus.includes('cảnh báo') || rawStatus.includes('canh bao') || rawStatus.includes('warning')) {
-          westgardStatus = 'warning';
-          westgardRule = '1_2s';
+      let rawZ = row['SD_INDEX_Z-SCORE'] || row.SD_INDEX_Z_SCORE || row['Z-score'] || row['Z-Score'];
+      if (typeof rawZ === 'string') rawZ = parseFloat(rawZ.replace(',', '.'));
+      if (!isNaN(Number(rawZ))) {
+        zScore = Number(rawZ);
+      } else if (matchedTest) {
+        const cfg = matchedTest.configs[level];
+        if (cfg && cfg.sd > 0) {
+          zScore = calculateZScore(valNum, cfg.mean, cfg.sd);
         }
+      }
+
+      const rawStatus = String(row.TRANG_THAI || row['Trạng thái'] || '').toLowerCase();
+      if (rawStatus.includes('vi phạm') || rawStatus.includes('vi pham') || rawStatus.includes('violation')) {
+        westgardStatus = 'violation';
+        const matchRule = rawStatus.match(/(\d[_\-]?\d?s|r[_\-]?4s|\d+x)/i);
+        if (matchRule) westgardRule = matchRule[0];
+      } else if (rawStatus.includes('cảnh báo') || rawStatus.includes('canh bao') || rawStatus.includes('warning')) {
+        westgardStatus = 'warning';
+        westgardRule = '1_2s';
       }
 
       parsedResults.push({

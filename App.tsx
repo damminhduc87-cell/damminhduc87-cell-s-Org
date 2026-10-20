@@ -242,43 +242,13 @@ function cleanAndDeduplicateTests(rawTests: LabTest[]): { cleanTests: LabTest[];
   return { cleanTests, idMap };
 }
 
-// Chuẩn hóa và làm sạch toàn diện các kết quả đo của Glucose, Ure và Creatinin để đảm bảo tuân thủ TEa và loại bỏ vi phạm Westgard
-export function standardizeResultsList(results: QCResult[], currentTests: LabTest[]): QCResult[] {
-  const targetIds = ['glucose', 'urea', 'creatinine'];
+// Làm sạch và đồng nhất mã xét nghiệm (bảo toàn 100% giá trị đo thực tế của KTV)
+export function standardizeResultsList(results: QCResult[], currentTests?: LabTest[]): QCResult[] {
   return results.map(r => {
     let tId = r.testId;
     if (tId === 'urease' || tId === 'test_urease') tId = 'urea';
     else if (tId === 'creatinin' || tId === 'test_creatinin') tId = 'creatinine';
     else if (tId === 'test_glucose') tId = 'glucose';
-
-    if (!targetIds.includes(tId)) return { ...r, testId: tId };
-
-    const test = currentTests.find(t => t.id === tId);
-    if (!test) return { ...r, testId: tId };
-
-    const cfg = test.configs[r.level];
-    if (!cfg || cfg.sd <= 0) return { ...r, testId: tId };
-
-    const diff = Math.abs(r.value - cfg.mean);
-    // Nếu độ lệch vượt quá 1.8 SD chuẩn mới (do kết quả đo thô cũ mang phương sai lớn)
-    if (diff > 1.8 * cfg.sd) {
-      let oldSd = 0;
-      if (tId === 'glucose') oldSd = r.level === QCLevel.HIGH ? 1.15 : r.level === QCLevel.LOW ? 0.28 : 0.41;
-      else if (tId === 'urea') oldSd = r.level === QCLevel.HIGH ? 1.70 : r.level === QCLevel.LOW ? 0.30 : 0.54;
-      else if (tId === 'creatinine') oldSd = r.level === QCLevel.HIGH ? 31.75 : r.level === QCLevel.LOW ? 5.5 : 8.6;
-
-      const origZ = oldSd > 0 ? (r.value - cfg.mean) / oldSd : (r.value - cfg.mean) / (cfg.sd * 3);
-      const clampedZ = Math.max(-1.5, Math.min(1.5, isNaN(origZ) ? 0 : origZ));
-      const newValue = Number((cfg.mean + clampedZ * cfg.sd).toFixed(tId === 'creatinine' ? 1 : 2));
-      return {
-        ...r,
-        testId: tId,
-        value: newValue,
-        zScore: clampedZ,
-        westgardStatus: 'passed',
-        westgardRule: 'none'
-      };
-    }
 
     return { ...r, testId: tId };
   });
@@ -321,10 +291,8 @@ export const App: React.FC = () => {
     if (oldSaved) {
       try {
         const parsed: QCResult[] = JSON.parse(oldSaved);
-        if (Array.isArray(parsed)) {
-          const otherResults = parsed.filter(r => r.testId !== 'urea' && r.testId !== 'glucose' && r.testId !== 'creatinine');
-          const standardizedMocks = MOCK_RESULTS.filter(r => r.testId === 'urea' || r.testId === 'glucose' || r.testId === 'creatinine');
-          return [...otherResults, ...standardizedMocks];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return standardizeResultsList(parsed);
         }
       } catch (e) {
         console.error(e);
@@ -482,9 +450,9 @@ export const App: React.FC = () => {
   useEffect(() => { localStorage.setItem('mdlab_google_sheets_url', googleSheetsUrl); }, [googleSheetsUrl]);
   useEffect(() => { localStorage.setItem('mdlab_auto_sync_sheets', String(autoSyncToSheets)); }, [autoSyncToSheets]);
 
-  // Khôi phục và chuẩn hóa an toàn SD thực tế phòng Lab và EQA đạt TEa (Bảo toàn 100% dữ liệu khác)
+  // Cập nhật thông số cấu hình chuẩn (Mean, SD, TEa, EQA) cho Glucose, Ure và Creatinin (Bảo toàn 100% dữ liệu kết quả đo)
   const handleStandardizeTargetQc = () => {
-    if (confirm('Bạn có muốn chuẩn hóa thông số SD thực tế và kết quả QC/EQA đạt TEa cho 3 chất: Glucose, Ure và Creatinin không?\n\n(LƯU Ý AN TOÀN: Toàn bộ dữ liệu các xét nghiệm khác, biên bản CAPA, danh mục máy và liên kết Google Drive sẽ được GIỮ NGUYÊN 100%).')) {
+    if (confirm('Bạn có muốn cập nhật thông số cấu hình mục tiêu (Mean, SD, TEa%, EQA) đạt chuẩn cho 3 chất: Glucose, Ure và Creatinin không?\n\n(LƯU Ý: Thao tác này chỉ cài đặt cấu hình thông số kỹ thuật, TOÀN BỘ KẾT QUẢ ĐO THỰC TẾ, biên bản CAPA và liên kết Google Drive sẽ được GIỮ NGUYÊN 100%).')) {
       const targetIds = ['glucose', 'urea', 'creatinine'];
       const standardizedTargets = INITIAL_TESTS.filter(t => targetIds.includes(t.id));
 
@@ -503,30 +471,7 @@ export const App: React.FC = () => {
       localStorage.setItem('mdlab_tests_v5', JSON.stringify(updatedTests));
       localStorage.setItem('mdlab_tests_v3', JSON.stringify(updatedTests));
 
-      // 2. Giữ nguyên 100% kết quả QC của các xét nghiệm khác, chuẩn hóa toàn diện kết quả của 3 chất mục tiêu
-      const otherResults = rawResults.filter(r => !targetIds.includes(r.testId) && r.testId !== 'urease' && r.testId !== 'test_urease');
-      const targetExisting = rawResults.filter(r => targetIds.includes(r.testId) || r.testId === 'urease' || r.testId === 'test_urease');
-      const standardizedTargetResults = targetExisting.length > 0
-        ? standardizeResultsList(targetExisting, updatedTests)
-        : MOCK_RESULTS.filter(r => targetIds.includes(r.testId));
-      const mergedResults = [...otherResults, ...standardizedTargetResults];
-
-      setRawResults(mergedResults);
-      localStorage.setItem('mdlab_results_v5', JSON.stringify(mergedResults));
-      localStorage.setItem('mdlab_results_v4', JSON.stringify(mergedResults));
-      localStorage.setItem('mdlab_results_v3', JSON.stringify(mergedResults));
-      localStorage.setItem('mdlab_standardized_targets_v1', 'true');
-
-      // 3. Tự động đồng bộ các dòng kết quả đạt chuẩn này lên Google Sheets nếu đang kết nối
-      if (googleSheetsUrl && autoSyncToSheets) {
-        syncResultsToGoogleSheets(googleSheetsUrl, standardizedTargetResults, updatedTests).then(res => {
-          if (res.success) {
-            addToast('success', 'Đã lưu lên Google Drive', `Đã tự động lưu ${res.count} kết quả chuẩn hóa vào Google Sheets!`);
-          }
-        }).catch(err => console.error('Lỗi đẩy kết quả chuẩn hóa lên Drive:', err));
-      }
-
-      addToast('success', 'Đã chuẩn hóa thành công!', 'Đã cập nhật SD và chuẩn hóa toàn bộ kết quả QC đạt TEa cho Glucose, Ure, Creatinin. Toàn bộ vi phạm lỗi Westgard đã được khắc phục hoàn toàn!');
+      addToast('success', 'Đã cập nhật cấu hình chuẩn TEa!', 'Đã cập nhật thông số Mean, SD và TEa% cho Glucose, Ure, Creatinin. Toàn bộ kết quả nội kiểm thực tế của bạn được giữ nguyên 100%.');
     }
   };
 

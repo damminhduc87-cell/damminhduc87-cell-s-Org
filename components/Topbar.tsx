@@ -114,16 +114,16 @@ export const Topbar: React.FC<TopbarProps> = ({
 
         {/* Right Controls */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {/* Quick Standardize In-House SD & EQA Button */}
+          {/* Quick Standardize In-House SD & EQA Config Button */}
           {onStandardizeQc && (
             <button
               type="button"
               onClick={onStandardizeQc}
               className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 text-xs font-bold transition-all cursor-pointer shadow-2xs"
-              title="Đồng bộ toàn bộ thông số SD thực tế và EQA chuẩn cho Glucose, Ure, Creatinin đạt TEa"
+              title="Cập nhật cấu hình thông số mục tiêu (Mean, SD, TEa%) chuẩn cho Glucose, Ure, Creatinin"
             >
-              <i className="fas fa-wand-magic-sparkles text-amber-600"></i>
-              <span className="hidden sm:inline">Chuẩn hóa SD (Đạt TEa)</span>
+              <i className="fas fa-sliders text-amber-600"></i>
+              <span className="hidden sm:inline">Cấu hình chuẩn TEa</span>
             </button>
           )}
 
