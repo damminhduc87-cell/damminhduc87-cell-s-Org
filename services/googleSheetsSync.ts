@@ -1,4 +1,5 @@
 import { LabTest, QCResult, QCLevel } from '../types';
+import { calculateZScore } from './westgardEngine';
 
 export interface GoogleSheetRowPayload {
   NGAY_GIO: string;
@@ -452,7 +453,7 @@ export async function pullResultsFromGoogleSheets(
       } else if (matchedTest) {
         const cfg = matchedTest.configs[level];
         if (cfg && cfg.sd > 0) {
-          zScore = calculateZScore(valNum, cfg.mean, cfg.sd);
+          zScore = Number(((valNum - cfg.mean) / cfg.sd).toFixed(2));
         }
       }
 
