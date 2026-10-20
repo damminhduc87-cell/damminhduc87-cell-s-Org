@@ -1069,10 +1069,12 @@ export const App: React.FC = () => {
                 onPointClick={handleOpenCapa}
               />
 
-              {/* Six Sigma & Total Allowable Error Panel */}
+              {/* Six Sigma & Total Allowable Error Panel (Real-time Dynamic Calculation) */}
               <SigmaAnalysis
                 test={activeTest}
                 config={activeLevelConfig}
+                results={activeLevelResults}
+                timeRange={timeRange}
                 onOpenCapa={() => {
                   if (latestResult) handleOpenCapa(latestResult);
                   else setActiveTab('capas');
