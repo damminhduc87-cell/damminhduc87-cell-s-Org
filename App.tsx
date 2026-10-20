@@ -242,15 +242,24 @@ function cleanAndDeduplicateTests(rawTests: LabTest[]): { cleanTests: LabTest[];
   return { cleanTests, idMap };
 }
 
-// Làm sạch và đồng nhất mã xét nghiệm (bảo toàn 100% giá trị đo thực tế của KTV)
-export function standardizeResultsList(results: QCResult[], currentTests?: LabTest[]): QCResult[] {
+// Làm sạch và đồng nhất mã xét nghiệm & người thực hiện (loại bỏ chuỗi rác "(Google Sheets)", bảo toàn 100% giá trị đo thực tế của KTV)
+export function standardizeResultsList(results: QCResult[], currentTests?: LabTest[], fallbackTechnician?: string): QCResult[] {
+  const activeTech = (fallbackTechnician || (typeof window !== 'undefined' ? localStorage.getItem('mdlab_technician') : '') || 'Đàm Minh Đức').replace(/^KTV\.?\s*/i, '').trim();
+
   return results.map(r => {
     let tId = r.testId;
     if (tId === 'urease' || tId === 'test_urease') tId = 'urea';
     else if (tId === 'creatinin' || tId === 'test_creatinin') tId = 'creatinine';
     else if (tId === 'test_glucose') tId = 'glucose';
 
-    return { ...r, testId: tId };
+    let tech = (r.technician || '').trim();
+    if (!tech || tech.toLowerCase().includes('google') || tech.toLowerCase().includes('sheet')) {
+      tech = activeTech;
+    } else {
+      tech = tech.replace(/^KTV\.?\s*/i, '').trim();
+    }
+
+    return { ...r, testId: tId, technician: tech };
   });
 }
 
@@ -355,7 +364,7 @@ export const App: React.FC = () => {
   const [currentTechnician, setCurrentTechnician] = useState<string>(() => {
     const saved = localStorage.getItem('mdlab_technician');
     if (saved) return saved.replace(/^KTV\.?\s*/i, '');
-    return 'Nguyễn Văn A';
+    return 'Đàm Minh Đức';
   });
   const [selectedWorksheetAnalyzer, setSelectedWorksheetAnalyzer] = useState<string>('all');
   const [configSearchTerm, setConfigSearchTerm] = useState<string>('');
@@ -596,7 +605,7 @@ export const App: React.FC = () => {
   const triggerGoogleSheetsSync = async (resultsToSync: QCResult[]) => {
     if (!googleSheetsUrl || !autoSyncToSheets || resultsToSync.length === 0) return;
     try {
-      const res = await syncResultsToGoogleSheets(googleSheetsUrl, resultsToSync, tests);
+      const res = await syncResultsToGoogleSheets(googleSheetsUrl, resultsToSync, tests, currentTechnician);
       if (res.success) {
         addToast('success', 'Đã lưu lên Google Drive', `Đã đồng bộ tự động ${res.count} kết quả vào file Google Sheets.`);
       } else {
@@ -616,7 +625,7 @@ export const App: React.FC = () => {
     }
     setIsCloudSyncing(true);
     try {
-      const res = await pullResultsFromGoogleSheets(googleSheetsUrl, tests);
+      const res = await pullResultsFromGoogleSheets(googleSheetsUrl, tests, currentTechnician);
       if (res.success && res.results.length > 0) {
         if (res.updatedTests && res.updatedTests.length > 0) {
           setTests(res.updatedTests);
@@ -664,7 +673,7 @@ export const App: React.FC = () => {
             lastTargetLevel = lastItem.level;
           }
 
-          return standardizeResultsList(reconciledLocal, tests);
+          return standardizeResultsList(reconciledLocal, tests, currentTechnician);
         });
 
         if (addedCount > 0) {
@@ -699,13 +708,13 @@ export const App: React.FC = () => {
     }
     setIsCloudSyncing(true);
     try {
-      const res = await pullResultsFromGoogleSheets(googleSheetsUrl, tests);
+      const res = await pullResultsFromGoogleSheets(googleSheetsUrl, tests, currentTechnician);
       if (res.success && res.results.length > 0) {
         if (res.updatedTests && res.updatedTests.length > 0) {
           setTests(res.updatedTests);
         }
         const sorted = res.results.slice().sort((a, b) => a.timestamp - b.timestamp);
-        const standardized = standardizeResultsList(sorted, tests);
+        const standardized = standardizeResultsList(sorted, tests, currentTechnician);
         setRawResults(standardized);
         addToast('success', 'Đã làm mới sạch toàn bộ', `Đã đồng bộ sạch toàn bộ ${standardized.length} kết quả từ Google Drive!`);
         const lastItem = standardized[standardized.length - 1];
@@ -752,7 +761,7 @@ export const App: React.FC = () => {
     }
     setIsCloudSyncing(true);
     try {
-      const res = await syncResultsToGoogleSheets(googleSheetsUrl, rawResults, tests);
+      const res = await syncResultsToGoogleSheets(googleSheetsUrl, rawResults, tests, currentTechnician);
       if (res.success) {
         addToast('success', 'Đã lưu lên Drive', `Đã đồng bộ thành công toàn bộ ${res.count} kết quả lên Google Sheets!`);
       } else {
@@ -912,7 +921,7 @@ export const App: React.FC = () => {
       // 3. Đồng bộ lệnh xóa sang Google Sheets
       if (googleSheetsUrl) {
         try {
-          const res = await deleteResultFromGoogleSheets(googleSheetsUrl, target, tests);
+          const res = await deleteResultFromGoogleSheets(googleSheetsUrl, target, tests, currentTechnician);
           if (res.success) {
             addToast('success', 'Đã xóa trên Google Drive', 'Đã đồng bộ xóa kết quả trong file Google Sheets.');
           }

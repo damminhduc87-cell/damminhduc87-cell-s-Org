@@ -348,8 +348,11 @@ export const LogbookTable: React.FC<LogbookTableProps> = ({
                     </td>
 
                     {/* Technician */}
-                    <td className="px-4 py-3.5 text-slate-500 font-medium">
-                      {r.technician ? r.technician.replace(/^KTV\.?\s*/i, '') : '---'}
+                    <td className="px-4 py-3.5 text-slate-700 font-medium whitespace-nowrap">
+                      <div className="flex items-center gap-1.5">
+                        <i className="fas fa-user-circle text-slate-400 text-xs"></i>
+                        <span>{r.technician && !r.technician.toLowerCase().includes('google') ? r.technician.replace(/^KTV\.?\s*/i, '') : 'Đàm Minh Đức'}</span>
+                      </div>
                     </td>
 
                     {/* Actions */}

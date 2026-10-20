@@ -320,7 +320,7 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
                           Quy tắc Westgard: <strong className="uppercase text-white">{d.rule === 'none' ? 'Hợp lệ' : d.rule}</strong>
                         </p>
                         <p className="text-[10px] text-slate-400 mt-0.5">
-                          Người thực hiện: <strong>{d.technician ? d.technician.replace(/^KTV\.?\s*/i, '') : '---'}</strong>
+                          Người thực hiện: <strong>{d.technician && !d.technician.toLowerCase().includes('google') ? d.technician.replace(/^KTV\.?\s*/i, '') : 'Đàm Minh Đức'}</strong>
                         </p>
                         {d.status === 'violation' && (
                           <div className="mt-2 pt-2 border-t border-red-500/40 text-[11px] text-red-300 font-bold flex items-center gap-1.5 animate-pulse">

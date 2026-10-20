@@ -31,7 +31,13 @@ export const CapaReportModal: React.FC<CapaReportModalProps> = ({
 
   const [analyzerName, setAnalyzerName] = useState(test.analyzerName || 'Máy sinh hóa / miễn dịch tự động');
   const [lotNumber, setLotNumber] = useState(result.lotNumber || config?.currentLot || 'LOT-2026-A1');
-  const [technician, setTechnician] = useState((result.technician || 'Nguyễn Văn A').replace(/^KTV\.?\s*/i, ''));
+  const [technician, setTechnician] = useState(() => {
+    let t = (result.technician || '').trim();
+    if (!t || t.toLowerCase().includes('google') || t.toLowerCase().includes('sheet')) {
+      t = (typeof window !== 'undefined' ? localStorage.getItem('mdlab_technician') : '') || 'Đàm Minh Đức';
+    }
+    return t.replace(/^KTV\.?\s*/i, '');
+  });
   const [approver, setApprover] = useState(result.approver || 'BS. CKII Trưởng Khoa');
   
   const [incidentDescription, setIncidentDescription] = useState(

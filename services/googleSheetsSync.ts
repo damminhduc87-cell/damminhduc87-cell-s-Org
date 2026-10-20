@@ -12,6 +12,7 @@ export interface GoogleSheetRowPayload {
   TRANG_THAI: string;
   HANH_DONG_KHAC_PHUC: string;
   TEN_MAY: string;
+  NGUOI_THUC_HIEN?: string;
 }
 
 export const APPS_SCRIPT_TEMPLATE = `function doPost(e) {
@@ -26,8 +27,23 @@ export const APPS_SCRIPT_TEMPLATE = `function doPost(e) {
       sheet.appendRow([
         "NGAY_GIO", "XET_NGHIEM", "MUC_IQC", "GIA_TRI_DO_LUONG", 
         "TAGRET_MEAN", "SD_DOLECHCHUAN", "SD_INDEX_Z-SCORE", 
-        "TRANG_THAI", "HANH_DONG_KHAC_PHUC", "TEN_MAY"
+        "TRANG_THAI", "HANH_DONG_KHAC_PHUC", "TEN_MAY", "NGUOI_THUC_HIEN"
       ]);
+    } else {
+      var lastCol = sheet.getLastColumn();
+      if (lastCol > 0) {
+        var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+        var hasTech = false;
+        for (var h = 0; h < headers.length; h++) {
+          var hName = String(headers[h] || '').toLowerCase();
+          if (hName.indexOf('nguoi') !== -1 || hName.indexOf('ktv') !== -1 || hName.indexOf('technician') !== -1) {
+            hasTech = true; break;
+          }
+        }
+        if (!hasTech) {
+          sheet.getRange(1, lastCol + 1).setValue("NGUOI_THUC_HIEN");
+        }
+      }
     }
     
     var payload = JSON.parse(e.postData.contents);
@@ -98,7 +114,8 @@ export const APPS_SCRIPT_TEMPLATE = `function doPost(e) {
         r.SD_INDEX_Z_SCORE !== undefined ? r.SD_INDEX_Z_SCORE : "",
         r.TRANG_THAI || "",
         r.HANH_DONG_KHAC_PHUC || "",
-        r.TEN_MAY || ""
+        r.TEN_MAY || "",
+        r.NGUOI_THUC_HIEN || ""
       ]);
     }
     
@@ -141,6 +158,9 @@ function doGet(e) {
       for (var j = 0; j < headers.length; j++) {
         rowObj[headers[j]] = values[i][j];
       }
+      if (values[i].length > 10 && !rowObj["NGUOI_THUC_HIEN"]) {
+        rowObj["NGUOI_THUC_HIEN"] = values[i][10];
+      }
       rows.push(rowObj);
     }
     
@@ -155,7 +175,11 @@ function doGet(e) {
 /**
  * Định dạng một QCResult thành đối tượng hàng tương thích với bảng Google Sheet
  */
-export function formatResultToSheetRow(result: QCResult, tests: LabTest[]): GoogleSheetRowPayload {
+export function formatResultToSheetRow(
+  result: QCResult, 
+  tests: LabTest[], 
+  fallbackTechnician?: string
+): GoogleSheetRowPayload {
   const test = tests.find(t => t.id === result.testId);
   const rawName = test?.name || result.testId;
   const testName = rawName.includes('(') ? rawName.split('(')[0].trim() : rawName.trim();
@@ -175,6 +199,13 @@ export function formatResultToSheetRow(result: QCResult, tests: LabTest[]): Goog
 
   const levelText = result.level === QCLevel.NORMAL ? 'Normal' : result.level === QCLevel.LOW ? 'Low' : 'High';
 
+  // Lấy tên KTV từ kết quả hoặc fallback về KTV hiện tại trên máy đang thao tác
+  let tech = (result.technician || '').trim();
+  if (!tech || tech.toLowerCase().includes('google') || tech.toLowerCase().includes('sheet')) {
+    tech = (fallbackTechnician || (typeof window !== 'undefined' ? localStorage.getItem('mdlab_technician') : '') || 'Đàm Minh Đức').trim();
+  }
+  tech = tech.replace(/^KTV\.?\s*/i, '').trim();
+
   return {
     NGAY_GIO: dateFormatted,
     XET_NGHIEM: testName,
@@ -185,7 +216,8 @@ export function formatResultToSheetRow(result: QCResult, tests: LabTest[]): Goog
     SD_INDEX_Z_SCORE: Number((result.zScore || 0).toFixed(2)),
     TRANG_THAI: statusText,
     HANH_DONG_KHAC_PHUC: result.correctiveAction || (result.capaId ? `Mã CAPA: ${result.capaId}` : ''),
-    TEN_MAY: test?.analyzerName || 'Máy Hóa sinh 1'
+    TEN_MAY: test?.analyzerName || 'Máy Hóa sinh 1',
+    NGUOI_THUC_HIEN: tech
   };
 }
 
@@ -232,13 +264,14 @@ export async function testWebhookConnection(webhookUrl: string): Promise<{ succe
 export async function syncResultsToGoogleSheets(
   webhookUrl: string,
   results: QCResult[],
-  tests: LabTest[]
+  tests: LabTest[],
+  currentTechnician?: string
 ): Promise<{ success: boolean; count: number; error?: string }> {
   if (!webhookUrl || results.length === 0) {
     return { success: false, count: 0, error: 'Chưa cấu hình URL hoặc không có kết quả để gửi.' };
   }
 
-  const rows = results.map(r => formatResultToSheetRow(r, tests));
+  const rows = results.map(r => formatResultToSheetRow(r, tests, currentTechnician));
 
   try {
     // 1. Thử gửi qua Serverless Proxy để đảm bảo follow redirect 302 của Google
@@ -277,8 +310,9 @@ export async function syncResultsToGoogleSheets(
  */
 export async function pullResultsFromGoogleSheets(
   webhookUrl: string,
-  tests: LabTest[]
-): Promise<{ success: boolean; results: QCResult[]; count: number; error?: string }> {
+  tests: LabTest[],
+  currentTechnician?: string
+): Promise<{ success: boolean; results: QCResult[]; count: number; error?: string; updatedTests?: LabTest[] }> {
   if (!webhookUrl || !webhookUrl.startsWith('https://script.google.com/')) {
     return { success: false, results: [], count: 0, error: 'Chưa cấu hình URL Webhook hợp lệ.' };
   }
@@ -467,6 +501,31 @@ export async function pullResultsFromGoogleSheets(
         westgardRule = '1_2s';
       }
 
+      // Trích xuất tên KTV / Người thực hiện
+      const rawTech = String(
+        row.NGUOI_THUC_HIEN || 
+        row['Người thực hiện'] || 
+        row['Người thực hiện:'] || 
+        row['Người TH'] || 
+        row['Nguoi thuc hien'] || 
+        row.KTV || 
+        row['KTV'] || 
+        row.TECHNICIAN || 
+        row['Technician'] || 
+        row['Kỹ thuật viên'] || 
+        row['Nhân viên'] || 
+        ''
+      ).trim();
+
+      const activeFallback = (currentTechnician || (typeof window !== 'undefined' ? localStorage.getItem('mdlab_technician') : '') || 'Đàm Minh Đức').replace(/^KTV\.?\s*/i, '').trim();
+
+      let rowTechnician = rawTech;
+      if (!rowTechnician || rowTechnician.toLowerCase().includes('google') || rowTechnician.toLowerCase().includes('sheet')) {
+        rowTechnician = activeFallback;
+      } else {
+        rowTechnician = rowTechnician.replace(/^KTV\.?\s*/i, '').trim();
+      }
+
       parsedResults.push({
         id: `sheet_${timestamp}_${idx}`,
         testId,
@@ -476,7 +535,7 @@ export async function pullResultsFromGoogleSheets(
         zScore,
         westgardStatus,
         westgardRule,
-        technician: 'KTV (Google Sheets)',
+        technician: rowTechnician,
         lotNumber: 'LOT-SHEET',
         correctiveAction: String(row.HANH_DONG_KHAC_PHUC || row['Hành động khắc phục'] || '')
       });
@@ -520,13 +579,14 @@ export async function pullResultsFromGoogleSheets(
 export async function deleteResultFromGoogleSheets(
   webhookUrl: string,
   result: QCResult,
-  tests: LabTest[]
+  tests: LabTest[],
+  currentTechnician?: string
 ): Promise<{ success: boolean; error?: string }> {
   if (!webhookUrl || !webhookUrl.startsWith('https://script.google.com/')) {
     return { success: false, error: 'Chưa cấu hình URL Webhook hợp lệ.' };
   }
 
-  const target = formatResultToSheetRow(result, tests);
+  const target = formatResultToSheetRow(result, tests, currentTechnician);
 
   try {
     const res = await fetch('/api/sheets-sync', {
