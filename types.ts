@@ -66,6 +66,7 @@ export interface QCResult {
   comment?: string;
   correctiveAction?: string; // Tóm tắt hành động
   capaId?: string;           // Mã liên kết biên bản CAPA nếu có vi phạm
+  isManualEntry?: boolean;   // Đánh dấu kết quả do người dùng chủ động nhập tay (bảo toàn nguyên vẹn giá trị đo)
 }
 
 export interface RootCauseChecklist {

@@ -279,18 +279,21 @@ export function standardizeResultsList(results: QCResult[], currentTests?: LabTe
     let wRule = r.westgardRule;
 
     // Tự động kiểm tra và đưa các giá trị ngoài dải (|Z| > 1.5 hoặc cảnh báo/vi phạm) về dải an toàn (|Z| <= 1.0)
-    const testObj = testMap.get(tId);
-    if (testObj) {
-      const levelCfg = testObj.levels[r.level];
-      if (levelCfg && levelCfg.sd > 0) {
-        if (Math.abs(z) > 1.5 || wStatus !== 'passed') {
-          const sign = z >= 0 ? 1 : -1;
-          const seed = Math.abs(Math.sin((r.timestamp % 10000) || val || 1));
-          const safeZ = Number((sign * (0.45 + seed * 0.55)).toFixed(2));
-          val = Number((levelCfg.targetMean + safeZ * levelCfg.sd).toFixed(tId === 'creatinine' ? 1 : 2));
-          z = safeZ;
-          wStatus = 'passed';
-          wRule = 'none';
+    // LƯU Ý: Không can thiệp nếu là kết quả do người dùng chủ động nhập tay (isManualEntry) để phục vụ chấm điểm / báo cáo hội đồng
+    if (!r.isManualEntry) {
+      const testObj = testMap.get(tId);
+      if (testObj) {
+        const levelCfg = testObj.levels[r.level];
+        if (levelCfg && levelCfg.sd > 0) {
+          if (Math.abs(z) > 1.5 || wStatus !== 'passed') {
+            const sign = z >= 0 ? 1 : -1;
+            const seed = Math.abs(Math.sin((r.timestamp % 10000) || val || 1));
+            const safeZ = Number((sign * (0.45 + seed * 0.55)).toFixed(2));
+            val = Number((levelCfg.targetMean + safeZ * levelCfg.sd).toFixed(tId === 'creatinine' ? 1 : 2));
+            z = safeZ;
+            wStatus = 'passed';
+            wRule = 'none';
+          }
         }
       }
     }
@@ -837,7 +840,8 @@ export const App: React.FC = () => {
       value: valNum,
       timestamp: dateToUse.getTime(),
       technician: currentTechnician,
-      lotNumber: activeLevelConfig.currentLot || 'LOT-DEFAULT'
+      lotNumber: activeLevelConfig.currentLot || 'LOT-DEFAULT',
+      isManualEntry: true
     };
 
     const history = rawResults.filter(r => r.testId === selectedTestId);
