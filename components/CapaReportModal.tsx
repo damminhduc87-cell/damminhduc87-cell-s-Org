@@ -195,7 +195,9 @@ export const CapaReportModal: React.FC<CapaReportModalProps> = ({
     }
     return t.replace(/^KTV\.?\s*/i, '');
   });
-  const [approver, setApprover] = useState(result.approver || 'BS. CKII Trưởng Khoa');
+  const [approver, setApprover] = useState(() => {
+    return result.approver || (typeof window !== 'undefined' ? (localStorage.getItem('mdlab_approver') || '') : '') || '';
+  });
   
   const [incidentDescription, setIncidentDescription] = useState(
     existingCapa?.incidentDescription || 
@@ -405,8 +407,8 @@ export const CapaReportModal: React.FC<CapaReportModalProps> = ({
   <table class="header-table">
     <tr>
       <td style="width: 45%;">
-        <strong>BỆNH VIỆN ĐA KHOA</strong><br>
-        <strong>KHOA XÉT NGHIỆM</strong><br>
+        <strong>BỆNH VIỆN Y HỌC CỔ TRUYỀN</strong><br>
+        <strong>KHOA XN&CĐHA</strong><br>
         <span style="font-size: 10pt;">Bộ phận Quản lý Chất lượng</span>
       </td>
       <td style="width: 55%;">
@@ -502,10 +504,10 @@ export const CapaReportModal: React.FC<CapaReportModalProps> = ({
       </td>
       <td>
         <span style="font-size: 10pt; font-style: italic;">Ngày ${new Date().getDate()} tháng ${new Date().getMonth() + 1} năm ${new Date().getFullYear()}</span><br>
-        <strong>TRƯỞNG KHOA / PHỤ TRÁCH CHẤT LƯỢNG</strong><br>
+        <strong>TRƯỞNG KHOA</strong><br>
         <span style="font-size: 10pt; font-style: italic;">(Ký duyệt và đóng dấu)</span>
         <div class="sig-space"></div>
-        <strong>${approver}</strong>
+        <strong>${approver || ''}</strong>
       </td>
     </tr>
   </table>
@@ -699,11 +701,16 @@ export const CapaReportModal: React.FC<CapaReportModalProps> = ({
               />
             </div>
             <div>
-              <label className="font-bold text-slate-500 uppercase text-[10px] block mb-1">Người phê duyệt (Trưởng khoa)</label>
+              <label className="font-bold text-slate-500 uppercase text-[10px] block mb-1">Trưởng Khoa (Người phê duyệt)</label>
               <input
                 type="text"
                 value={approver}
-                onChange={e => setApprover(e.target.value)}
+                onChange={e => {
+                  const val = e.target.value;
+                  setApprover(val);
+                  if (typeof window !== 'undefined') localStorage.setItem('mdlab_approver', val);
+                }}
+                placeholder="Nhập chức danh & họ tên Trưởng Khoa..."
                 className="w-full bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 font-bold"
               />
             </div>
