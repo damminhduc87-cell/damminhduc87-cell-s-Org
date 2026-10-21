@@ -517,21 +517,6 @@ export async function pullResultsFromGoogleSheets(
         westgardRule = '1_2s';
       }
 
-      // Tự động chuẩn hóa và kéo các giá trị ngoài dải vào TRONG DẢI AN TOÀN (|Z| <= 1.25SD)
-      const testCfg = matchedTest?.configs?.[level];
-      const meanTarget = testCfg ? testCfg.mean : (meanNum || valNum);
-      const sdTarget = testCfg ? testCfg.sd : (sdNum || (meanTarget * 0.03));
-
-      if (sdTarget > 0 && (Math.abs(zScore) > 1.5 || westgardStatus !== 'passed')) {
-        const sign = zScore >= 0 ? 1 : -1;
-        const seed = Math.abs(Math.sin((timestamp % 10000) || valNum));
-        const safeZ = Number((sign * (0.45 + seed * 0.55)).toFixed(2)); // |Z| in [0.45, 1.00]
-        valNum = Number((meanTarget + safeZ * sdTarget).toFixed(testId === 'creatinine' ? 1 : 2));
-        zScore = safeZ;
-        westgardStatus = 'passed';
-        westgardRule = 'none';
-      }
-
       // Trích xuất tên KTV / Người thực hiện
       const rawTech = String(
         row.NGUOI_THUC_HIEN || 
