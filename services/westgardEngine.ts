@@ -241,6 +241,23 @@ export function evaluateAllResults(
   return sorted.map((res, index) => {
     const historyToPoint = sorted.slice(0, index);
     const evaluation = evaluateWestgardResult(res, historyToPoint, configs);
+    
+    // Nếu kết quả đã được ghi nhận vi phạm cụ thể từ dữ liệu đồng bộ/thủ công và thuật toán ra 'passed'
+    if (res.westgardStatus === 'violation' && res.westgardRule && res.westgardRule !== 'none' && evaluation.status === 'passed') {
+      return {
+        ...res,
+        zScore: evaluation.zScore,
+        westgardRule: res.westgardRule,
+        westgardStatus: 'violation',
+        evaluation: {
+          ...evaluation,
+          status: 'violation',
+          rule: res.westgardRule,
+          isRunRejected: true
+        }
+      };
+    }
+
     return {
       ...res,
       zScore: evaluation.zScore,
