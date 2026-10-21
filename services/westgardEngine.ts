@@ -32,7 +32,7 @@ export function evaluateWestgardResult(
   configs: Record<QCLevel, QCConfig>,
   options: WestgardEngineOptions = { enable10x: true, enable41s: true, enableR4s: true, enable22s: true }
 ): WestgardEvaluation {
-  const currentConfig = configs[currentRes.level];
+  const currentConfig = configs?.[currentRes.level];
   if (!currentConfig || currentConfig.sd <= 0) {
     return {
       status: 'passed',

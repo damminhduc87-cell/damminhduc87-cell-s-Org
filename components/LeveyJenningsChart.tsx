@@ -68,7 +68,7 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
             dateTimeStr: new Date(r.timestamp).toLocaleDateString('vi-VN'),
           };
         }
-        const cfg = allConfigs[r.level];
+        const cfg = allConfigs?.[r.level];
         if (cfg && cfg.sd > 0) {
           const z = calculateZScore(r.value, cfg.mean, cfg.sd);
           mapByTime[timeKey][`z_${r.level}`] = z;

@@ -24,8 +24,8 @@ export const LotManagementModal: React.FC<LotManagementModalProps> = ({
       expirationDate: '2026-12-31',
       openDate: '2026-09-01',
       manufacturer: 'Bio-Rad Liquichek',
-      mean: test.configs[QCLevel.LOW].mean,
-      sd: test.configs[QCLevel.LOW].sd,
+      mean: test?.configs?.[QCLevel.LOW]?.mean ?? 0,
+      sd: test?.configs?.[QCLevel.LOW]?.sd ?? 0,
       unit: test.unit,
       isActive: true
     },
@@ -37,8 +37,8 @@ export const LotManagementModal: React.FC<LotManagementModalProps> = ({
       expirationDate: '2026-12-31',
       openDate: '2026-09-01',
       manufacturer: 'Bio-Rad Liquichek',
-      mean: test.configs[QCLevel.NORMAL].mean,
-      sd: test.configs[QCLevel.NORMAL].sd,
+      mean: test?.configs?.[QCLevel.NORMAL]?.mean ?? 0,
+      sd: test?.configs?.[QCLevel.NORMAL]?.sd ?? 0,
       unit: test.unit,
       isActive: true
     },
@@ -50,8 +50,8 @@ export const LotManagementModal: React.FC<LotManagementModalProps> = ({
       expirationDate: '2026-12-31',
       openDate: '2026-09-01',
       manufacturer: 'Bio-Rad Liquichek',
-      mean: test.configs[QCLevel.HIGH].mean,
-      sd: test.configs[QCLevel.HIGH].sd,
+      mean: test?.configs?.[QCLevel.HIGH]?.mean ?? 0,
+      sd: test?.configs?.[QCLevel.HIGH]?.sd ?? 0,
       unit: test.unit,
       isActive: true
     }
@@ -62,8 +62,8 @@ export const LotManagementModal: React.FC<LotManagementModalProps> = ({
   const [newExpDate, setNewExpDate] = useState('');
   const [newOpenDate, setNewOpenDate] = useState(new Date().toISOString().split('T')[0]);
   const [newManufacturer, setNewManufacturer] = useState('Bio-Rad / Roche');
-  const [newMean, setNewMean] = useState(String(test.configs[selectedLevel].mean));
-  const [newSd, setNewSd] = useState(String(test.configs[selectedLevel].sd));
+  const [newMean, setNewMean] = useState(String(test?.configs?.[selectedLevel]?.mean ?? ''));
+  const [newSd, setNewSd] = useState(String(test?.configs?.[selectedLevel]?.sd ?? ''));
 
   if (!isOpen) return null;
 
@@ -176,8 +176,8 @@ export const LotManagementModal: React.FC<LotManagementModalProps> = ({
               key={lvl}
               onClick={() => {
                 setSelectedLevel(lvl);
-                setNewMean(String(test.configs[lvl].mean));
-                setNewSd(String(test.configs[lvl].sd));
+                setNewMean(String(test?.configs?.[lvl]?.mean ?? ''));
+                setNewSd(String(test?.configs?.[lvl]?.sd ?? ''));
               }}
               className={`flex-1 py-3 rounded-2xl text-xs font-black uppercase transition-all cursor-pointer ${
                 selectedLevel === lvl ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200'

@@ -94,7 +94,7 @@ Hãy nhập câu hỏi hoặc chọn các câu hỏi gợi ý bên dưới!`,
       let context;
       if (currentTest) {
         if (latestViolation && typeof latestViolation.value === 'number') {
-          const config = currentTest.configs[latestViolation.level];
+          const config = currentTest.configs?.[latestViolation.level];
           context = {
             testName: currentTest.name,
             level: latestViolation.level,

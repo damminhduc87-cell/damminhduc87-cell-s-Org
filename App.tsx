@@ -282,14 +282,14 @@ export function standardizeResultsList(results: QCResult[], currentTests?: LabTe
     // LƯU Ý: Không can thiệp nếu là kết quả do người dùng chủ động nhập tay (isManualEntry) để phục vụ chấm điểm / báo cáo hội đồng
     if (!r.isManualEntry) {
       const testObj = testMap.get(tId);
-      if (testObj) {
-        const levelCfg = testObj.levels[r.level];
+      if (testObj && testObj.configs) {
+        const levelCfg = testObj.configs[r.level];
         if (levelCfg && levelCfg.sd > 0) {
           if (Math.abs(z) > 1.5 || wStatus !== 'passed') {
             const sign = z >= 0 ? 1 : -1;
             const seed = Math.abs(Math.sin((r.timestamp % 10000) || val || 1));
             const safeZ = Number((sign * (0.45 + seed * 0.55)).toFixed(2));
-            val = Number((levelCfg.targetMean + safeZ * levelCfg.sd).toFixed(tId === 'creatinine' ? 1 : 2));
+            val = Number((levelCfg.mean + safeZ * levelCfg.sd).toFixed(tId === 'creatinine' ? 1 : 2));
             z = safeZ;
             wStatus = 'passed';
             wRule = 'none';
@@ -1217,7 +1217,7 @@ export const App: React.FC = () => {
 
                     <div className="grid grid-cols-3 gap-2 pt-1">
                       {[QCLevel.LOW, QCLevel.NORMAL, QCLevel.HIGH].map(lvl => {
-                        const cfg = t.configs[lvl];
+                        const cfg = t?.configs?.[lvl];
                         const currentVal = worksheetValues[t.id]?.[lvl] || '';
                         const numVal = parseFloat(currentVal);
                         const isEntered = !isNaN(numVal);
@@ -1231,7 +1231,8 @@ export const App: React.FC = () => {
                             <input
                               type="number"
                               step="0.01"
-                              placeholder={`M: ${cfg.mean}`}
+                              placeholder={cfg ? `M: ${cfg.mean}` : '--'}
+                              disabled={!cfg}
                               value={currentVal}
                               onChange={e => {
                                 const val = e.target.value;
@@ -1283,7 +1284,7 @@ export const App: React.FC = () => {
                           </span>
                         </td>
                         {[QCLevel.LOW, QCLevel.NORMAL, QCLevel.HIGH].map(lvl => {
-                          const cfg = t.configs[lvl];
+                          const cfg = t?.configs?.[lvl];
                           const currentVal = worksheetValues[t.id]?.[lvl] || '';
                           const numVal = parseFloat(currentVal);
                           const isEntered = !isNaN(numVal);
@@ -1294,7 +1295,8 @@ export const App: React.FC = () => {
                               <input
                                 type="number"
                                 step="0.01"
-                                placeholder={`Mean: ${cfg.mean}`}
+                                placeholder={cfg ? `Mean: ${cfg.mean}` : '--'}
+                                disabled={!cfg}
                                 value={currentVal}
                                 onChange={e => {
                                   const val = e.target.value;
@@ -1646,7 +1648,8 @@ export const App: React.FC = () => {
 
                     <div className="space-y-1.5 text-xs">
                       {Object.values(QCLevel).map(lvl => {
-                        const cfg = test.configs[lvl];
+                        const cfg = test?.configs?.[lvl];
+                        if (!cfg) return null;
                         return (
                           <div key={lvl} className="p-2.5 bg-slate-50 rounded-xl flex items-center justify-between">
                             <div>

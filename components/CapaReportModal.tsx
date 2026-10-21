@@ -19,7 +19,7 @@ export const CapaReportModal: React.FC<CapaReportModalProps> = ({
   onSaveCapa,
   existingCapa
 }) => {
-  const config = test.configs[result.level];
+  const config = test?.configs?.[result.level] || { mean: 0, sd: 1, bias: 0, currentLot: 'LOT-DEFAULT' };
   const zScore = config?.sd > 0 ? Number(((result.value - config.mean) / config.sd).toFixed(2)) : 0;
   
   // Default values
