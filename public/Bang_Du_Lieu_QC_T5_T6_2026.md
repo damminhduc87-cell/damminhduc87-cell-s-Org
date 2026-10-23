@@ -1,3 +1,13 @@
+### BẢNG TỔNG HỢP CHỈ SỐ THỐNG KÊ (MEAN, SD, CV%) — GIAI ĐOẠN 1 (THÁNG 5 & 6/2026)
+
+| Glucose – Normal | | | Glucose – High | | | Urea – Normal | | | Urea – High | | | Creatinin – Normal | | | Creatinin – High | | |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Mean | SD | CV% | Mean | SD | CV% | Mean | SD | CV% | Mean | SD | CV% | Mean | SD | CV% | Mean | SD | CV% |
+| **5.48** | **0.10** | **1.78%** | **17.45** | **0.35** | **2.01%** | **7.10** | **0.28** | **3.90%** | **22.62** | **1.13** | **5.00%** | **94.71** | **4.39** | **4.64%** | **350.37** | **14.90** | **4.25%** |
+
+
+---
+
 # BẢNG DỮ LIỆU NỘI KIỂM QC GIAI ĐOẠN 1 (THÁNG 5 & THÁNG 6 NĂM 2026)
 
 > Giai đoạn Trước áp dụng sáng kiến: 42 ngày công, 6 sự cố Westgard (14.29%)
