@@ -14,6 +14,7 @@ interface TopbarProps {
   onPullFromSheets?: () => void;
   isSyncing?: boolean;
   onStandardizeQc?: () => void;
+  onOpenExportReport?: () => void;
 }
 
 export const Topbar: React.FC<TopbarProps> = ({
@@ -28,7 +29,8 @@ export const Topbar: React.FC<TopbarProps> = ({
   onOpenDeviceSync,
   onPullFromSheets,
   isSyncing,
-  onStandardizeQc
+  onStandardizeQc,
+  onOpenExportReport
 }) => {
   const [currentTime, setCurrentTime] = useState<string>('');
 
@@ -114,6 +116,19 @@ export const Topbar: React.FC<TopbarProps> = ({
 
         {/* Right Controls */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Quick Export Report Button */}
+          {onOpenExportReport && (
+            <button
+              type="button"
+              onClick={onOpenExportReport}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+              title="Xuất báo cáo nhật ký nội kiểm theo khoảng ngày (Excel & In A4)"
+            >
+              <i className="fas fa-file-invoice text-emerald-600"></i>
+              <span className="hidden sm:inline">Xuất báo cáo IQC</span>
+            </button>
+          )}
+
           {/* Quick Standardize In-House SD & EQA Config Button */}
           {onStandardizeQc && (
             <button

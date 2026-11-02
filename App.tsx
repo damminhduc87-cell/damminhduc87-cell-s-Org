@@ -23,6 +23,7 @@ import { AddEditTestModal } from './components/AddEditTestModal';
 import { ImportDataModal } from './components/ImportDataModal';
 import { GoogleDriveSyncModal } from './components/GoogleDriveSyncModal';
 import { DeviceSyncModal } from './components/DeviceSyncModal';
+import { ExportReportModal } from './components/ExportReportModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { syncResultsToGoogleSheets, pullResultsFromGoogleSheets, deleteResultFromGoogleSheets } from './services/googleSheetsSync';
 
@@ -376,7 +377,17 @@ export const App: React.FC = () => {
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
   const [isDriveSyncModalOpen, setIsDriveSyncModalOpen] = useState<boolean>(false);
   const [isDeviceSyncModalOpen, setIsDeviceSyncModalOpen] = useState<boolean>(false);
+  const [isExportReportModalOpen, setIsExportReportModalOpen] = useState<boolean>(false);
+  const [exportReportStartDate, setExportReportStartDate] = useState<string>('');
+  const [exportReportEndDate, setExportReportEndDate] = useState<string>('');
   const [isCloudSyncing, setIsCloudSyncing] = useState<boolean>(false);
+
+  // Mở modal xuất báo cáo nhật ký với tùy chọn ngày
+  const handleOpenExportReportModal = (start?: string, end?: string) => {
+    setExportReportStartDate(start || '');
+    setExportReportEndDate(end || '');
+    setIsExportReportModalOpen(true);
+  };
 
   // 4. Người thực hiện & Cấu hình tìm kiếm
   const [currentTechnician, setCurrentTechnician] = useState<string>(() => {
@@ -455,11 +466,12 @@ export const App: React.FC = () => {
         if (isImportModalOpen) setIsImportModalOpen(false);
         if (isDriveSyncModalOpen) setIsDriveSyncModalOpen(false);
         if (isDeviceSyncModalOpen) setIsDeviceSyncModalOpen(false);
+        if (isExportReportModalOpen) setIsExportReportModalOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isCapaModalOpen, isLotModalOpen, isAddEditTestModalOpen, isImportModalOpen, isDriveSyncModalOpen, isDeviceSyncModalOpen]);
+  }, [isCapaModalOpen, isLotModalOpen, isAddEditTestModalOpen, isImportModalOpen, isDriveSyncModalOpen, isDeviceSyncModalOpen, isExportReportModalOpen]);
 
   // Lưu trữ tự động vào localStorage
   useEffect(() => { 
@@ -1046,6 +1058,7 @@ export const App: React.FC = () => {
           onPullFromSheets={() => handlePullFromGoogleSheets(false)}
           isSyncing={isCloudSyncing}
           onStandardizeQc={handleStandardizeTargetQc}
+          onOpenExportReport={() => handleOpenExportReportModal()}
         />
 
         {/* Main Content Viewport */}
@@ -1116,7 +1129,8 @@ export const App: React.FC = () => {
                 activeTest={activeTest}
                 onOpenCapa={handleOpenCapa}
                 onDeleteResult={handleDeleteResult}
-                onExportExcel={handleExportExcel}
+                onExportExcel={() => handleOpenExportReportModal()}
+                onOpenExportReport={handleOpenExportReportModal}
                 onOpenImport={() => setIsImportModalOpen(true)}
               />
             </div>
@@ -1744,7 +1758,24 @@ export const App: React.FC = () => {
         />
       )}
 
-      {/* 5. Mobile Bottom Navigation Bar (lg:hidden) */}
+      {/* 5. Export IQC Logbook Report Modal with Date Range Selector */}
+      {isExportReportModalOpen && (
+        <ExportReportModal
+          isOpen={isExportReportModalOpen}
+          onClose={() => setIsExportReportModalOpen(false)}
+          tests={tests}
+          activeTest={activeTest}
+          selectedLevel={selectedLevel}
+          rawResults={rawResults}
+          analyzers={analyzers}
+          currentTechnician={currentTechnician}
+          initialStartDate={exportReportStartDate}
+          initialEndDate={exportReportEndDate}
+          addToast={addToast}
+        />
+      )}
+
+      {/* 6. Mobile Bottom Navigation Bar (lg:hidden) */}
       <MobileBottomNav
         activeTab={activeTab}
         setActiveTab={setActiveTab}

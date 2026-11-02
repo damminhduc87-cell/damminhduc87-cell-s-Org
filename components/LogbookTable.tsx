@@ -8,6 +8,7 @@ interface LogbookTableProps {
   onOpenCapa: (result: QCResult) => void;
   onDeleteResult: (e: React.MouseEvent, id: string) => void;
   onExportExcel: () => void;
+  onOpenExportReport?: (start?: string, end?: string) => void;
   onOpenImport?: () => void;
 }
 
@@ -17,19 +18,37 @@ export const LogbookTable: React.FC<LogbookTableProps> = ({
   onOpenCapa,
   onDeleteResult,
   onExportExcel,
+  onOpenExportReport,
   onOpenImport
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'passed' | 'warning' | 'violation'>('all');
   const [levelFilter, setLevelFilter] = useState<'all' | QCLevel>('all');
+  const [startDateFilter, setStartDateFilter] = useState<string>('');
+  const [endDateFilter, setEndDateFilter] = useState<string>('');
   const [selectedResultDetail, setSelectedResultDetail] = useState<QCResult | null>(null);
 
-  // Lọc kết quả theo tìm kiếm, mức nồng độ và trạng thái
+  // Lọc kết quả theo tìm kiếm, mức nồng độ, trạng thái và khoảng ngày
   const filteredResults = useMemo(() => {
     return results
       .filter(r => {
+        // Lọc mức QC
         if (levelFilter !== 'all' && r.level !== levelFilter) return false;
+        // Lọc trạng thái Westgard
         if (statusFilter !== 'all' && r.westgardStatus !== statusFilter) return false;
+
+        // Lọc theo khoảng ngày (Từ ngày... Đến ngày...)
+        if (startDateFilter || endDateFilter) {
+          const resDate = new Date(r.timestamp);
+          const y = resDate.getFullYear();
+          const m = String(resDate.getMonth() + 1).padStart(2, '0');
+          const d = String(resDate.getDate()).padStart(2, '0');
+          const dateStr = `${y}-${m}-${d}`;
+          if (startDateFilter && dateStr < startDateFilter) return false;
+          if (endDateFilter && dateStr > endDateFilter) return false;
+        }
+
+        // Lọc từ khóa tìm kiếm
         if (!searchTerm) return true;
         const term = searchTerm.toLowerCase();
         const tech = (r.technician || '').toLowerCase();
@@ -40,7 +59,7 @@ export const LogbookTable: React.FC<LogbookTableProps> = ({
       })
       .slice()
       .reverse(); // Mới nhất lên đầu
-  }, [results, searchTerm, statusFilter, levelFilter]);
+  }, [results, searchTerm, statusFilter, levelFilter, startDateFilter, endDateFilter]);
 
   return (
     <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden transition-all">
@@ -60,7 +79,7 @@ export const LogbookTable: React.FC<LogbookTableProps> = ({
           </p>
         </div>
 
-        {/* Action buttons: Nhập file & Xuất Excel */}
+        {/* Action buttons: Nhập file & Xuất Excel / Báo cáo */}
         <div className="flex items-center gap-2.5 flex-wrap">
           {onOpenImport && (
             <button
@@ -76,67 +95,151 @@ export const LogbookTable: React.FC<LogbookTableProps> = ({
 
           <button
             type="button"
-            onClick={onExportExcel}
+            onClick={() => {
+              if (onOpenExportReport) {
+                onOpenExportReport(startDateFilter, endDateFilter);
+              } else {
+                onExportExcel();
+              }
+            }}
             className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
-            title="Tải sổ theo dõi nội kiểm dạng file Excel (.xlsx)"
+            title="Xuất báo cáo nhật ký nội kiểm theo khoảng ngày (Excel & In A4)"
           >
-            <i className="fas fa-file-excel"></i>
-            <span>Xuất Excel</span>
+            <i className="fas fa-file-invoice"></i>
+            <span>Xuất báo cáo nhật ký</span>
           </button>
         </div>
       </div>
 
-      {/* Filter Toolbar */}
-      <div className="p-4 bg-slate-50/60 border-b border-slate-100 grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
-        {/* Search input */}
-        <div className="sm:col-span-6 relative">
-          <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-          <input
-            type="text"
-            placeholder="Tìm theo ngày giờ, số lô, người thực hiện, quy tắc..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="w-full bg-white border border-slate-200 focus:border-blue-500 rounded-xl pl-9 pr-8 py-2 text-xs font-medium text-slate-800 outline-none transition-colors"
-          />
-          {searchTerm && (
-            <button
-              type="button"
-              onClick={() => setSearchTerm('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs p-1"
+      {/* Filter Toolbar (Search, Date Range, Level & Westgard Status) */}
+      <div className="p-4 bg-slate-50/70 border-b border-slate-100 space-y-3">
+        {/* Row 1: Search, Date Range (Từ ngày ... Đến ngày ...) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center">
+          {/* Search input */}
+          <div className="sm:col-span-2 lg:col-span-4 relative">
+            <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+            <input
+              type="text"
+              placeholder="Tìm theo ngày giờ, số lô, KTV, quy tắc..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full bg-white border border-slate-200 focus:border-blue-500 rounded-xl pl-9 pr-8 py-2 text-xs font-medium text-slate-800 outline-none transition-colors"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs p-1"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            )}
+          </div>
+
+          {/* Date Range: Từ ngày */}
+          <div className="lg:col-span-4 flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0">
+              Từ:
+            </span>
+            <input
+              type="date"
+              value={startDateFilter}
+              onChange={e => setStartDateFilter(e.target.value)}
+              className="w-full bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer"
+              title="Lọc kết quả từ ngày"
+            />
+          </div>
+
+          {/* Date Range: Đến ngày */}
+          <div className="lg:col-span-4 flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0">
+              Đến:
+            </span>
+            <input
+              type="date"
+              value={endDateFilter}
+              onChange={e => setEndDateFilter(e.target.value)}
+              className="w-full bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer"
+              title="Lọc kết quả đến ngày"
+            />
+            {(startDateFilter || endDateFilter) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setStartDateFilter('');
+                  setEndDateFilter('');
+                }}
+                className="text-slate-400 hover:text-red-500 text-xs px-1"
+                title="Xóa bộ lọc ngày"
+              >
+                <i className="fas fa-times-circle"></i>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Row 2: Level, Status, and Active Date Filter Notice */}
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+          {/* Level Filter Dropdown */}
+          <div className="sm:col-span-6 lg:col-span-4 relative">
+            <select
+              value={levelFilter}
+              onChange={e => setLevelFilter(e.target.value as any)}
+              className="w-full appearance-none bg-white border border-slate-200 focus:border-blue-500 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none cursor-pointer pr-8"
             >
-              <i className="fas fa-times"></i>
-            </button>
-          )}
-        </div>
+              <option value="all">Tất cả mức QC (Low/Norm/High)</option>
+              <option value={QCLevel.LOW}>Mức Thấp (Low)</option>
+              <option value={QCLevel.NORMAL}>Mức Chuẩn (Normal)</option>
+              <option value={QCLevel.HIGH}>Mức Cao (High)</option>
+            </select>
+            <i className="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] pointer-events-none"></i>
+          </div>
 
-        {/* Level Filter Dropdown */}
-        <div className="sm:col-span-3 relative">
-          <select
-            value={levelFilter}
-            onChange={e => setLevelFilter(e.target.value as any)}
-            className="w-full appearance-none bg-white border border-slate-200 focus:border-blue-500 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none cursor-pointer pr-8"
-          >
-            <option value="all">Tất cả mức QC (Low/Norm/High)</option>
-            <option value={QCLevel.LOW}>Mức Thấp (Low)</option>
-            <option value={QCLevel.NORMAL}>Mức Chuẩn (Normal)</option>
-            <option value={QCLevel.HIGH}>Mức Cao (High)</option>
-          </select>
-          <i className="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] pointer-events-none"></i>
-        </div>
+          {/* Status Filter Dropdown */}
+          <div className="sm:col-span-6 lg:col-span-4 relative">
+            <select
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value as any)}
+              className="w-full appearance-none bg-white border border-slate-200 focus:border-blue-500 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none cursor-pointer pr-8"
+            >
+              <option value="all">Tất cả trạng thái ({results.length})</option>
+              <option value="passed">Chỉ xem Đạt chuẩn (Passed)</option>
+              <option value="warning">Chỉ xem Cảnh báo (1-2s)</option>
+              <option value="violation">Chỉ xem Vi phạm (Cần CAPA)</option>
+            </select>
+            <i className="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] pointer-events-none"></i>
+          </div>
 
-        {/* Status Filter Dropdown */}
-        <div className="sm:col-span-3 relative">
-          <select
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value as any)}
-            className="w-full appearance-none bg-white border border-slate-200 focus:border-blue-500 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none cursor-pointer pr-8"
-          >
-            <option value="all">Tất cả trạng thái ({results.length})</option>
-            <option value="passed">Chỉ xem Đạt chuẩn (Passed)</option>
-            <option value="warning">Chỉ xem Cảnh báo (1-2s)</option>
-            <option value="violation">Chỉ xem Vi phạm (Cần CAPA)</option>
-          </select>
-          <i className="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] pointer-events-none"></i>
+          {/* Date range active indicator */}
+          <div className="sm:col-span-12 lg:col-span-4 flex items-center justify-start lg:justify-end gap-2 text-xs">
+            {startDateFilter || endDateFilter ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold text-[11px]">
+                <i className="fas fa-filter text-emerald-600 text-[10px]"></i>
+                <span>
+                  {startDateFilter && endDateFilter
+                    ? `${startDateFilter} → ${endDateFilter}`
+                    : startDateFilter
+                    ? `Từ ${startDateFilter}`
+                    : `Đến ${endDateFilter}`}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStartDateFilter('');
+                    setEndDateFilter('');
+                  }}
+                  className="hover:text-red-600 ml-1 text-slate-400"
+                  title="Bỏ lọc khoảng ngày"
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              </span>
+            ) : (
+              <span className="text-slate-400 text-[11px] font-medium hidden lg:inline">
+                * Có thể lọc hoặc bấm nút "Xuất báo cáo nhật ký" để chọn ngày xuất file
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
