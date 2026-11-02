@@ -180,6 +180,7 @@ function cleanAndDeduplicateTests(rawTests: LabTest[]): { cleanTests: LabTest[];
         };
       }
       if (norm === 'urea' || norm === 'urease' || t.id === 'urea') {
+        cleanTest.tea = 9; // Cập nhật TEa của Urea từ 12% thành 9% theo chuẩn CLIA 2024
         const normalCfg = cleanTest.configs?.[QCLevel.NORMAL];
         cleanTest.configs[QCLevel.NORMAL] = {
           ...normalCfg,
@@ -298,7 +299,12 @@ export const App: React.FC = () => {
       list = INITIAL_TESTS;
     }
     const { cleanTests } = cleanAndDeduplicateTests(list);
-    return cleanTests;
+    return cleanTests.map(t => {
+      if (t.id === 'urea' || t.name.toLowerCase().includes('urea') || t.name.toLowerCase().includes('ure')) {
+        return { ...t, tea: 9 };
+      }
+      return t;
+    });
   });
 
   const [rawResults, setRawResults] = useState<QCResult[]>(() => {

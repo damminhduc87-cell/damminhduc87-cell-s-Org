@@ -120,7 +120,7 @@ export const INITIAL_TESTS: LabTest[] = [
     id: 'urea',
     name: 'Urea (Ure máu)',
     unit: 'mmol/L',
-    tea: 12,
+    tea: 9,
     analyzerName: 'Máy Hóa sinh 1',
     configs: {
       [QCLevel.LOW]: { mean: 3.0, sd: 0.08, bias: 2.77, eqaTarget: 3.97, eqaResult: 4.08, currentLot: 'LOT-2026-REN-L' },
