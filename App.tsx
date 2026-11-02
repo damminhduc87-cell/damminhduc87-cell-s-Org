@@ -405,13 +405,45 @@ export const App: React.FC = () => {
   const [configSearchTerm, setConfigSearchTerm] = useState<string>('');
   const [capaSearchTerm, setCapaSearchTerm] = useState<string>('');
 
-  // 5. Trạng thái Form nhập đơn lẻ
+  // 5. Trạng thái Form nhập đơn lẻ (Ngày, Giờ, Phút, Giây)
   const [singleValue, setSingleValue] = useState<string>('');
-  const [singleDate, setSingleDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [singleDate, setSingleDate] = useState<string>(() => {
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  });
+  const [singleHour, setSingleHour] = useState<string>(() => String(new Date().getHours()).padStart(2, '0'));
+  const [singleMinute, setSingleMinute] = useState<string>(() => String(new Date().getMinutes()).padStart(2, '0'));
+  const [singleSecond, setSingleSecond] = useState<string>(() => String(new Date().getSeconds()).padStart(2, '0'));
 
-  // 6. Trạng thái Bảng kiểm hàng loạt (Worksheet Batch Entry)
+  const handleSetCurrentSingleTime = () => {
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    setSingleDate(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`);
+    setSingleHour(pad(d.getHours()));
+    setSingleMinute(pad(d.getMinutes()));
+    setSingleSecond(pad(d.getSeconds()));
+  };
+
+  // 6. Trạng thái Bảng kiểm hàng loạt (Worksheet Batch Entry) (Ngày, Giờ, Phút, Giây)
   const [worksheetValues, setWorksheetValues] = useState<Record<string, Record<QCLevel, string>>>({});
-  const [worksheetDate, setWorksheetDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [worksheetDate, setWorksheetDate] = useState<string>(() => {
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  });
+  const [worksheetHour, setWorksheetHour] = useState<string>(() => String(new Date().getHours()).padStart(2, '0'));
+  const [worksheetMinute, setWorksheetMinute] = useState<string>(() => String(new Date().getMinutes()).padStart(2, '0'));
+  const [worksheetSecond, setWorksheetSecond] = useState<string>(() => String(new Date().getSeconds()).padStart(2, '0'));
+
+  const handleSetCurrentWorksheetTime = () => {
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    setWorksheetDate(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`);
+    setWorksheetHour(pad(d.getHours()));
+    setWorksheetMinute(pad(d.getMinutes()));
+    setWorksheetSecond(pad(d.getSeconds()));
+  };
 
   // 7. Google Drive / Google Sheets Webhook Sync
   const [googleSheetsUrl, setGoogleSheetsUrl] = useState<string>(() => {
@@ -630,7 +662,7 @@ export const App: React.FC = () => {
     if (selectedResultForCapa) {
       setRawResults(prev => prev.map(r => 
         r.id === selectedResultForCapa.id 
-          ? { ...r, capaId: newCapa.code, correctiveAction: newCapa.immediateCorrection } 
+          ? { ...r, timestamp: newCapa.timestamp, capaId: newCapa.code, correctiveAction: newCapa.immediateCorrection } 
           : r
       ));
     }
@@ -818,9 +850,13 @@ export const App: React.FC = () => {
       return;
     }
 
-    const now = new Date();
-    const [year, month, day] = singleDate.split('-').map(Number);
-    const dateToUse = new Date(year, month - 1, day, now.getHours(), now.getMinutes(), now.getSeconds());
+    const [year, month, day] = (singleDate || '').split('-').map(Number);
+    const h = Math.min(23, Math.max(0, parseInt(singleHour, 10) || 0));
+    const m = Math.min(59, Math.max(0, parseInt(singleMinute, 10) || 0));
+    const s = Math.min(59, Math.max(0, parseInt(singleSecond, 10) || 0));
+    const dateToUse = (year && month && day)
+      ? new Date(year, month - 1, day, h, m, s)
+      : new Date();
 
     const newRes: QCResult = {
       id: `qc_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
@@ -873,9 +909,13 @@ export const App: React.FC = () => {
 
   // Lưu cả mẻ kiểm soát nội kiểm đầu ngày (Batch Worksheet Entry)
   const handleSaveWorksheet = () => {
-    const now = new Date();
-    const [year, month, day] = worksheetDate.split('-').map(Number);
-    const baseTime = new Date(year, month - 1, day, now.getHours(), now.getMinutes()).getTime();
+    const [year, month, day] = (worksheetDate || '').split('-').map(Number);
+    const h = Math.min(23, Math.max(0, parseInt(worksheetHour, 10) || 0));
+    const m = Math.min(59, Math.max(0, parseInt(worksheetMinute, 10) || 0));
+    const s = Math.min(59, Math.max(0, parseInt(worksheetSecond, 10) || 0));
+    const baseTime = (year && month && day)
+      ? new Date(year, month - 1, day, h, m, s).getTime()
+      : Date.now();
 
     const newResultsToAdd: QCResult[] = [];
     let violationCount = 0;
@@ -1172,14 +1212,68 @@ export const App: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Ngày thực hiện */}
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="date"
-                      value={worksheetDate}
-                      onChange={e => setWorksheetDate(e.target.value)}
-                      className="bg-slate-50 p-2 rounded-xl border border-slate-200 font-semibold text-xs text-slate-700 outline-none"
-                    />
+                  {/* Ngày & Giờ:Phút:Giây thực hiện */}
+                  <div className="flex flex-wrap items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+                    <div className="flex items-center gap-1.5">
+                      <i className="fas fa-calendar-alt text-slate-400 text-xs ml-1"></i>
+                      <input
+                        type="date"
+                        value={worksheetDate}
+                        onChange={e => setWorksheetDate(e.target.value)}
+                        className="bg-transparent font-semibold text-xs text-slate-700 outline-none cursor-pointer"
+                        title="Ngày thực hiện mẻ QC"
+                      />
+                    </div>
+                    <span className="text-slate-300">|</span>
+                    <div className="flex items-center gap-1 font-bold text-xs text-slate-700">
+                      <i className="fas fa-clock text-slate-400 text-xs" title="Giờ:Phút:Giây"></i>
+                      <input
+                        type="number"
+                        min="0"
+                        max="23"
+                        value={worksheetHour}
+                        onChange={e => {
+                          const v = e.target.value;
+                          setWorksheetHour(v === '' ? '' : String(Math.min(23, Math.max(0, parseInt(v, 10) || 0))).padStart(2, '0'));
+                        }}
+                        className="w-8 text-center bg-white border border-slate-200 rounded p-0.5 text-xs font-mono outline-none focus:border-blue-500"
+                        title="Giờ (00-23)"
+                      />
+                      <span>:</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="59"
+                        value={worksheetMinute}
+                        onChange={e => {
+                          const v = e.target.value;
+                          setWorksheetMinute(v === '' ? '' : String(Math.min(59, Math.max(0, parseInt(v, 10) || 0))).padStart(2, '0'));
+                        }}
+                        className="w-8 text-center bg-white border border-slate-200 rounded p-0.5 text-xs font-mono outline-none focus:border-blue-500"
+                        title="Phút (00-59)"
+                      />
+                      <span>:</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="59"
+                        value={worksheetSecond}
+                        onChange={e => {
+                          const v = e.target.value;
+                          setWorksheetSecond(v === '' ? '' : String(Math.min(59, Math.max(0, parseInt(v, 10) || 0))).padStart(2, '0'));
+                        }}
+                        className="w-8 text-center bg-white border border-slate-200 rounded p-0.5 text-xs font-mono outline-none focus:border-blue-500"
+                        title="Giây (00-59)"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSetCurrentWorksheetTime}
+                        className="p-1 text-blue-600 hover:text-blue-700 text-xs ml-0.5 cursor-pointer"
+                        title="Lấy giờ hiện tại của máy tính"
+                      >
+                        <i className="fas fa-sync-alt"></i>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Nạp từ Google Drive */}
@@ -1371,12 +1465,14 @@ export const App: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="font-bold text-slate-500 block mb-1 uppercase text-[10px]">Ngày thực hiện</label>
+                    <label className="font-bold text-slate-500 block mb-1 uppercase text-[10px]">
+                      <i className="fas fa-calendar-alt text-slate-400 mr-1"></i> Ngày thực hiện
+                    </label>
                     <input
                       type="date"
                       value={singleDate}
                       onChange={e => setSingleDate(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-bold text-slate-800 outline-none"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-bold text-slate-800 outline-none focus:border-blue-500"
                     />
                   </div>
                   <div>
@@ -1387,6 +1483,84 @@ export const App: React.FC = () => {
                       value={activeLevelConfig.currentLot || 'LOT-2026'}
                       className="w-full bg-slate-100 border border-slate-200 rounded-xl p-2.5 font-bold text-slate-500"
                     />
+                  </div>
+                </div>
+
+                {/* Chỉnh sửa Giờ, Phút, Giây */}
+                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-600 uppercase text-[10px] flex items-center gap-1.5">
+                      <i className="fas fa-clock text-blue-600"></i>
+                      Thời gian chạy QC (Giờ : Phút : Giây)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleSetCurrentSingleTime}
+                      className="px-2 py-0.5 bg-white hover:bg-slate-100 text-slate-600 rounded-lg text-[11px] font-bold border border-slate-200 shadow-2xs transition-colors flex items-center gap-1 cursor-pointer"
+                      title="Lấy chính xác giờ, phút, giây hiện tại của máy tính"
+                    >
+                      <i className="fas fa-sync-alt text-[10px] text-blue-600"></i>
+                      <span>Hiện tại</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="0"
+                          max="23"
+                          value={singleHour}
+                          onChange={e => {
+                            const v = e.target.value;
+                            setSingleHour(v === '' ? '' : String(Math.min(23, Math.max(0, parseInt(v, 10) || 0))).padStart(2, '0'));
+                          }}
+                          className="w-full bg-white border border-slate-200 rounded-xl p-2 font-bold text-slate-800 text-center outline-none focus:border-blue-500 text-xs font-mono"
+                          placeholder="00"
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 font-semibold text-[10px]">giờ</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-bold block mt-0.5">Giờ</span>
+                    </div>
+
+                    <div>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="0"
+                          max="59"
+                          value={singleMinute}
+                          onChange={e => {
+                            const v = e.target.value;
+                            setSingleMinute(v === '' ? '' : String(Math.min(59, Math.max(0, parseInt(v, 10) || 0))).padStart(2, '0'));
+                          }}
+                          className="w-full bg-white border border-slate-200 rounded-xl p-2 font-bold text-slate-800 text-center outline-none focus:border-blue-500 text-xs font-mono"
+                          placeholder="00"
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 font-semibold text-[10px]">phút</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-bold block mt-0.5">Phút</span>
+                    </div>
+
+                    <div>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="0"
+                          max="59"
+                          value={singleSecond}
+                          onChange={e => {
+                            const v = e.target.value;
+                            setSingleSecond(v === '' ? '' : String(Math.min(59, Math.max(0, parseInt(v, 10) || 0))).padStart(2, '0'));
+                          }}
+                          className="w-full bg-white border border-slate-200 rounded-xl p-2 font-bold text-slate-800 text-center outline-none focus:border-blue-500 text-xs font-mono"
+                          placeholder="00"
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 font-semibold text-[10px]">giây</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-bold block mt-0.5">Giây</span>
+                    </div>
                   </div>
                 </div>
 

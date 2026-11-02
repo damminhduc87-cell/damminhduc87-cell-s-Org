@@ -180,6 +180,39 @@ export const CapaReportModal: React.FC<CapaReportModalProps> = ({
   const guide = getWestgardRuleGuide(result.westgardRule);
   
   // Default values
+  const initialTimestamp = existingCapa?.timestamp || result.timestamp;
+  const initialDateObj = new Date(initialTimestamp);
+  const pad = (n: number) => String(n).padStart(2, '0');
+
+  const [capaDate, setCapaDate] = useState<string>(
+    `${initialDateObj.getFullYear()}-${pad(initialDateObj.getMonth() + 1)}-${pad(initialDateObj.getDate())}`
+  );
+  const [capaHour, setCapaHour] = useState<string>(pad(initialDateObj.getHours()));
+  const [capaMinute, setCapaMinute] = useState<string>(pad(initialDateObj.getMinutes()));
+  const [capaSecond, setCapaSecond] = useState<string>(pad(initialDateObj.getSeconds()));
+
+  const effectiveTimestamp = useMemo(() => {
+    const [y, m, d] = (capaDate || '').split('-').map(Number);
+    if (!y || !m || !d) return initialTimestamp;
+    const h = Math.min(23, Math.max(0, parseInt(capaHour, 10) || 0));
+    const min = Math.min(59, Math.max(0, parseInt(capaMinute, 10) || 0));
+    const s = Math.min(59, Math.max(0, parseInt(capaSecond, 10) || 0));
+    return new Date(y, m - 1, d, h, min, s).getTime();
+  }, [capaDate, capaHour, capaMinute, capaSecond, initialTimestamp]);
+
+  const effectiveDateTimeStr = useMemo(() => {
+    const d = new Date(effectiveTimestamp);
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  }, [effectiveTimestamp]);
+
+  const handleSetCurrentCapaTime = () => {
+    const now = new Date();
+    setCapaDate(`${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`);
+    setCapaHour(pad(now.getHours()));
+    setCapaMinute(pad(now.getMinutes()));
+    setCapaSecond(pad(now.getSeconds()));
+  };
+
   const [code, setCode] = useState(() => {
     if (existingCapa?.code) return existingCapa.code;
     const dateStr = new Date(result.timestamp).toISOString().slice(0, 10).replace(/-/g, '');
@@ -275,7 +308,7 @@ export const CapaReportModal: React.FC<CapaReportModalProps> = ({
     const capa: CAPARecord = {
       id: existingCapa?.id || `capa_${Date.now()}`,
       code,
-      timestamp: result.timestamp,
+      timestamp: effectiveTimestamp,
       testId: test.id,
       testName: test.name,
       unit: test.unit,
@@ -437,7 +470,7 @@ export const CapaReportModal: React.FC<CapaReportModalProps> = ({
       <td><strong>Mức QC:</strong></td>
       <td>${result.level} (Số Lô: ${lotNumber})</td>
       <td><strong>Ngày giờ phát hiện:</strong></td>
-      <td>${new Date(result.timestamp).toLocaleString('vi-VN')}</td>
+      <td>${effectiveDateTimeStr}</td>
     </tr>
     <tr>
       <td><strong>Giá trị đo:</strong></td>
@@ -679,6 +712,116 @@ export const CapaReportModal: React.FC<CapaReportModalProps> = ({
               <i className="fas fa-check-circle mr-1"></i> {aiSuggestionNotice}
             </div>
           )}
+
+          {/* Form Fields: Thời gian phát hiện sự cố (Ngày, Giờ, Phút, Giây) */}
+          <div className="p-4 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3 shadow-2xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 flex items-center justify-center text-xs">
+                  <i className="fas fa-clock"></i>
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                    Thời gian phát hiện sự cố (Ngày, Giờ, Phút, Giây)
+                  </h4>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    Tùy chỉnh chính xác thời điểm xảy ra sự cố để xuất biên bản chuẩn QĐ 2429
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/80 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                  {effectiveDateTimeStr}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleSetCurrentCapaTime}
+                  className="px-2.5 py-1 bg-white hover:bg-slate-100 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold border border-slate-200 dark:border-slate-600 shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
+                  title="Lấy chính xác ngày, giờ, phút, giây hiện tại của máy tính"
+                >
+                  <i className="fas fa-sync-alt text-[10px] text-blue-600"></i>
+                  <span>Hiện tại</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+              <div className="sm:col-span-1">
+                <label className="font-bold text-slate-500 block mb-1 uppercase text-[10px]">
+                  <i className="fas fa-calendar-alt text-slate-400 mr-1"></i> Ngày phát hiện
+                </label>
+                <input
+                  type="date"
+                  value={capaDate}
+                  onChange={e => setCapaDate(e.target.value)}
+                  className="w-full bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-slate-800 dark:text-slate-100 outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-500 block mb-1 uppercase text-[10px]">
+                  Giờ (00 - 23)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="23"
+                    value={capaHour}
+                    onChange={e => {
+                      const v = e.target.value;
+                      setCapaHour(v === '' ? '' : String(Math.min(23, Math.max(0, parseInt(v, 10) || 0))).padStart(2, '0'));
+                    }}
+                    className="w-full bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-slate-800 dark:text-slate-100 text-center outline-none focus:border-blue-500"
+                    placeholder="00"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-[10px]">giờ</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-500 block mb-1 uppercase text-[10px]">
+                  Phút (00 - 59)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="59"
+                    value={capaMinute}
+                    onChange={e => {
+                      const v = e.target.value;
+                      setCapaMinute(v === '' ? '' : String(Math.min(59, Math.max(0, parseInt(v, 10) || 0))).padStart(2, '0'));
+                    }}
+                    className="w-full bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-slate-800 dark:text-slate-100 text-center outline-none focus:border-blue-500"
+                    placeholder="00"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-[10px]">phút</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-500 block mb-1 uppercase text-[10px]">
+                  Giây (00 - 59)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="59"
+                    value={capaSecond}
+                    onChange={e => {
+                      const v = e.target.value;
+                      setCapaSecond(v === '' ? '' : String(Math.min(59, Math.max(0, parseInt(v, 10) || 0))).padStart(2, '0'));
+                    }}
+                    className="w-full bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-slate-800 dark:text-slate-100 text-center outline-none focus:border-blue-500"
+                    placeholder="00"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-[10px]">giây</span>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Form Fields: Thông tin quản trị */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
