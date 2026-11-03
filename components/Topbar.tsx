@@ -15,6 +15,7 @@ interface TopbarProps {
   isSyncing?: boolean;
   onStandardizeQc?: () => void;
   onOpenExportReport?: () => void;
+  onReloadInitiativeDataset?: () => void;
 }
 
 export const Topbar: React.FC<TopbarProps> = ({
@@ -30,7 +31,8 @@ export const Topbar: React.FC<TopbarProps> = ({
   onPullFromSheets,
   isSyncing,
   onStandardizeQc,
-  onOpenExportReport
+  onOpenExportReport,
+  onReloadInitiativeDataset
 }) => {
   const [currentTime, setCurrentTime] = useState<string>('');
 
@@ -139,6 +141,19 @@ export const Topbar: React.FC<TopbarProps> = ({
             >
               <i className="fas fa-sliders text-amber-600"></i>
               <span className="hidden sm:inline">Cấu hình chuẩn TEa</span>
+            </button>
+          )}
+
+          {/* Quick Reload Initiative QC Data (T5-T8) */}
+          {onReloadInitiativeDataset && (
+            <button
+              type="button"
+              onClick={onReloadInitiativeDataset}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+              title="Đồng bộ nạp lại 2 file dữ liệu QC T5-T8/2026 (86 ngày công) vào phần mềm"
+            >
+              <i className="fas fa-database text-indigo-600"></i>
+              <span className="hidden sm:inline">Đồng bộ QC T5-T8</span>
             </button>
           )}
 

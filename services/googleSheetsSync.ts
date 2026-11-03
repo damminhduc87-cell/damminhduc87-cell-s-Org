@@ -1,4 +1,4 @@
-import { LabTest, QCResult, QCLevel } from '../types';
+import { LabTest, QCResult, QCLevel, WestgardRuleType } from '../types';
 import { calculateZScore } from './westgardEngine';
 
 export interface GoogleSheetRowPayload {
@@ -471,7 +471,7 @@ export async function pullResultsFromGoogleSheets(
       if (isNaN(valNum)) return;
 
       let westgardStatus: 'passed' | 'warning' | 'violation' = 'passed';
-      let westgardRule = 'none';
+      let westgardRule: WestgardRuleType = 'none';
       let zScore = 0;
 
       const rawDate = row.NGAY_GIO || row['Ngày giờ'] || row['Ngày'];
@@ -511,10 +511,18 @@ export async function pullResultsFromGoogleSheets(
       if (rawStatus.includes('vi phạm') || rawStatus.includes('vi pham') || rawStatus.includes('violation')) {
         westgardStatus = 'violation';
         const matchRule = rawStatus.match(/(\d[_\-]?\d?s|r[_\-]?4s|\d+x)/i);
-        if (matchRule) westgardRule = matchRule[0];
+        if (matchRule) {
+          const rStr = matchRule[0].toLowerCase().replace('_', '-');
+          if (rStr.includes('1-3s')) westgardRule = '1-3s';
+          else if (rStr.includes('2-2s')) westgardRule = '2-2s';
+          else if (rStr.includes('r-4s')) westgardRule = 'R-4s';
+          else if (rStr.includes('4-1s')) westgardRule = '4-1s';
+          else if (rStr.includes('10-x') || rStr.includes('10x')) westgardRule = '10-x';
+          else if (rStr.includes('1-2s')) westgardRule = '1-2s';
+        }
       } else if (rawStatus.includes('cảnh báo') || rawStatus.includes('canh bao') || rawStatus.includes('warning')) {
         westgardStatus = 'warning';
-        westgardRule = '1_2s';
+        westgardRule = '1-2s';
       }
 
       // Trích xuất tên KTV / Người thực hiện

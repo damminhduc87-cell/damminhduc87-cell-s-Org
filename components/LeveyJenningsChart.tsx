@@ -134,8 +134,8 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
 
     const svgString = new XMLSerializer().serializeToString(svgElement);
     const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-    const URL = window.URL || window.webkitURL || window;
-    const blobURL = URL.createObjectURL(blob);
+    const URLObj = window.URL || (window as any).webkitURL;
+    const blobURL = URLObj.createObjectURL(blob);
     
     const image = new Image();
     image.onload = () => {

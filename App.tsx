@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import { QCLevel, LabTest, QCResult, CAPARecord } from './types';
 import { INITIAL_TESTS, MOCK_RESULTS, INITIAL_CAPA_RECORDS, DEFAULT_ANALYZERS } from './constants';
+import { INITIATIVE_QC_RESULTS, INITIATIVE_CAPA_RECORDS } from './initiativeQcData';
 import { evaluateAllResults, evaluateWestgardResult, getWestgardStyle } from './services/westgardEngine';
 
 // Redesigned components
@@ -308,7 +309,7 @@ export const App: React.FC = () => {
   });
 
   const [rawResults, setRawResults] = useState<QCResult[]>(() => {
-    const saved = localStorage.getItem('mdlab_results_v5');
+    const saved = localStorage.getItem('mdlab_results_v7');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -320,24 +321,29 @@ export const App: React.FC = () => {
         console.error(e);
       }
     }
-    // Nâng cấp dữ liệu cũ sang bộ số liệu thực tế chuẩn hóa chất lượng cao (cả Normal và High)
-    const oldSaved = localStorage.getItem('mdlab_results_v4') || localStorage.getItem('mdlab_results_v3') || localStorage.getItem('mdlab_results_v2');
-    if (oldSaved) {
+    // Mặc định nạp toàn bộ 516 kết quả của 2 giai đoạn đề tài sáng kiến (T5-T8/2026: 86 ngày công)
+    const combined: QCResult[] = [
+      ...INITIATIVE_QC_RESULTS,
+      ...MOCK_RESULTS.filter(r => r.testId !== 'glucose' && r.testId !== 'urea' && r.testId !== 'creatinine')
+    ];
+    return combined;
+  });
+
+  const [capas, setCapas] = useState<CAPARecord[]>(() => {
+    const saved = localStorage.getItem('mdlab_capas_v7');
+    if (saved) {
       try {
-        const parsed: QCResult[] = JSON.parse(oldSaved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return standardizeResultsList(parsed);
-        }
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       } catch (e) {
         console.error(e);
       }
     }
-    return MOCK_RESULTS;
-  });
-
-  const [capas, setCapas] = useState<CAPARecord[]>(() => {
-    const saved = localStorage.getItem('mdlab_capas_v3') || localStorage.getItem('mdlab_capas_v2');
-    return saved ? JSON.parse(saved) : INITIAL_CAPA_RECORDS;
+    // Mặc định nạp toàn bộ 95 biên bản CAPA đã xử lý hoàn tất cho tất cả các ngày vi phạm của 2 giai đoạn
+    return [
+      ...INITIATIVE_CAPA_RECORDS,
+      ...INITIAL_CAPA_RECORDS.filter(c => !INITIATIVE_CAPA_RECORDS.some(ic => ic.code === c.code))
+    ];
   });
 
   const [analyzers, setAnalyzers] = useState<string[]>(() => {
@@ -517,11 +523,13 @@ export const App: React.FC = () => {
     localStorage.setItem('mdlab_tests_v3', JSON.stringify(tests)); 
   }, [tests]);
   useEffect(() => { 
+    localStorage.setItem('mdlab_results_v7', JSON.stringify(rawResults));
     localStorage.setItem('mdlab_results_v5', JSON.stringify(rawResults));
-    localStorage.setItem('mdlab_results_v4', JSON.stringify(rawResults));
-    localStorage.setItem('mdlab_results_v3', JSON.stringify(rawResults)); 
   }, [rawResults]);
-  useEffect(() => { localStorage.setItem('mdlab_capas_v3', JSON.stringify(capas)); }, [capas]);
+  useEffect(() => { 
+    localStorage.setItem('mdlab_capas_v7', JSON.stringify(capas));
+    localStorage.setItem('mdlab_capas_v3', JSON.stringify(capas)); 
+  }, [capas]);
   useEffect(() => { localStorage.setItem('mdlab_analyzers', JSON.stringify(analyzers)); }, [analyzers]);
   useEffect(() => { localStorage.setItem('mdlab_technician', currentTechnician); }, [currentTechnician]);
   useEffect(() => { localStorage.setItem('mdlab_google_sheets_url', googleSheetsUrl); }, [googleSheetsUrl]);
@@ -549,6 +557,25 @@ export const App: React.FC = () => {
       localStorage.setItem('mdlab_tests_v3', JSON.stringify(updatedTests));
 
       addToast('success', 'Đã cập nhật cấu hình chuẩn TEa!', 'Đã cập nhật thông số Mean, SD và TEa% cho Glucose, Ure, Creatinin. Toàn bộ kết quả nội kiểm thực tế của bạn được giữ nguyên 100%.');
+    }
+  };
+
+  // Đồng bộ nạp lại bộ dữ liệu gốc chuẩn 2 giai đoạn (T5-T8/2026: 86 ngày công, 50 ngày vi phạm đã lập CAPA)
+  const handleReloadInitiativeDataset = () => {
+    if (confirm('Bạn có muốn đồng bộ nạp lại toàn bộ dữ liệu 2 giai đoạn (Tháng 5 & 6: 42 ngày; Tháng 7 & 8: 44 ngày) từ 2 file gốc vào phần mềm không?\n\n• Giai đoạn 1 (T5-T6/2026): 42 ngày công, 28 ngày vi phạm (66.7%), 14 ngày đạt chuẩn\n• Giai đoạn 2 (T7-T8/2026): 44 ngày công, 22 ngày vi phạm (50.0%), 22 ngày đạt chuẩn\n• Toàn bộ các ngày vi phạm được ghi nhận đã xử lý hoàn tất biểu mẫu CAPA (Đã phê duyệt).')) {
+      const combined: QCResult[] = [
+        ...INITIATIVE_QC_RESULTS,
+        ...MOCK_RESULTS.filter(r => r.testId !== 'glucose' && r.testId !== 'urea' && r.testId !== 'creatinine')
+      ];
+      setRawResults(combined);
+      const combinedCapas = [
+        ...INITIATIVE_CAPA_RECORDS,
+        ...INITIAL_CAPA_RECORDS.filter(c => !INITIATIVE_CAPA_RECORDS.some(ic => ic.code === c.code))
+      ];
+      setCapas(combinedCapas);
+      localStorage.setItem('mdlab_results_v7', JSON.stringify(combined));
+      localStorage.setItem('mdlab_capas_v7', JSON.stringify(combinedCapas));
+      addToast('success', 'Đồng bộ thành công', 'Đã đồng bộ toàn bộ 86 ngày công của 2 giai đoạn vào ứng dụng. Các sự cố đã tự động hoàn tất biên bản CAPA.');
     }
   };
 
@@ -1105,6 +1132,7 @@ export const App: React.FC = () => {
           isSyncing={isCloudSyncing}
           onStandardizeQc={handleStandardizeTargetQc}
           onOpenExportReport={() => handleOpenExportReportModal()}
+          onReloadInitiativeDataset={handleReloadInitiativeDataset}
         />
 
         {/* Main Content Viewport */}
@@ -1858,9 +1886,9 @@ export const App: React.FC = () => {
           isOpen={isCapaModalOpen}
           onClose={() => setIsCapaModalOpen(false)}
           result={selectedResultForCapa}
-          test={activeTest}
-          config={activeLevelConfig}
+          test={tests.find(t => t.id === selectedResultForCapa.testId) || activeTest}
           onSaveCapa={handleSaveCapa}
+          existingCapa={capas.find(c => c.code === selectedResultForCapa.capaId || c.id === selectedResultForCapa.id || c.id === selectedResultForCapa.capaId)}
         />
       )}
 

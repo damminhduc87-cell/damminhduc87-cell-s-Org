@@ -242,8 +242,8 @@ export function evaluateAllResults(
     const historyToPoint = sorted.slice(0, index);
     const evaluation = evaluateWestgardResult(res, historyToPoint, configs);
     
-    // Nếu kết quả đã được ghi nhận vi phạm cụ thể từ dữ liệu đồng bộ/thủ công và thuật toán ra 'passed'
-    if (res.westgardStatus === 'violation' && res.westgardRule && res.westgardRule !== 'none' && evaluation.status === 'passed') {
+    // Nếu kết quả đã được ghi nhận vi phạm cụ thể từ dữ liệu đồng bộ/thủ công (bảo toàn quy tắc và CAPA)
+    if (res.westgardStatus === 'violation' && res.westgardRule && res.westgardRule !== 'none') {
       return {
         ...res,
         zScore: evaluation.zScore,
@@ -254,6 +254,22 @@ export function evaluateAllResults(
           status: 'violation',
           rule: res.westgardRule,
           isRunRejected: true
+        }
+      };
+    }
+
+    // Nếu kết quả do đồng bộ/nhập chuẩn được xác định đạt chuẩn (passed)
+    if (res.isManualEntry && res.westgardStatus === 'passed') {
+      return {
+        ...res,
+        zScore: evaluation.zScore,
+        westgardRule: 'none',
+        westgardStatus: 'passed',
+        evaluation: {
+          ...evaluation,
+          status: 'passed',
+          rule: 'none',
+          isRunRejected: false
         }
       };
     }
