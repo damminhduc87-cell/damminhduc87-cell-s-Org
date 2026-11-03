@@ -45,7 +45,7 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
           rule: r.westgardRule || 'none',
           status: r.westgardStatus || 'passed',
           technician: r.technician || 'KTV',
-          lotNumber: r.lotNumber || 'Default'
+          lotNumber: (r.lotNumber && r.lotNumber !== '---' && r.lotNumber !== 'LOT-DEFAULT') ? r.lotNumber : (config.currentLot || 'LOT-2026')
         };
       });
   }, [data, config]);

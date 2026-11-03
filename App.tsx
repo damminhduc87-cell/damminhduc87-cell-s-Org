@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import { QCLevel, LabTest, QCResult, CAPARecord } from './types';
-import { INITIAL_TESTS, MOCK_RESULTS, INITIAL_CAPA_RECORDS, DEFAULT_ANALYZERS } from './constants';
+import { INITIAL_TESTS, MOCK_RESULTS, INITIAL_CAPA_RECORDS, DEFAULT_ANALYZERS, getStandardLotForTest, generateDefaultLotsForTest } from './constants';
 import { INITIATIVE_QC_RESULTS, INITIATIVE_CAPA_RECORDS } from './initiativeQcData';
 import { evaluateAllResults, evaluateWestgardResult, getWestgardStyle } from './services/westgardEngine';
 
@@ -238,6 +238,22 @@ function cleanAndDeduplicateTests(rawTests: LabTest[]): { cleanTests: LabTest[];
         }
       }
 
+      // Đảm bảo 100% tất cả các mức nồng độ đều có Số Lô (Lot Number) chuẩn y khoa và danh mục Lô hoạt động
+      const levels = [QCLevel.LOW, QCLevel.NORMAL, QCLevel.HIGH];
+      levels.forEach(lvl => {
+        const curCfg = cleanTest.configs?.[lvl];
+        if (curCfg) {
+          const stdLot = getStandardLotForTest(cleanTest.id, lvl);
+          if (!curCfg.currentLot || curCfg.currentLot === 'LOT-DEFAULT' || curCfg.currentLot === 'LOT-2026' || curCfg.currentLot.trim() === '') {
+            cleanTest.configs[lvl] = {
+              ...curCfg,
+              currentLot: stdLot
+            };
+          }
+        }
+      });
+      cleanTest.lots = generateDefaultLotsForTest(cleanTest.id, cleanTest.unit, cleanTest.configs);
+
       cleanTests.push(cleanTest);
     }
   });
@@ -276,10 +292,17 @@ export function standardizeResultsList(results: QCResult[], currentTests?: LabTe
       tech = tech.replace(/^KTV\.?\s*/i, '').trim();
     }
 
+    let lot = (r.lotNumber || '').trim();
+    if (!lot || lot === '---' || lot === 'LOT-DEFAULT' || lot === 'LOT-2026' || lot === 'LOT-SHEET') {
+      const t = testMap.get(tId);
+      lot = t?.configs?.[r.level]?.currentLot || getStandardLotForTest(tId, r.level);
+    }
+
     return {
       ...r,
       testId: tId,
-      technician: tech
+      technician: tech,
+      lotNumber: lot
     };
   });
 }
@@ -288,7 +311,7 @@ export const App: React.FC = () => {
   // 1. Quản lý trạng thái dữ liệu (đồng bộ với localStorage & tự động dọn trùng)
   const [tests, setTests] = useState<LabTest[]>(() => {
     let list = INITIAL_TESTS;
-    const saved = localStorage.getItem('mdlab_tests_v5');
+    const saved = localStorage.getItem('mdlab_tests_v7');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -519,6 +542,7 @@ export const App: React.FC = () => {
 
   // Lưu trữ tự động vào localStorage
   useEffect(() => { 
+    localStorage.setItem('mdlab_tests_v7', JSON.stringify(tests));
     localStorage.setItem('mdlab_tests_v5', JSON.stringify(tests));
     localStorage.setItem('mdlab_tests_v3', JSON.stringify(tests)); 
   }, [tests]);
@@ -892,7 +916,7 @@ export const App: React.FC = () => {
       value: valNum,
       timestamp: dateToUse.getTime(),
       technician: currentTechnician,
-      lotNumber: activeLevelConfig.currentLot || 'LOT-DEFAULT',
+      lotNumber: activeLevelConfig.currentLot || getStandardLotForTest(selectedTestId, selectedLevel),
       isManualEntry: true
     };
 
@@ -962,7 +986,7 @@ export const App: React.FC = () => {
             value: numVal,
             timestamp: baseTime,
             technician: currentTechnician,
-            lotNumber: cfg?.currentLot || 'LOT-2026'
+            lotNumber: cfg?.currentLot || getStandardLotForTest(testId, lvl as QCLevel)
           };
 
           const testHistory = rawResults.filter(r => r.testId === testId);

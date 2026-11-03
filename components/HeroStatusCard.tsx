@@ -1,5 +1,6 @@
 import React from 'react';
 import { QCResult, LabTest } from '../types';
+import { getStandardLotForTest } from '../constants';
 
 interface HeroStatusCardProps {
   latestResult: QCResult | null;
@@ -92,8 +93,12 @@ export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
               <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider ${theme.badgeBg}`}>
                 {theme.badgeText}
               </span>
-              <span className="text-xs text-slate-500 font-medium">
-                Lần đo gần nhất: <strong className="text-slate-700">{formattedDate}</strong>
+              <span className="text-xs text-slate-500 font-medium flex items-center gap-2 flex-wrap">
+                <span>Lần đo gần nhất: <strong className="text-slate-700">{formattedDate}</strong></span>
+                <span className="px-2 py-0.5 rounded-md bg-white border border-slate-200/90 font-mono text-[11px] font-bold text-slate-700 shadow-2xs">
+                  <i className="fas fa-boxes text-slate-400 mr-1"></i>
+                  Lô: {latestResult.lotNumber || activeTest.configs?.[latestResult.level]?.currentLot || getStandardLotForTest(activeTest.id, latestResult.level)}
+                </span>
               </span>
             </div>
 

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { QCResult, LabTest, QCLevel } from '../types';
 import { getWestgardStyle } from '../services/westgardEngine';
+import { getStandardLotForTest } from '../constants';
 
 interface LogbookTableProps {
   results: QCResult[];
@@ -313,7 +314,7 @@ export const LogbookTable: React.FC<LogbookTableProps> = ({
                       {activeTest.analyzerName || 'Máy Hóa sinh'}
                     </span>
                     <span>•</span>
-                    <span>Lô: {r.lotNumber || '---'}</span>
+                    <span>Lô: {r.lotNumber || activeTest.configs?.[r.level]?.currentLot || getStandardLotForTest(r.testId || activeTest.id, r.level)}</span>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
@@ -409,8 +410,11 @@ export const LogbookTable: React.FC<LogbookTableProps> = ({
                     </td>
 
                     {/* Lot */}
-                    <td className="px-4 py-3.5 font-semibold text-slate-600">
-                      {r.lotNumber || '---'}
+                    <td className="px-4 py-3.5 font-semibold text-slate-700">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-mono text-[11px] font-bold border border-slate-200 shadow-2xs">
+                        <i className="fas fa-boxes text-slate-400 text-[10px]"></i>
+                        {r.lotNumber || activeTest.configs?.[r.level]?.currentLot || getStandardLotForTest(r.testId || activeTest.id, r.level)}
+                      </span>
                     </td>
 
                     {/* Value */}

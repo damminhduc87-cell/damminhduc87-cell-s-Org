@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import { LabTest, QCLevel, QCResult, QCConfig } from '../types';
 import { evaluateAllResults, getWestgardStyle } from '../services/westgardEngine';
+import { getStandardLotForTest } from '../constants';
 
 export interface ExportReportModalProps {
   isOpen: boolean;
@@ -170,7 +171,11 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
           unit: test.unit,
           analyzerName: test.analyzerName || 'Máy Hóa sinh',
           level: res.level,
-          lotNumber: res.lotNumber || cfg.currentLot || '---',
+          lotNumber: (res.lotNumber && res.lotNumber !== '---' && res.lotNumber !== 'LOT-DEFAULT' && res.lotNumber !== 'LOT-2026')
+            ? res.lotNumber
+            : (cfg.currentLot && cfg.currentLot !== '---' && cfg.currentLot !== 'LOT-DEFAULT' && cfg.currentLot !== 'LOT-2026'
+                ? cfg.currentLot
+                : getStandardLotForTest(test.id, res.level)),
           value: res.value,
           meanTarget: cfg.mean,
           sdTarget: cfg.sd,

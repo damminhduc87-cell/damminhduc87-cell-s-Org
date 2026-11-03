@@ -1,4 +1,4 @@
-import { LabTest, QCLevel, QCResult, CAPARecord } from './types';
+import { LabTest, QCLevel, QCResult, CAPARecord, QCLot, QCConfig } from './types';
 
 export const DEFAULT_ANALYZERS: string[] = [
   'Máy Hóa sinh 1',
@@ -7,7 +7,50 @@ export const DEFAULT_ANALYZERS: string[] = [
   'Máy Điện giải & Khí máu'
 ];
 
-export const INITIAL_TESTS: LabTest[] = [
+/**
+ * Trả về Số Lô QC chuẩn hóa theo tiêu chuẩn QĐ 2429/QĐ-BYT cho từng chỉ số xét nghiệm và mức nồng độ
+ */
+export function getStandardLotForTest(testId: string, level: QCLevel): string {
+  const t = (testId || '').toLowerCase().trim();
+  const lvlSuffix = level === QCLevel.LOW ? 'L' : (level === QCLevel.HIGH ? 'H' : 'N');
+  
+  if (t === 'glucose' || t.includes('glu')) return `LOT-2026-GLU-${lvlSuffix}`;
+  if (t === 'creatinine' || t.includes('cre')) return `LOT-2026-REN-${lvlSuffix}`;
+  if (t === 'urea' || t.includes('ure')) return `LOT-2026-REN-${lvlSuffix}`;
+  if (t === 'cholesterol' || t === 'triglycerides' || t === 'hdl' || t === 'ldl' || t.includes('lip')) return `LOT-2026-LIP-${lvlSuffix}`;
+  if (t === 'ast' || t === 'alt' || t === 'ggt' || t.includes('enz') || t.includes('got') || t.includes('gpt')) return `LOT-2026-ENZ-${lvlSuffix}`;
+  if (t === 'albumin' || t === 'protein' || t.includes('pro') || t.includes('alb')) return `LOT-2026-PRO-${lvlSuffix}`;
+  if (t === 'uric-acid' || t.includes('uri')) return `LOT-2026-URI-${lvlSuffix}`;
+  if (t.includes('bil')) return `LOT-2026-BIL-${lvlSuffix}`;
+  if (t.includes('cal') || t.includes('min')) return `LOT-2026-MIN-${lvlSuffix}`;
+  if (t.includes('na') || t.includes('k') || t.includes('cl') || t.includes('ele')) return `LOT-2026-ELE-${lvlSuffix}`;
+  if (t.includes('crp') || t.includes('imm')) return `LOT-2026-IMM-${lvlSuffix}`;
+  
+  return `LOT-2026-${testId.toUpperCase().slice(0, 3)}-${lvlSuffix}`;
+}
+
+export function generateDefaultLotsForTest(testId: string, unit: string, configs: Record<QCLevel, QCConfig>): QCLot[] {
+  const levels = [QCLevel.LOW, QCLevel.NORMAL, QCLevel.HIGH];
+  return levels.map(lvl => {
+    const cfg = configs[lvl];
+    const lotNum = cfg?.currentLot || getStandardLotForTest(testId, lvl);
+    return {
+      id: `lot_${testId}_${lvl.toLowerCase()}`,
+      testId,
+      level: lvl,
+      lotNumber: lotNum,
+      expirationDate: '2026-12-31',
+      openDate: '2026-05-01',
+      manufacturer: testId.includes('crp') ? 'Roche Diagnostics' : 'Bio-Rad Liquichek (Đạt chuẩn QĐ 2429)',
+      mean: cfg?.mean ?? 0,
+      sd: cfg?.sd ?? 0,
+      unit,
+      isActive: true
+    };
+  });
+}
+
+const INITIAL_TESTS_RAW: LabTest[] = [
   {
     id: 'glucose',
     name: 'Glucose (Đường huyết)',
@@ -249,6 +292,11 @@ export const INITIAL_TESTS: LabTest[] = [
     }
   }
 ];
+
+export const INITIAL_TESTS: LabTest[] = INITIAL_TESTS_RAW.map(t => ({
+  ...t,
+  lots: generateDefaultLotsForTest(t.id, t.unit, t.configs)
+}));
 
 const now = Date.now();
 const dayMs = 86400000;

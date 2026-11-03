@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { CAPARecord, QCResult, LabTest, QCLevel, RootCauseChecklist } from '../types';
 import { askAdvisorApi } from '../services/advisorClient';
+import { getStandardLotForTest } from '../constants';
 
 export interface WestgardRuleGuide {
   ruleCode: string;
@@ -220,7 +221,15 @@ export const CapaReportModal: React.FC<CapaReportModalProps> = ({
   });
 
   const [analyzerName, setAnalyzerName] = useState(test.analyzerName || 'Máy sinh hóa / miễn dịch tự động');
-  const [lotNumber, setLotNumber] = useState(result.lotNumber || config?.currentLot || 'LOT-2026-A1');
+  const [lotNumber, setLotNumber] = useState(() => {
+    if (result.lotNumber && result.lotNumber !== '---' && result.lotNumber !== 'LOT-DEFAULT' && result.lotNumber !== 'LOT-2026') {
+      return result.lotNumber;
+    }
+    if (config?.currentLot && config.currentLot !== '---' && config.currentLot !== 'LOT-DEFAULT' && config.currentLot !== 'LOT-2026') {
+      return config.currentLot;
+    }
+    return getStandardLotForTest(test.id, result.level);
+  });
   const [technician, setTechnician] = useState(() => {
     let t = (result.technician || '').trim();
     if (!t || t.toLowerCase().includes('google') || t.toLowerCase().includes('sheet')) {

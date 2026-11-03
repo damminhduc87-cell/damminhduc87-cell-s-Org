@@ -1,5 +1,6 @@
 import React from 'react';
 import { LabTest, QCLevel, QCConfig } from '../types';
+import { getStandardLotForTest } from '../constants';
 
 interface HeaderFilterBarProps {
   tests: LabTest[];
@@ -144,7 +145,7 @@ export const HeaderFilterBar: React.FC<HeaderFilterBarProps> = ({
           >
             <span className="truncate flex items-center gap-1.5">
               <i className="fas fa-boxes text-indigo-500 text-[11px]"></i>
-              {activeLevelConfig.currentLot || 'Chưa gán lô'}
+              {activeLevelConfig?.currentLot || getStandardLotForTest(activeTest?.id || 'glucose', selectedLevel)}
             </span>
             <span className="text-[10px] text-indigo-600 underline shrink-0 ml-1">Đổi Lô</span>
           </button>

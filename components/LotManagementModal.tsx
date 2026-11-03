@@ -1,61 +1,30 @@
 import React, { useState } from 'react';
 import { LabTest, QCLevel, QCLot } from '../types';
+import { generateDefaultLotsForTest } from '../constants';
 
 interface LotManagementModalProps {
   isOpen: boolean;
   onClose: () => void;
   test: LabTest;
-  onUpdateTestLots: (updatedTest: LabTest) => void;
+  level?: QCLevel;
+  onSaveConfig?: (updatedTest: LabTest) => void;
+  onUpdateTestLots?: (updatedTest: LabTest) => void;
 }
 
 export const LotManagementModal: React.FC<LotManagementModalProps> = ({
   isOpen,
   onClose,
   test,
+  level,
+  onSaveConfig,
   onUpdateTestLots
 }) => {
-  const [selectedLevel, setSelectedLevel] = useState<QCLevel>(QCLevel.NORMAL);
-  const [lots, setLots] = useState<QCLot[]>(test.lots || [
-    {
-      id: 'lot-1',
-      testId: test.id,
-      level: QCLevel.LOW,
-      lotNumber: 'LOT-2026-L1',
-      expirationDate: '2026-12-31',
-      openDate: '2026-09-01',
-      manufacturer: 'Bio-Rad Liquichek',
-      mean: test?.configs?.[QCLevel.LOW]?.mean ?? 0,
-      sd: test?.configs?.[QCLevel.LOW]?.sd ?? 0,
-      unit: test.unit,
-      isActive: true
-    },
-    {
-      id: 'lot-2',
-      testId: test.id,
-      level: QCLevel.NORMAL,
-      lotNumber: 'LOT-2026-N1',
-      expirationDate: '2026-12-31',
-      openDate: '2026-09-01',
-      manufacturer: 'Bio-Rad Liquichek',
-      mean: test?.configs?.[QCLevel.NORMAL]?.mean ?? 0,
-      sd: test?.configs?.[QCLevel.NORMAL]?.sd ?? 0,
-      unit: test.unit,
-      isActive: true
-    },
-    {
-      id: 'lot-3',
-      testId: test.id,
-      level: QCLevel.HIGH,
-      lotNumber: 'LOT-2026-H1',
-      expirationDate: '2026-12-31',
-      openDate: '2026-09-01',
-      manufacturer: 'Bio-Rad Liquichek',
-      mean: test?.configs?.[QCLevel.HIGH]?.mean ?? 0,
-      sd: test?.configs?.[QCLevel.HIGH]?.sd ?? 0,
-      unit: test.unit,
-      isActive: true
-    }
-  ]);
+  const [selectedLevel, setSelectedLevel] = useState<QCLevel>(level || QCLevel.NORMAL);
+  const [lots, setLots] = useState<QCLot[]>(
+    test.lots && test.lots.length > 0
+      ? test.lots
+      : generateDefaultLotsForTest(test.id, test.unit, test.configs)
+  );
 
   // Form thêm lô mới
   const [newLotNum, setNewLotNum] = useState('');
@@ -105,11 +74,14 @@ export const LotManagementModal: React.FC<LotManagementModalProps> = ({
       }
     };
 
-    onUpdateTestLots({
+    const updatedTest: LabTest = {
       ...test,
       configs: updatedConfigs,
       lots: updatedLots
-    });
+    };
+
+    if (onSaveConfig) onSaveConfig(updatedTest);
+    if (onUpdateTestLots) onUpdateTestLots(updatedTest);
 
     setNewLotNum('');
     alert(`Đã thêm và kích hoạt Lô ${newLot.lotNumber} thành công!`);
@@ -138,11 +110,14 @@ export const LotManagementModal: React.FC<LotManagementModalProps> = ({
       }
     };
 
-    onUpdateTestLots({
+    const updatedTest: LabTest = {
       ...test,
       configs: updatedConfigs,
       lots: updatedLots
-    });
+    };
+
+    if (onSaveConfig) onSaveConfig(updatedTest);
+    if (onUpdateTestLots) onUpdateTestLots(updatedTest);
   };
 
   const isExpired = (expDate: string) => {
