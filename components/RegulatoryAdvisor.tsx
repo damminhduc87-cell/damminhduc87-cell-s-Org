@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChatMessage, LabTest, QCResult } from '../types';
 import { askAdvisorApi } from '../services/advisorClient';
+import { safeLocalStorageSet, safeLocalStorageGet, safeLocalStorageRemove } from '../services/safeStorage';
 
 interface RegulatoryAdvisorProps {
   currentTest?: LabTest;
@@ -33,7 +34,7 @@ Hãy nhập câu hỏi hoặc chọn các câu hỏi gợi ý bên dưới!`,
   // Quản lý API Key trực tiếp trên trình duyệt
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [savedKey, setSavedKey] = useState<string>(() => {
-    return localStorage.getItem('mdlab_api_key') || localStorage.getItem('gemini_api_key') || '';
+    return safeLocalStorageGet('mdlab_api_key') || safeLocalStorageGet('gemini_api_key') || '';
   });
   const [tempKeyInput, setTempKeyInput] = useState('');
   const [showKeySecret, setShowKeySecret] = useState(false);
@@ -55,8 +56,8 @@ Hãy nhập câu hỏi hoặc chọn các câu hỏi gợi ý bên dưới!`,
   const handleSaveKey = () => {
     const trimmed = tempKeyInput.trim();
     if (trimmed) {
-      localStorage.setItem('mdlab_api_key', trimmed);
-      localStorage.setItem('gemini_api_key', trimmed);
+      safeLocalStorageSet('mdlab_api_key', trimmed);
+      safeLocalStorageSet('gemini_api_key', trimmed);
       setSavedKey(trimmed);
       setSaveSuccessMsg('Đã lưu API Key thành công! Bạn có thể chat với Cố vấn AI ngay bây giờ.');
       setTimeout(() => {
@@ -64,8 +65,8 @@ Hãy nhập câu hỏi hoặc chọn các câu hỏi gợi ý bên dưới!`,
         setSaveSuccessMsg('');
       }, 1500);
     } else {
-      localStorage.removeItem('mdlab_api_key');
-      localStorage.removeItem('gemini_api_key');
+      safeLocalStorageRemove('mdlab_api_key');
+      safeLocalStorageRemove('gemini_api_key');
       setSavedKey('');
       setSaveSuccessMsg('Đã xóa API Key cá nhân. Hệ thống sẽ sử dụng Key từ Vercel Server.');
       setTimeout(() => {

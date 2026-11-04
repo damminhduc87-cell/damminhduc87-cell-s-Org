@@ -1,4 +1,5 @@
 // Client service calling /api/advisor serverless endpoint
+import { safeLocalStorageGet } from './safeStorage';
 
 export interface AdvisorContext {
   testName?: string;
@@ -15,7 +16,7 @@ export interface AdvisorContext {
 
 export async function askAdvisorApi(prompt: string, context?: AdvisorContext): Promise<{ text: string; error?: string }> {
   try {
-    const customKey = localStorage.getItem('mdlab_api_key') || localStorage.getItem('gemini_api_key');
+    const customKey = safeLocalStorageGet('mdlab_api_key') || safeLocalStorageGet('gemini_api_key');
     const res = await fetch('/api/advisor', {
       method: 'POST',
       headers: {

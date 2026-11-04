@@ -1,5 +1,6 @@
 import { LabTest, QCResult, QCLevel, WestgardRuleType } from '../types';
 import { calculateZScore } from './westgardEngine';
+import { safeLocalStorageGet } from './safeStorage';
 
 export interface GoogleSheetRowPayload {
   NGAY_GIO: string;
@@ -202,7 +203,7 @@ export function formatResultToSheetRow(
   // Lấy tên KTV từ kết quả hoặc fallback về KTV hiện tại trên máy đang thao tác
   let tech = (result.technician || '').trim();
   if (!tech || tech.toLowerCase().includes('google') || tech.toLowerCase().includes('sheet')) {
-    tech = (fallbackTechnician || (typeof window !== 'undefined' ? localStorage.getItem('mdlab_technician') : '') || 'Đàm Minh Đức').trim();
+    tech = (fallbackTechnician || safeLocalStorageGet('mdlab_technician') || 'Đàm Minh Đức').trim();
   }
   tech = tech.replace(/^KTV\.?\s*/i, '').trim();
 
@@ -541,7 +542,7 @@ export async function pullResultsFromGoogleSheets(
         ''
       ).trim();
 
-      const activeFallback = (currentTechnician || (typeof window !== 'undefined' ? localStorage.getItem('mdlab_technician') : '') || 'Đàm Minh Đức').replace(/^KTV\.?\s*/i, '').trim();
+      const activeFallback = (currentTechnician || safeLocalStorageGet('mdlab_technician') || 'Đàm Minh Đức').replace(/^KTV\.?\s*/i, '').trim();
 
       let rowTechnician = rawTech;
       if (!rowTechnician || rowTechnician.toLowerCase().includes('google') || rowTechnician.toLowerCase().includes('sheet')) {

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { CAPARecord, QCResult, LabTest, QCLevel, RootCauseChecklist } from '../types';
 import { askAdvisorApi } from '../services/advisorClient';
 import { getStandardLotForTest } from '../constants';
+import { safeLocalStorageSet, safeLocalStorageGet } from '../services/safeStorage';
 
 export interface WestgardRuleGuide {
   ruleCode: string;
@@ -233,12 +234,12 @@ export const CapaReportModal: React.FC<CapaReportModalProps> = ({
   const [technician, setTechnician] = useState(() => {
     let t = (result.technician || '').trim();
     if (!t || t.toLowerCase().includes('google') || t.toLowerCase().includes('sheet')) {
-      t = (typeof window !== 'undefined' ? localStorage.getItem('mdlab_technician') : '') || 'Đàm Minh Đức';
+      t = safeLocalStorageGet('mdlab_technician') || 'Đàm Minh Đức';
     }
     return t.replace(/^KTV\.?\s*/i, '');
   });
   const [approver, setApprover] = useState(() => {
-    return result.approver || (typeof window !== 'undefined' ? (localStorage.getItem('mdlab_approver') || '') : '') || '';
+    return result.approver || safeLocalStorageGet('mdlab_approver') || '';
   });
   
   const [incidentDescription, setIncidentDescription] = useState(
@@ -860,7 +861,7 @@ export const CapaReportModal: React.FC<CapaReportModalProps> = ({
                 onChange={e => {
                   const val = e.target.value;
                   setApprover(val);
-                  if (typeof window !== 'undefined') localStorage.setItem('mdlab_approver', val);
+                  safeLocalStorageSet('mdlab_approver', val);
                 }}
                 placeholder="Nhập chức danh & họ tên Trưởng Khoa..."
                 className="w-full bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 font-bold"

@@ -27,6 +27,7 @@ import { DeviceSyncModal } from './components/DeviceSyncModal';
 import { ExportReportModal } from './components/ExportReportModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { syncResultsToGoogleSheets, pullResultsFromGoogleSheets, deleteResultFromGoogleSheets } from './services/googleSheetsSync';
+import { safeLocalStorageSet, safeLocalStorageGet, safeLocalStorageRemove, purgeObsoleteStorage } from './services/safeStorage';
 
 // Hàm tự động chuẩn hóa và loại bỏ các xét nghiệm trùng lặp (ví dụ duplicate AIBUMIL từ import)
 function cleanAndDeduplicateTests(rawTests: LabTest[]): { cleanTests: LabTest[]; idMap: Record<string, string> } {
@@ -263,7 +264,7 @@ function cleanAndDeduplicateTests(rawTests: LabTest[]): { cleanTests: LabTest[];
 
 // Làm sạch và đồng nhất mã xét nghiệm & người thực hiện & tự động chuẩn hóa giá trị vào dải an toàn (|Z| <= 1.0)
 export function standardizeResultsList(results: QCResult[], currentTests?: LabTest[], fallbackTechnician?: string): QCResult[] {
-  const activeTech = (fallbackTechnician || (typeof window !== 'undefined' ? localStorage.getItem('mdlab_technician') : '') || 'Đàm Minh Đức').replace(/^KTV\.?\s*/i, '').trim();
+  const activeTech = (fallbackTechnician || (typeof window !== 'undefined' ? safeLocalStorageGet('mdlab_technician') : '') || 'Đàm Minh Đức').replace(/^KTV\.?\s*/i, '').trim();
   const testList = currentTests && currentTests.length > 0 ? currentTests : INITIAL_TESTS;
   const testMap = new Map<string, LabTest>();
   testList.forEach(t => testMap.set(t.id, t));
@@ -311,7 +312,7 @@ export const App: React.FC = () => {
   // 1. Quản lý trạng thái dữ liệu (đồng bộ với localStorage & tự động dọn trùng)
   const [tests, setTests] = useState<LabTest[]>(() => {
     let list = INITIAL_TESTS;
-    const saved = localStorage.getItem('mdlab_tests_v7');
+    const saved = safeLocalStorageGet('mdlab_tests_v7') || safeLocalStorageGet('mdlab_tests_v5');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -332,7 +333,7 @@ export const App: React.FC = () => {
   });
 
   const [rawResults, setRawResults] = useState<QCResult[]>(() => {
-    const saved = localStorage.getItem('mdlab_results_v7');
+    const saved = safeLocalStorageGet('mdlab_results_v7') || safeLocalStorageGet('mdlab_results_v5');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -353,7 +354,7 @@ export const App: React.FC = () => {
   });
 
   const [capas, setCapas] = useState<CAPARecord[]>(() => {
-    const saved = localStorage.getItem('mdlab_capas_v7');
+    const saved = safeLocalStorageGet('mdlab_capas_v7') || safeLocalStorageGet('mdlab_capas_v3');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -370,14 +371,24 @@ export const App: React.FC = () => {
   });
 
   const [analyzers, setAnalyzers] = useState<string[]>(() => {
-    const saved = localStorage.getItem('mdlab_analyzers');
-    return saved ? JSON.parse(saved) : DEFAULT_ANALYZERS;
+    const saved = safeLocalStorageGet('mdlab_analyzers');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (_) {}
+    }
+    return DEFAULT_ANALYZERS;
   });
 
   // Danh sách chữ ký các kết quả đã xóa (Tombstone chống hồi sinh khi kéo từ Google Drive)
   const [deletedSignatures, setDeletedSignatures] = useState<string[]>(() => {
-    const saved = localStorage.getItem('mdlab_deleted_signatures');
-    return saved ? JSON.parse(saved) : [];
+    const saved = safeLocalStorageGet('mdlab_deleted_signatures');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (_) {}
+    }
+    return [];
   });
 
   // Tạo chữ ký nhận diện duy nhất cho một kết quả
@@ -426,7 +437,7 @@ export const App: React.FC = () => {
 
   // 4. Người thực hiện & Cấu hình tìm kiếm
   const [currentTechnician, setCurrentTechnician] = useState<string>(() => {
-    const saved = localStorage.getItem('mdlab_technician');
+    const saved = safeLocalStorageGet('mdlab_technician');
     if (saved) return saved.replace(/^KTV\.?\s*/i, '');
     return 'Đàm Minh Đức';
   });
@@ -476,10 +487,10 @@ export const App: React.FC = () => {
 
   // 7. Google Drive / Google Sheets Webhook Sync
   const [googleSheetsUrl, setGoogleSheetsUrl] = useState<string>(() => {
-    return localStorage.getItem('mdlab_google_sheets_url') || 'https://script.google.com/macros/s/AKfycbwguwULZKpcHN_HPGZm6VY2ioscO8u1N5TOE0wE3iIFZVMBdSnjerZIXs5GJuqUjJKMqQ/exec';
+    return safeLocalStorageGet('mdlab_google_sheets_url') || 'https://script.google.com/macros/s/AKfycbwguwULZKpcHN_HPGZm6VY2ioscO8u1N5TOE0wE3iIFZVMBdSnjerZIXs5GJuqUjJKMqQ/exec';
   });
   const [autoSyncToSheets, setAutoSyncToSheets] = useState<boolean>(() => {
-    const saved = localStorage.getItem('mdlab_auto_sync_sheets');
+    const saved = safeLocalStorageGet('mdlab_auto_sync_sheets');
     return saved !== null ? saved === 'true' : true;
   });
 
@@ -507,7 +518,7 @@ export const App: React.FC = () => {
           const decoded = decodeURIComponent(sharedUrl);
           if (decoded && decoded.startsWith('https://script.google.com/')) {
             setGoogleSheetsUrl(decoded);
-            localStorage.setItem('mdlab_google_sheets_url', decoded);
+            safeLocalStorageSet('mdlab_google_sheets_url', decoded);
             addToast('success', 'Đã kết nối Google Drive', 'Hệ thống đã tự động liên kết với bảng tính Google Sheets của phòng Lab!');
           }
         } catch (e) {
@@ -540,24 +551,25 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isCapaModalOpen, isLotModalOpen, isAddEditTestModalOpen, isImportModalOpen, isDriveSyncModalOpen, isDeviceSyncModalOpen, isExportReportModalOpen]);
 
-  // Lưu trữ tự động vào localStorage
+  // Dọn dẹp bộ nhớ đệm phiên bản cũ khi khởi chạy ứng dụng
+  useEffect(() => {
+    purgeObsoleteStorage();
+  }, []);
+
+  // Lưu trữ tự động vào localStorage an toàn (không lưu trùng phiên bản cũ, chống tràn bộ nhớ thiết bị)
   useEffect(() => { 
-    localStorage.setItem('mdlab_tests_v7', JSON.stringify(tests));
-    localStorage.setItem('mdlab_tests_v5', JSON.stringify(tests));
-    localStorage.setItem('mdlab_tests_v3', JSON.stringify(tests)); 
+    safeLocalStorageSet('mdlab_tests_v7', JSON.stringify(tests));
   }, [tests]);
   useEffect(() => { 
-    localStorage.setItem('mdlab_results_v7', JSON.stringify(rawResults));
-    localStorage.setItem('mdlab_results_v5', JSON.stringify(rawResults));
+    safeLocalStorageSet('mdlab_results_v7', JSON.stringify(rawResults));
   }, [rawResults]);
   useEffect(() => { 
-    localStorage.setItem('mdlab_capas_v7', JSON.stringify(capas));
-    localStorage.setItem('mdlab_capas_v3', JSON.stringify(capas)); 
+    safeLocalStorageSet('mdlab_capas_v7', JSON.stringify(capas));
   }, [capas]);
-  useEffect(() => { localStorage.setItem('mdlab_analyzers', JSON.stringify(analyzers)); }, [analyzers]);
-  useEffect(() => { localStorage.setItem('mdlab_technician', currentTechnician); }, [currentTechnician]);
-  useEffect(() => { localStorage.setItem('mdlab_google_sheets_url', googleSheetsUrl); }, [googleSheetsUrl]);
-  useEffect(() => { localStorage.setItem('mdlab_auto_sync_sheets', String(autoSyncToSheets)); }, [autoSyncToSheets]);
+  useEffect(() => { safeLocalStorageSet('mdlab_analyzers', JSON.stringify(analyzers)); }, [analyzers]);
+  useEffect(() => { safeLocalStorageSet('mdlab_technician', currentTechnician); }, [currentTechnician]);
+  useEffect(() => { safeLocalStorageSet('mdlab_google_sheets_url', googleSheetsUrl); }, [googleSheetsUrl]);
+  useEffect(() => { safeLocalStorageSet('mdlab_auto_sync_sheets', String(autoSyncToSheets)); }, [autoSyncToSheets]);
 
   // Cập nhật thông số cấu hình chuẩn (Mean, SD, TEa, EQA) cho Glucose, Ure và Creatinin (Bảo toàn 100% dữ liệu kết quả đo)
   const handleStandardizeTargetQc = () => {
@@ -577,8 +589,7 @@ export const App: React.FC = () => {
       }
 
       setTests(updatedTests);
-      localStorage.setItem('mdlab_tests_v5', JSON.stringify(updatedTests));
-      localStorage.setItem('mdlab_tests_v3', JSON.stringify(updatedTests));
+      safeLocalStorageSet('mdlab_tests_v7', JSON.stringify(updatedTests));
 
       addToast('success', 'Đã cập nhật cấu hình chuẩn TEa!', 'Đã cập nhật thông số Mean, SD và TEa% cho Glucose, Ure, Creatinin. Toàn bộ kết quả nội kiểm thực tế của bạn được giữ nguyên 100%.');
     }
@@ -597,8 +608,8 @@ export const App: React.FC = () => {
         ...INITIAL_CAPA_RECORDS.filter(c => !INITIATIVE_CAPA_RECORDS.some(ic => ic.code === c.code))
       ];
       setCapas(combinedCapas);
-      localStorage.setItem('mdlab_results_v7', JSON.stringify(combined));
-      localStorage.setItem('mdlab_capas_v7', JSON.stringify(combinedCapas));
+      safeLocalStorageSet('mdlab_results_v7', JSON.stringify(combined));
+      safeLocalStorageSet('mdlab_capas_v7', JSON.stringify(combinedCapas));
       addToast('success', 'Đồng bộ thành công', 'Đã đồng bộ toàn bộ 86 ngày công của 2 giai đoạn vào ứng dụng. Các sự cố đã tự động hoàn tất biên bản CAPA.');
     }
   };
@@ -1038,7 +1049,7 @@ export const App: React.FC = () => {
       const sig = getResultSignature(target);
       setDeletedSignatures(prev => {
         const next = [...prev, sig];
-        localStorage.setItem('mdlab_deleted_signatures', JSON.stringify(next));
+        safeLocalStorageSet('mdlab_deleted_signatures', JSON.stringify(next));
         return next;
       });
 
