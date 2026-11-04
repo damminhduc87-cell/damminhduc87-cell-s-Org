@@ -60,7 +60,7 @@ export function evaluateWestgardResult(
   );
 
   // 1. QUY TẮC 1-3s (Rejection Rule - Lỗi ngẫu nhiên hoặc hệ thống nặng)
-  if (absZ >= 3.0) {
+  if (absZ > 3.0) {
     return {
       status: 'violation',
       rule: '1-3s',
@@ -79,8 +79,8 @@ export function evaluateWestgardResult(
       const lastZ = fullZScores[fullZScores.length - 1];
       const prevZ = fullZScores[fullZScores.length - 2];
       
-      const bothAbove2 = lastZ >= 2.0 && prevZ >= 2.0;
-      const bothBelow2 = lastZ <= -2.0 && prevZ <= -2.0;
+      const bothAbove2 = lastZ > 2.0 && prevZ > 2.0;
+      const bothBelow2 = lastZ < -2.0 && prevZ < -2.0;
 
       if (bothAbove2 || bothBelow2) {
         return {
@@ -105,7 +105,7 @@ export function evaluateWestgardResult(
       const otherConfig = configs[otherRes.level];
       if (otherConfig && otherConfig.sd > 0) {
         const otherZ = calculateZScore(otherRes.value, otherConfig.mean, otherConfig.sd);
-        if ((currentZ >= 2.0 && otherZ >= 2.0) || (currentZ <= -2.0 && otherZ <= -2.0)) {
+        if ((currentZ > 2.0 && otherZ > 2.0) || (currentZ < -2.0 && otherZ < -2.0)) {
           return {
             status: 'violation',
             rule: '2-2s',
@@ -133,7 +133,7 @@ export function evaluateWestgardResult(
       if (otherConfig && otherConfig.sd > 0) {
         const otherZ = calculateZScore(otherRes.value, otherConfig.mean, otherConfig.sd);
         const range = Math.abs(currentZ - otherZ);
-        if (range >= 4.0) {
+        if (range > 4.0) {
           return {
             status: 'violation',
             rule: 'R-4s',
@@ -152,7 +152,7 @@ export function evaluateWestgardResult(
       const lastZ = fullZScores[fullZScores.length - 1];
       const prevZ = fullZScores[fullZScores.length - 2];
       const range = Math.abs(lastZ - prevZ);
-      if (range >= 4.0 && (Math.abs(lastZ) >= 2.0 || Math.abs(prevZ) >= 2.0)) {
+      if (range > 4.0 && (Math.abs(lastZ) > 2.0 || Math.abs(prevZ) > 2.0)) {
         return {
           status: 'violation',
           rule: 'R-4s',
@@ -169,8 +169,8 @@ export function evaluateWestgardResult(
   // 4. QUY TẮC 4-1s (Rejection Rule - Lỗi hệ thống tiến triển)
   if (options.enable41s && fullZScores.length >= 4) {
     const last4 = fullZScores.slice(-4);
-    const allAbove1 = last4.every(z => z >= 1.0);
-    const allBelow1 = last4.every(z => z <= -1.0);
+    const allAbove1 = last4.every(z => z > 1.0);
+    const allBelow1 = last4.every(z => z < -1.0);
 
     if (allAbove1 || allBelow1) {
       return {
@@ -205,7 +205,9 @@ export function evaluateWestgardResult(
   }
 
   // 6. QUY TẮC 1-2s (Warning Rule - Cảnh báo kiểm tra)
-  if (absZ >= 2.0) {
+  // Chỉ cảnh báo khi VƯỢT RA NGOÀI khoảng ±2SD (|Z| > 2.0).
+  // Các điểm nằm trong hoặc chạm đúng đường ranh giới ±2.00 SD (thuộc khoảng chấp thuận) vẫn được tính là HỢP LỆ.
+  if (absZ > 2.0) {
     return {
       status: 'warning',
       rule: '1-2s',
