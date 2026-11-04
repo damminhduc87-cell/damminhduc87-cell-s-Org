@@ -209,7 +209,7 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
           fill={fill}
           stroke="#FFFFFF"
           strokeWidth={isSelected ? 3 : 2}
-          className="cursor-pointer transition-transform hover:scale-125"
+          className="cursor-pointer"
           onClick={(e) => {
             e.stopPropagation();
             setSelectedPoint(payload);
@@ -447,7 +447,7 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
                   tick={{ fontSize: 10, fill: '#64748B', fontWeight: 600 }} 
                   axisLine={{ stroke: '#E2E8F0' }} 
                   tickLine={false} 
-                  interval={0}
+                  interval={isScrollable ? 0 : (activeDataLength > 40 ? Math.ceil(activeDataLength / 12) : 'preserveStartEnd')}
                 />
                 <YAxis 
                   domain={yDomainSingle} 
@@ -456,14 +456,19 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
                   tickLine={false} 
                 />
                 <Tooltip 
+                  isAnimationActive={false}
+                  wrapperStyle={{ pointerEvents: 'none', zIndex: 1000, outline: 'none' }}
+                  cursor={{ stroke: '#64748B', strokeWidth: 1, strokeDasharray: '4 4' }}
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       const d = payload[0].payload;
                       return (
-                        <div className="bg-[#0F1F3D] text-white p-3 rounded-xl shadow-xl text-xs border border-slate-700 min-w-[210px] pointer-events-none">
-                          <p className="text-slate-400 font-medium mb-1 border-b border-slate-700 pb-1 flex items-center justify-between">
-                            <span>{d.dateTimeStr}</span>
-                            <span className="text-[10px] text-blue-400 font-bold">Lô: {d.lotNumber}</span>
+                        <div className="bg-[#0F1F3D] text-white p-3 rounded-xl shadow-xl text-xs border border-slate-700 min-w-[220px] pointer-events-none select-none">
+                          <p className="text-slate-400 font-medium mb-1 border-b border-slate-700 pb-1 flex items-center justify-between gap-3">
+                            <span className="truncate">{d.dateTimeStr}</span>
+                            <span className="text-[10px] text-blue-400 font-bold shrink-0 bg-blue-950/80 px-2 py-0.5 rounded border border-blue-800/60">
+                              Lô: {d.lotNumber}
+                            </span>
                           </p>
                           <p className="text-sm font-black text-white mt-1">
                             Giá trị đo: <span className="text-blue-400 font-black">{d.value} {unit}</span>
@@ -503,7 +508,7 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
                   stroke="#2563EB"
                   strokeWidth={2.5}
                   dot={renderCustomDot}
-                  activeDot={{ r: 8, stroke: '#FFFFFF', strokeWidth: 2, fill: '#1D4ED8' }}
+                  activeDot={{ r: 7.5, stroke: '#FFFFFF', strokeWidth: 2.5, fill: '#1D4ED8', className: 'pointer-events-none' }}
                   isAnimationActive={false}
                 />
               </LineChart>
@@ -516,7 +521,7 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
                   tick={{ fontSize: 10, fill: '#64748B', fontWeight: 600 }} 
                   axisLine={{ stroke: '#E2E8F0' }} 
                   tickLine={false} 
-                  interval={0}
+                  interval={isScrollable ? 0 : (activeDataLength > 40 ? Math.ceil(activeDataLength / 12) : 'preserveStartEnd')}
                 />
                 <YAxis 
                   domain={[-4, 4]} 
@@ -526,11 +531,14 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
                   tickLine={false} 
                 />
                 <Tooltip 
+                  isAnimationActive={false}
+                  wrapperStyle={{ pointerEvents: 'none', zIndex: 1000, outline: 'none' }}
+                  cursor={{ stroke: '#64748B', strokeWidth: 1, strokeDasharray: '4 4' }}
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       const d = payload[0].payload;
                       return (
-                        <div className="bg-[#0F1F3D] text-white p-3 rounded-xl shadow-xl text-xs border border-slate-700 min-w-[220px]">
+                        <div className="bg-[#0F1F3D] text-white p-3 rounded-xl shadow-xl text-xs border border-slate-700 min-w-[220px] pointer-events-none select-none">
                           <p className="text-slate-400 font-medium mb-1 border-b border-slate-700 pb-1">{d.dateTimeStr}</p>
                           <p className="text-blue-400 font-bold">Mức Thấp (Low): Z = {d.z_Low !== undefined ? `${d.z_Low > 0 ? '+' : ''}${d.z_Low.toFixed(2)} SD (${d.val_Low})` : 'Chưa đo'}</p>
                           <p className="text-emerald-400 font-bold">Mức Bình thường (Normal): Z = {d.z_Normal !== undefined ? `${d.z_Normal > 0 ? '+' : ''}${d.z_Normal.toFixed(2)} SD (${d.val_Normal})` : 'Chưa đo'}</p>
@@ -550,9 +558,9 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
                 <ReferenceLine y={3} stroke="#EF4444" strokeDasharray="5 5" strokeWidth={1.5} label={{ position: 'right', value: '+3.0 SD', fontSize: 9, fill: '#DC2626', fontWeight: 700 }} />
                 <ReferenceLine y={-3} stroke="#EF4444" strokeDasharray="5 5" strokeWidth={1.5} label={{ position: 'right', value: '-3.0 SD', fontSize: 9, fill: '#DC2626', fontWeight: 700 }} />
 
-                <Line type="monotone" dataKey="z_Low" name="Mức Thấp" stroke="#2563EB" strokeWidth={2} dot={{ r: 4 }} connectNulls isAnimationActive={false} />
-                <Line type="monotone" dataKey="z_Normal" name="Mức Bình thường" stroke="#10B981" strokeWidth={2} dot={{ r: 4 }} connectNulls isAnimationActive={false} />
-                <Line type="monotone" dataKey="z_High" name="Mức Cao" stroke="#F59E0B" strokeWidth={2} dot={{ r: 4 }} connectNulls isAnimationActive={false} />
+                <Line type="monotone" dataKey="z_Low" name="Mức Thấp" stroke="#2563EB" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6, stroke: '#FFFFFF', strokeWidth: 2, className: 'pointer-events-none' }} connectNulls isAnimationActive={false} />
+                <Line type="monotone" dataKey="z_Normal" name="Mức Bình thường" stroke="#10B981" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6, stroke: '#FFFFFF', strokeWidth: 2, className: 'pointer-events-none' }} connectNulls isAnimationActive={false} />
+                <Line type="monotone" dataKey="z_High" name="Mức Cao" stroke="#F59E0B" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6, stroke: '#FFFFFF', strokeWidth: 2, className: 'pointer-events-none' }} connectNulls isAnimationActive={false} />
               </LineChart>
             )}
           </ResponsiveContainer>
