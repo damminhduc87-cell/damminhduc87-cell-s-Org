@@ -39,6 +39,9 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
   // Điểm đang được chạm/chọn trên màn hình di động
   const [selectedPoint, setSelectedPoint] = useState<any>(null);
 
+  // Điểm đang được rê chuột trực tiếp (bảo đảm 100% đúng dữ liệu của ngày đang trỏ tới)
+  const [hoveredPoint, setHoveredPoint] = useState<any>(null);
+
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const chartContainerRef = useRef<HTMLDivElement>(null);
 
@@ -48,11 +51,19 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
       .sort((a, b) => a.timestamp - b.timestamp)
       .map(r => {
         const z = config.sd > 0 ? calculateZScore(r.value, config.mean, config.sd) : 0;
+        const d = new Date(r.timestamp);
+        const dayStr = String(d.getDate()).padStart(2, '0');
+        const monthStr = String(d.getMonth() + 1).padStart(2, '0');
+        const yearStr = d.getFullYear();
+        const hourStr = String(d.getHours()).padStart(2, '0');
+        const minStr = String(d.getMinutes()).padStart(2, '0');
+        const secStr = String(d.getSeconds()).padStart(2, '0');
+
         return {
           rawResult: r,
           timestamp: r.timestamp,
-          fullLabel: new Date(r.timestamp).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }),
-          dateTimeStr: new Date(r.timestamp).toLocaleString('vi-VN'),
+          fullLabel: `${dayStr}/${monthStr}`,
+          dateTimeStr: `${hourStr}:${minStr}:${secStr} ${dayStr}/${monthStr}/${yearStr}`,
           value: r.value,
           zScore: z,
           rule: r.westgardRule || 'none',
@@ -63,29 +74,31 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
       });
   }, [data, config]);
 
-  // Lọc dữ liệu theo phạm vi người dùng chọn
+  // Lọc dữ liệu theo phạm vi người dùng chọn & đánh số chartIndex độc nhất
   const filteredSingleData = useMemo(() => {
     if (singleChartData.length === 0) return [];
+    let list = singleChartData;
     if (displayRange === 'recent30') {
-      return singleChartData.slice(-30);
-    }
-    if (displayRange === 'gd1') {
-      return singleChartData.filter(d => {
+      list = singleChartData.slice(-30);
+    } else if (displayRange === 'gd1') {
+      list = singleChartData.filter(d => {
         const date = new Date(d.timestamp);
         const m = date.getMonth() + 1;
         const y = date.getFullYear();
         return y === 2026 && (m === 5 || m === 6);
       });
-    }
-    if (displayRange === 'gd2') {
-      return singleChartData.filter(d => {
+    } else if (displayRange === 'gd2') {
+      list = singleChartData.filter(d => {
         const date = new Date(d.timestamp);
         const m = date.getMonth() + 1;
         const y = date.getFullYear();
         return y === 2026 && (m === 7 || m === 8);
       });
     }
-    return singleChartData;
+    return list.map((item, idx) => ({
+      ...item,
+      chartIndex: idx
+    }));
   }, [singleChartData, displayRange]);
 
   // Dữ liệu hiển thị đa mức chuẩn hóa (Multi-level Normalized Z-score -4SD đến +4SD)
@@ -120,24 +133,26 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
 
   const filteredMultiData = useMemo(() => {
     if (multiLevelChartData.length === 0) return [];
+    let list = multiLevelChartData;
     if (displayRange === 'recent30') {
-      return multiLevelChartData.slice(-30);
-    }
-    if (displayRange === 'gd1') {
-      return multiLevelChartData.filter((d: any) => {
+      list = multiLevelChartData.slice(-30);
+    } else if (displayRange === 'gd1') {
+      list = multiLevelChartData.filter((d: any) => {
         const date = new Date(d.timestamp);
         const m = date.getMonth() + 1;
         return m === 5 || m === 6;
       });
-    }
-    if (displayRange === 'gd2') {
-      return multiLevelChartData.filter((d: any) => {
+    } else if (displayRange === 'gd2') {
+      list = multiLevelChartData.filter((d: any) => {
         const date = new Date(d.timestamp);
         const m = date.getMonth() + 1;
         return m === 7 || m === 8;
       });
     }
-    return multiLevelChartData;
+    return list.map((item: any, idx: number) => ({
+      ...item,
+      chartIndex: idx
+    }));
   }, [multiLevelChartData, displayRange]);
 
   const activeData = isMultiLevelView ? filteredMultiData : filteredSingleData;
@@ -187,10 +202,31 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
       r = isCrowded ? 4 : 6.5;
     }
 
-    const isSelected = selectedPoint && selectedPoint.timestamp === payload.timestamp;
+    const isSelected = (selectedPoint && selectedPoint.timestamp === payload.timestamp) ||
+                       (hoveredPoint && hoveredPoint.timestamp === payload.timestamp);
+    const hitRadius = Math.max(14, r + 6);
 
     return (
-      <g key={`dot-group-${payload.timestamp}-${cx}`}>
+      <g 
+        key={`dot-group-${payload.timestamp}-${cx}`}
+        className="cursor-pointer"
+        onMouseEnter={() => setHoveredPoint(payload)}
+        onMouseLeave={() => setHoveredPoint(null)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setSelectedPoint(payload);
+          if (onPointClick) onPointClick(payload.rawResult);
+        }}
+      >
+        {/* Vùng đệm bắt sự kiện chuột/chạm cố định kích thước, chống rung lắc */}
+        <circle
+          cx={cx}
+          cy={cy}
+          r={hitRadius}
+          fill="transparent"
+          stroke="none"
+        />
+        {/* Vòng hào quang hiển thị khi chọn hoặc hover */}
         {isSelected && (
           <circle
             cx={cx}
@@ -200,21 +236,17 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
             stroke={fill}
             strokeWidth={2}
             strokeDasharray="2 2"
+            className="pointer-events-none"
           />
         )}
         <circle
           cx={cx}
           cy={cy}
-          r={isSelected ? r + 2 : r}
+          r={isSelected ? r + 1.5 : r}
           fill={fill}
           stroke="#FFFFFF"
           strokeWidth={isSelected ? 3 : 2}
-          className="cursor-pointer"
-          onClick={(e) => {
-            e.stopPropagation();
-            setSelectedPoint(payload);
-            if (onPointClick) onPointClick(payload.rawResult);
-          }}
+          className="pointer-events-none"
         />
       </g>
     );
@@ -440,10 +472,15 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
           <ResponsiveContainer width="100%" height="100%">
             {!isMultiLevelView ? (
               /* Biểu đồ Đơn mức (Single Level) */
-              <LineChart data={filteredSingleData} margin={{ top: 12, right: 85, left: 10, bottom: 5 }}>
+              <LineChart 
+                data={filteredSingleData} 
+                margin={{ top: 12, right: 85, left: 10, bottom: 5 }}
+                onMouseLeave={() => setHoveredPoint(null)}
+              >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                 <XAxis 
-                  dataKey="fullLabel" 
+                  dataKey="chartIndex" 
+                  tickFormatter={(idx) => filteredSingleData[idx]?.fullLabel || ''}
                   tick={{ fontSize: 10, fill: '#64748B', fontWeight: 600 }} 
                   axisLine={{ stroke: '#E2E8F0' }} 
                   tickLine={false} 
@@ -460,8 +497,8 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
                   wrapperStyle={{ pointerEvents: 'none', zIndex: 1000, outline: 'none' }}
                   cursor={{ stroke: '#64748B', strokeWidth: 1, strokeDasharray: '4 4' }}
                   content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const d = payload[0].payload;
+                    const d = hoveredPoint || (active && payload && payload.length ? payload[0].payload : null);
+                    if (d) {
                       return (
                         <div className="bg-[#0F1F3D] text-white p-3 rounded-xl shadow-xl text-xs border border-slate-700 min-w-[220px] pointer-events-none select-none">
                           <p className="text-slate-400 font-medium mb-1 border-b border-slate-700 pb-1 flex items-center justify-between gap-3">
@@ -508,16 +545,21 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
                   stroke="#2563EB"
                   strokeWidth={2.5}
                   dot={renderCustomDot}
-                  activeDot={{ r: 7.5, stroke: '#FFFFFF', strokeWidth: 2.5, fill: '#1D4ED8', className: 'pointer-events-none' }}
+                  activeDot={false}
                   isAnimationActive={false}
                 />
               </LineChart>
             ) : (
               /* Biểu đồ Đa mức Chuẩn hóa Z-Score (-4SD đến +4SD) */
-              <LineChart data={filteredMultiData} margin={{ top: 12, right: 85, left: 10, bottom: 5 }}>
+              <LineChart 
+                data={filteredMultiData} 
+                margin={{ top: 12, right: 85, left: 10, bottom: 5 }}
+                onMouseLeave={() => setHoveredPoint(null)}
+              >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                 <XAxis 
-                  dataKey="fullLabel" 
+                  dataKey="chartIndex" 
+                  tickFormatter={(idx) => filteredMultiData[idx]?.fullLabel || ''}
                   tick={{ fontSize: 10, fill: '#64748B', fontWeight: 600 }} 
                   axisLine={{ stroke: '#E2E8F0' }} 
                   tickLine={false} 
