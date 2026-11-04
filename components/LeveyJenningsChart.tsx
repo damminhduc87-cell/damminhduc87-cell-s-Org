@@ -191,20 +191,28 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
     if (cx === undefined || cy === undefined) return null;
 
     const isCrowded = !isScrollable && activeDataLength > 40;
-    let fill = '#10B981'; // Xanh lá: Hợp lệ
-    let r = isCrowded ? 3 : 5.5;
+    
+    // 1. Phân loại màu sắc & kích thước to rõ cho từng trạng thái
+    let fill = '#10B981'; // Xanh ngọc lục bảo tươi (Hợp lệ)
+    let strokeColor = '#FFFFFF';
+    let strokeW = isCrowded ? 1.5 : 2;
+    let r = isCrowded ? 5 : 6.5; // Chấm to rõ ràng, không bị đường nối nuốt mất
+    const isViolation = payload.status === 'violation';
+    const isWarning = payload.status === 'warning';
 
-    if (payload.status === 'violation') {
-      fill = '#EF4444'; // Đỏ: Vi phạm
-      r = isCrowded ? 4.5 : 7.5;
-    } else if (payload.status === 'warning') {
-      fill = '#F59E0B'; // Vàng cam: Cảnh báo 1-2s
-      r = isCrowded ? 4 : 6.5;
+    if (isViolation) {
+      fill = '#EF4444'; // Đỏ tươi nổi bật (Vi phạm Westgard)
+      r = isCrowded ? 7.5 : 9.5; // Kích thước to nhất để nhận diện lỗi lập tức
+      strokeW = isCrowded ? 2 : 2.5;
+    } else if (isWarning) {
+      fill = '#F59E0B'; // Vàng cam hổ phách rực rỡ (Cảnh báo 1-2s)
+      r = isCrowded ? 6 : 8; // To hơn điểm hợp lệ để dễ lưu ý
+      strokeW = isCrowded ? 1.5 : 2;
     }
 
     const isSelected = (selectedPoint && selectedPoint.timestamp === payload.timestamp) ||
                        (hoveredPoint && hoveredPoint.timestamp === payload.timestamp);
-    const hitRadius = Math.max(14, r + 6);
+    const hitRadius = Math.max(16, r + 8);
 
     return (
       <g 
@@ -226,26 +234,58 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
           fill="transparent"
           stroke="none"
         />
+
+        {/* Vòng cảnh báo kép đặc biệt cho điểm VI PHẠM WESTGARD (Đỏ) */}
+        {isViolation && (
+          <circle
+            cx={cx}
+            cy={cy}
+            r={r + (isCrowded ? 3 : 4)}
+            fill="none"
+            stroke="#EF4444"
+            strokeWidth={1.5}
+            strokeDasharray="2 2"
+            opacity={0.85}
+            className="pointer-events-none"
+          />
+        )}
+
+        {/* Vòng viền nhấn cho điểm CẢNH BÁO 1-2s (Vàng) */}
+        {isWarning && (
+          <circle
+            cx={cx}
+            cy={cy}
+            r={r + (isCrowded ? 2.5 : 3)}
+            fill="none"
+            stroke="#F59E0B"
+            strokeWidth={1.2}
+            opacity={0.7}
+            className="pointer-events-none"
+          />
+        )}
+
         {/* Vòng hào quang hiển thị khi chọn hoặc hover */}
         {isSelected && (
           <circle
             cx={cx}
             cy={cy}
-            r={r + 5}
+            r={r + (isCrowded ? 5 : 6)}
             fill="none"
             stroke={fill}
-            strokeWidth={2}
-            strokeDasharray="2 2"
+            strokeWidth={2.5}
+            strokeDasharray="3 3"
             className="pointer-events-none"
           />
         )}
+
+        {/* Chấm tròn chính hiển thị kết quả đo với viền trắng tương phản cao */}
         <circle
           cx={cx}
           cy={cy}
           r={isSelected ? r + 1.5 : r}
           fill={fill}
-          stroke="#FFFFFF"
-          strokeWidth={isSelected ? 3 : 2}
+          stroke={strokeColor}
+          strokeWidth={isSelected ? strokeW + 1 : strokeW}
           className="pointer-events-none"
         />
       </g>
@@ -425,17 +465,17 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
 
         {/* Legend status indicators */}
         <div className="flex items-center gap-3 text-[11px] font-semibold text-slate-600 flex-wrap shrink-0">
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/80">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            Hợp lệ
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs font-bold">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-200"></span>
+            Hợp lệ (Xanh)
           </span>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200/80">
-            <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-            Cảnh báo 1-2s
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs font-bold">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-amber-200"></span>
+            Cảnh báo 1-2s (Vàng)
           </span>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 text-red-800 border border-red-200/80">
-            <span className="w-2 h-2 rounded-full bg-red-500"></span>
-            Vi phạm Westgard
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-50 text-red-800 border border-red-200 shadow-2xs font-bold">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-red-200"></span>
+            Vi phạm Westgard (Đỏ)
           </span>
         </div>
       </div>
@@ -543,7 +583,7 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
                   type="monotone"
                   dataKey="value"
                   stroke="#2563EB"
-                  strokeWidth={2.5}
+                  strokeWidth={2}
                   dot={renderCustomDot}
                   activeDot={false}
                   isAnimationActive={false}
@@ -600,9 +640,9 @@ export const LeveyJenningsChart: React.FC<LeveyJenningsChartProps> = ({
                 <ReferenceLine y={3} stroke="#EF4444" strokeDasharray="5 5" strokeWidth={1.5} label={{ position: 'right', value: '+3.0 SD', fontSize: 9, fill: '#DC2626', fontWeight: 700 }} />
                 <ReferenceLine y={-3} stroke="#EF4444" strokeDasharray="5 5" strokeWidth={1.5} label={{ position: 'right', value: '-3.0 SD', fontSize: 9, fill: '#DC2626', fontWeight: 700 }} />
 
-                <Line type="monotone" dataKey="z_Low" name="Mức Thấp" stroke="#2563EB" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6, stroke: '#FFFFFF', strokeWidth: 2, className: 'pointer-events-none' }} connectNulls isAnimationActive={false} />
-                <Line type="monotone" dataKey="z_Normal" name="Mức Bình thường" stroke="#10B981" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6, stroke: '#FFFFFF', strokeWidth: 2, className: 'pointer-events-none' }} connectNulls isAnimationActive={false} />
-                <Line type="monotone" dataKey="z_High" name="Mức Cao" stroke="#F59E0B" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6, stroke: '#FFFFFF', strokeWidth: 2, className: 'pointer-events-none' }} connectNulls isAnimationActive={false} />
+                <Line type="monotone" dataKey="z_Low" name="Mức Thấp" stroke="#2563EB" strokeWidth={2} dot={{ r: 5, stroke: '#FFFFFF', strokeWidth: 1.5, fill: '#2563EB' }} activeDot={{ r: 7, stroke: '#FFFFFF', strokeWidth: 2, className: 'pointer-events-none' }} connectNulls isAnimationActive={false} />
+                <Line type="monotone" dataKey="z_Normal" name="Mức Bình thường" stroke="#10B981" strokeWidth={2} dot={{ r: 5, stroke: '#FFFFFF', strokeWidth: 1.5, fill: '#10B981' }} activeDot={{ r: 7, stroke: '#FFFFFF', strokeWidth: 2, className: 'pointer-events-none' }} connectNulls isAnimationActive={false} />
+                <Line type="monotone" dataKey="z_High" name="Mức Cao" stroke="#F59E0B" strokeWidth={2} dot={{ r: 5, stroke: '#FFFFFF', strokeWidth: 1.5, fill: '#F59E0B' }} activeDot={{ r: 7, stroke: '#FFFFFF', strokeWidth: 2, className: 'pointer-events-none' }} connectNulls isAnimationActive={false} />
               </LineChart>
             )}
           </ResponsiveContainer>
