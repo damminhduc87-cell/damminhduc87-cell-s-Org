@@ -58,6 +58,7 @@ export interface QCResult {
   value: number;
   timestamp: number;
   lotNumber?: string;
+  analyzerName?: string;     // Tên máy xét nghiệm thực hiện
   technician?: string;       // Kỹ thuật viên chạy máy
   approver?: string;         // Người kiểm tra / phê duyệt
   zScore?: number;           // SD Index

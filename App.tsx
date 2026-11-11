@@ -299,11 +299,18 @@ export function standardizeResultsList(results: QCResult[], currentTests?: LabTe
       lot = t?.configs?.[r.level]?.currentLot || getStandardLotForTest(tId, r.level);
     }
 
+    let analyzer = (r.analyzerName || '').trim();
+    if (!analyzer || analyzer === 'Máy Hóa sinh 1' || analyzer === 'Máy Hóa sinh 2' || analyzer === 'Máy Hóa sinh') {
+      const t = testMap.get(tId);
+      analyzer = t?.analyzerName || 'Sphera Edif';
+    }
+
     return {
       ...r,
       testId: tId,
       technician: tech,
-      lotNumber: lot
+      lotNumber: lot,
+      analyzerName: analyzer
     };
   });
 }
@@ -325,10 +332,15 @@ export const App: React.FC = () => {
     }
     const { cleanTests } = cleanAndDeduplicateTests(list);
     return cleanTests.map(t => {
+      let tea = t.tea;
       if (t.id === 'urea' || t.name.toLowerCase().includes('urea') || t.name.toLowerCase().includes('ure')) {
-        return { ...t, tea: 9 };
+        tea = 9;
       }
-      return t;
+      let analyzerName = t.analyzerName;
+      if (!analyzerName || analyzerName === 'Máy Hóa sinh 1' || analyzerName === 'Máy Hóa sinh 2' || analyzerName === 'Máy Hóa sinh') {
+        analyzerName = 'Sphera Edif';
+      }
+      return { ...t, tea, analyzerName };
     });
   });
 
@@ -339,7 +351,14 @@ export const App: React.FC = () => {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
           const { cleanTests } = cleanAndDeduplicateTests(INITIAL_TESTS);
-          return standardizeResultsList(parsed, cleanTests);
+          const standardized = standardizeResultsList(parsed, cleanTests);
+          return standardized.map(r => {
+            const an = r.analyzerName;
+            if (!an || an === 'Máy Hóa sinh 1' || an === 'Máy Hóa sinh 2' || an === 'Máy Hóa sinh') {
+              return { ...r, analyzerName: 'Sphera Edif' };
+            }
+            return r;
+          });
         }
       } catch (e) {
         console.error(e);
@@ -358,7 +377,12 @@ export const App: React.FC = () => {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((c: CAPARecord) => ({
+            ...c,
+            analyzerName: (c.analyzerName === 'Máy Hóa sinh 1' || c.analyzerName === 'Máy Hóa sinh 2' || c.analyzerName === 'Máy Hóa sinh' || !c.analyzerName) ? 'Sphera Edif' : c.analyzerName
+          }));
+        }
       } catch (e) {
         console.error(e);
       }
@@ -374,7 +398,12 @@ export const App: React.FC = () => {
     const saved = safeLocalStorageGet('mdlab_analyzers');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const updated = parsed.map((a: string) => (a === 'Máy Hóa sinh 1' || a === 'Máy Hóa sinh 2' || a === 'Máy Hóa sinh' ? 'Sphera Edif' : a));
+          if (!updated.includes('Sphera Edif')) updated.unshift('Sphera Edif');
+          return Array.from(new Set(updated));
+        }
       } catch (_) {}
     }
     return DEFAULT_ANALYZERS;
@@ -443,6 +472,8 @@ export const App: React.FC = () => {
   });
   const [selectedWorksheetAnalyzer, setSelectedWorksheetAnalyzer] = useState<string>('all');
   const [configSearchTerm, setConfigSearchTerm] = useState<string>('');
+  const [selectedConfigAnalyzerFilter, setSelectedConfigAnalyzerFilter] = useState<string>('all');
+  const [newAnalyzerNameInput, setNewAnalyzerNameInput] = useState<string>('');
   const [capaSearchTerm, setCapaSearchTerm] = useState<string>('');
 
   // 5. Trạng thái Form nhập đơn lẻ (Ngày, Giờ, Phút, Giây)
@@ -618,9 +649,52 @@ export const App: React.FC = () => {
   const handleAddAnalyzer = (newAnalyzerName: string) => {
     if (!newAnalyzerName.trim()) return;
     const trimmed = newAnalyzerName.trim();
-    if (!analyzers.includes(trimmed)) {
+    if (!analyzers.some(a => a.toLowerCase() === trimmed.toLowerCase())) {
       setAnalyzers(prev => [...prev, trimmed]);
+      addToast('success', 'Đã thêm máy phân tích', `Đã thêm thành công máy "${trimmed}" vào danh mục!`);
+    } else {
+      addToast('warning', 'Máy đã tồn tại', `Máy "${trimmed}" đã có trong danh mục!`);
     }
+  };
+
+  // Đổi tên máy phân tích (đồng bộ tự động vào các xét nghiệm và kết quả liên quan)
+  const handleRenameAnalyzer = (oldName: string, newName: string) => {
+    const trimmedNew = newName.trim();
+    if (!trimmedNew || trimmedNew === oldName) return;
+    if (analyzers.some(a => a.toLowerCase() === trimmedNew.toLowerCase() && a !== oldName)) {
+      addToast('warning', 'Tên máy trùng lặp', `Tên máy "${trimmedNew}" đã tồn tại trong danh mục!`);
+      return;
+    }
+    setAnalyzers(prev => prev.map(a => a === oldName ? trimmedNew : a));
+    setTests(prev => prev.map(t => (t.analyzerName === oldName || (!t.analyzerName && oldName === 'Sphera Edif')) ? { ...t, analyzerName: trimmedNew } : t));
+    setRawResults(prev => prev.map(r => (r.analyzerName === oldName) ? { ...r, analyzerName: trimmedNew } : r));
+    setCapas(prev => prev.map(c => (c.analyzerName === oldName) ? { ...c, analyzerName: trimmedNew } : c));
+    if (selectedConfigAnalyzerFilter === oldName) {
+      setSelectedConfigAnalyzerFilter(trimmedNew);
+    }
+    addToast('success', 'Đã đổi tên máy', `Đã đổi tên máy thành "${trimmedNew}" và cập nhật toàn bộ xét nghiệm liên quan!`);
+  };
+
+  // Xóa máy phân tích
+  const handleDeleteAnalyzer = (nameToDelete: string) => {
+    if (analyzers.length <= 1) {
+      addToast('warning', 'Không thể xóa', 'Hệ thống cần tối thiểu 1 máy phân tích!');
+      return;
+    }
+    const assignedTests = tests.filter(t => (t.analyzerName || 'Sphera Edif') === nameToDelete);
+    if (assignedTests.length > 0) {
+      const fallback = analyzers.find(a => a !== nameToDelete) || 'Sphera Edif';
+      if (!confirm(`Máy "${nameToDelete}" đang được kết nối với ${assignedTests.length} xét nghiệm. Bạn có chắc muốn xóa và chuyển các xét nghiệm này sang máy "${fallback}" không?`)) {
+        return;
+      }
+      setTests(prev => prev.map(t => (t.analyzerName === nameToDelete) ? { ...t, analyzerName: fallback } : t));
+      setRawResults(prev => prev.map(r => (r.analyzerName === nameToDelete) ? { ...r, analyzerName: fallback } : r));
+    }
+    setAnalyzers(prev => prev.filter(a => a !== nameToDelete));
+    if (selectedConfigAnalyzerFilter === nameToDelete) {
+      setSelectedConfigAnalyzerFilter('all');
+    }
+    addToast('info', 'Đã xóa máy', `Đã xóa máy "${nameToDelete}" khỏi danh mục!`);
   };
 
   // Khôi phục danh mục 20 xét nghiệm đầy đủ
