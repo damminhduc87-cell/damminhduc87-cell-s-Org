@@ -157,7 +157,7 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
         if (statusFilter !== 'all' && res.westgardStatus !== statusFilter) return;
 
         // Lọc theo máy phân tích
-        if (analyzerFilter !== 'all' && (test.analyzerName || 'Máy Hóa sinh') !== analyzerFilter) return;
+        if (analyzerFilter !== 'all' && (test.analyzerName || 'Sphera Edif') !== analyzerFilter) return;
 
         const cfg = test.configs?.[res.level] || { mean: 0, sd: 0, bias: 0, currentLot: '---' };
 
@@ -169,7 +169,7 @@ export const ExportReportModal: React.FC<ExportReportModalProps> = ({
           testId: test.id,
           testName: test.name,
           unit: test.unit,
-          analyzerName: test.analyzerName || 'Máy Hóa sinh',
+          analyzerName: test.analyzerName || 'Sphera Edif',
           level: res.level,
           lotNumber: (res.lotNumber && res.lotNumber !== '---' && res.lotNumber !== 'LOT-DEFAULT' && res.lotNumber !== 'LOT-2026')
             ? res.lotNumber

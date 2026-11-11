@@ -542,7 +542,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 04/05/2026 đạt 7.6 mmol/L, Z-score = +2.28 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -577,7 +577,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 04/05/2026 đạt 24.2 mmol/L, Z-score = +2.80 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -612,7 +612,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 06/05/2026 đạt 6.72 mmol/L, Z-score = -2.61 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -647,7 +647,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 06/05/2026 đạt 106.0 µmol/L, Z-score = +4.96 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -682,7 +682,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 06/05/2026 đạt 371.0 µmol/L, Z-score = +2.00 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -717,7 +717,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '4-1s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 07/05/2026 đạt 95.7 µmol/L, Z-score = +0.48 SD. Vi phạm quy tắc Westgard 4-1S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -752,7 +752,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 07/05/2026 đạt 379.0 µmol/L, Z-score = +2.94 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -787,7 +787,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-GLU-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 11/05/2026 đạt 16.6 mmol/L, Z-score = -2.57 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -822,7 +822,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 11/05/2026 đạt 7.8 mmol/L, Z-score = +3.39 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -857,7 +857,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 12/05/2026 đạt 6.58 mmol/L, Z-score = -3.39 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -892,7 +892,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 12/05/2026 đạt 23.9 mmol/L, Z-score = +2.25 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -927,7 +927,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '4-1s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 12/05/2026 đạt 96.4 µmol/L, Z-score = +0.78 SD. Vi phạm quy tắc Westgard 4-1S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -962,7 +962,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 12/05/2026 đạt 376.0 µmol/L, Z-score = +2.59 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -997,7 +997,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 13/05/2026 đạt 24.5 mmol/L, Z-score = +3.35 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -1032,7 +1032,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 14/05/2026 đạt 24.1 mmol/L, Z-score = +2.62 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -1067,7 +1067,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 18/05/2026 đạt 20.4 mmol/L, Z-score = -4.11 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -1102,7 +1102,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 19/05/2026 đạt 20.9 mmol/L, Z-score = -3.20 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -1137,7 +1137,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 20/05/2026 đạt 7.6 mmol/L, Z-score = +2.28 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -1172,7 +1172,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 20/05/2026 đạt 105.0 µmol/L, Z-score = +4.52 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -1207,7 +1207,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 22/05/2026 đạt 90.0 µmol/L, Z-score = -2.00 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -1242,7 +1242,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 22/05/2026 đạt 335.0 µmol/L, Z-score = -2.24 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -1277,7 +1277,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 25/05/2026 đạt 7.6 mmol/L, Z-score = +2.28 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -1312,7 +1312,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '4-1s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 25/05/2026 đạt 96.6 µmol/L, Z-score = +0.87 SD. Vi phạm quy tắc Westgard 4-1S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -1347,7 +1347,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 25/05/2026 đạt 328.0 µmol/L, Z-score = -3.06 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -1382,7 +1382,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 26/05/2026 đạt 21.3 mmol/L, Z-score = -2.47 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -1417,7 +1417,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-GLU-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 27/05/2026 đạt 5.3 mmol/L, Z-score = -2.10 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -1452,7 +1452,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 27/05/2026 đạt 6.77 mmol/L, Z-score = -2.33 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -1487,7 +1487,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 27/05/2026 đạt 21.1 mmol/L, Z-score = -2.84 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -1522,7 +1522,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-GLU-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 28/05/2026 đạt 16.3 mmol/L, Z-score = -3.43 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -1557,7 +1557,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 29/05/2026 đạt 101.0 µmol/L, Z-score = +2.78 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -1592,7 +1592,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '4-1s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 01/06/2026 đạt 93.3 µmol/L, Z-score = -0.57 SD. Vi phạm quy tắc Westgard 4-1S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -1627,7 +1627,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 01/06/2026 đạt 327.8 µmol/L, Z-score = -3.08 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -1662,7 +1662,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '4-1s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-GLU-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 03/06/2026 đạt 5.35 mmol/L, Z-score = -1.60 SD. Vi phạm quy tắc Westgard 4-1S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -1697,7 +1697,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 04/06/2026 đạt 21.4 mmol/L, Z-score = -2.29 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -1732,7 +1732,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 04/06/2026 đạt 90.0 µmol/L, Z-score = -2.00 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -1767,7 +1767,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 04/06/2026 đạt 327.0 µmol/L, Z-score = -3.18 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -1802,7 +1802,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 08/06/2026 đạt 90.0 µmol/L, Z-score = -2.00 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -1837,7 +1837,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 08/06/2026 đạt 373.0 µmol/L, Z-score = +2.24 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -1872,7 +1872,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-GLU-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 10/06/2026 đạt 5.3 mmol/L, Z-score = -2.10 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -1907,7 +1907,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 10/06/2026 đạt 6.8 mmol/L, Z-score = -2.17 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -1942,7 +1942,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 11/06/2026 đạt 87.0 µmol/L, Z-score = -3.30 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -1977,7 +1977,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 11/06/2026 đạt 329.0 µmol/L, Z-score = -2.94 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -2012,7 +2012,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 12/06/2026 đạt 6.78 mmol/L, Z-score = -2.28 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -2047,7 +2047,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 12/06/2026 đạt 21.4 mmol/L, Z-score = -2.29 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -2082,7 +2082,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: 'R-4s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 15/06/2026 đạt 20.7 mmol/L, Z-score = -3.56 SD. Vi phạm quy tắc Westgard R-4S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kiểm tra kỹ thuật hoàn nguyên và đảo trộn mẫu chứng trước khi phân tích.",
@@ -2117,7 +2117,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 16/06/2026 đạt 24.1 mmol/L, Z-score = +2.62 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -2152,7 +2152,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '4-1s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 16/06/2026 đạt 98.0 µmol/L, Z-score = +1.48 SD. Vi phạm quy tắc Westgard 4-1S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -2187,7 +2187,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 16/06/2026 đạt 326.0 µmol/L, Z-score = -3.29 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -2222,7 +2222,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 17/06/2026 đạt 103.0 µmol/L, Z-score = +3.65 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -2257,7 +2257,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 29/06/2026 đạt 86.5 µmol/L, Z-score = -3.52 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -2292,7 +2292,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '4-1s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 30/06/2026 đạt 96.0 µmol/L, Z-score = +0.61 SD. Vi phạm quy tắc Westgard 4-1S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -2327,7 +2327,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 30/06/2026 đạt 326.0 µmol/L, Z-score = -3.29 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -2362,7 +2362,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-GLU-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 01/07/2026 đạt 5.3 mmol/L, Z-score = -2.10 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -2397,7 +2397,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 01/07/2026 đạt 24.6 mmol/L, Z-score = +3.53 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -2432,7 +2432,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '4-1s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 01/07/2026 đạt 95.0 µmol/L, Z-score = +0.17 SD. Vi phạm quy tắc Westgard 4-1S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -2467,7 +2467,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 01/07/2026 đạt 311.0 µmol/L, Z-score = -5.06 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -2502,7 +2502,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 02/07/2026 đạt 86.0 µmol/L, Z-score = -3.74 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -2537,7 +2537,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 06/07/2026 đạt 24.6 mmol/L, Z-score = +3.53 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -2572,7 +2572,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 06/07/2026 đạt 87.0 µmol/L, Z-score = -3.30 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -2607,7 +2607,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-GLU-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 09/07/2026 đạt 16.5 mmol/L, Z-score = -2.86 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -2642,7 +2642,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 09/07/2026 đạt 20.6 mmol/L, Z-score = -3.75 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -2677,7 +2677,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 09/07/2026 đạt 101.0 µmol/L, Z-score = +2.78 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -2712,7 +2712,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '4-1s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 13/07/2026 đạt 95.7 µmol/L, Z-score = +0.48 SD. Vi phạm quy tắc Westgard 4-1S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -2747,7 +2747,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 13/07/2026 đạt 386.0 µmol/L, Z-score = +3.76 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -2782,7 +2782,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 14/07/2026 đạt 6.8 mmol/L, Z-score = -2.17 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -2817,7 +2817,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 14/07/2026 đạt 24.2 mmol/L, Z-score = +2.80 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -2852,7 +2852,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-GLU-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 16/07/2026 đạt 18.65 mmol/L, Z-score = +3.29 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -2887,7 +2887,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 20/07/2026 đạt 25.0 mmol/L, Z-score = +4.25 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -2922,7 +2922,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '4-1s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 20/07/2026 đạt 94.4 µmol/L, Z-score = -0.09 SD. Vi phạm quy tắc Westgard 4-1S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -2957,7 +2957,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 20/07/2026 đạt 374.5 µmol/L, Z-score = +2.41 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -2992,7 +2992,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 23/07/2026 đạt 20.6 mmol/L, Z-score = -3.75 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -3027,7 +3027,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 23/07/2026 đạt 90.0 µmol/L, Z-score = -2.00 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -3062,7 +3062,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 23/07/2026 đạt 326.0 µmol/L, Z-score = -3.29 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -3097,7 +3097,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-GLU-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 27/07/2026 đạt 18.5 mmol/L, Z-score = +2.86 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -3132,7 +3132,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 27/07/2026 đạt 24.5 mmol/L, Z-score = +3.35 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -3167,7 +3167,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '4-1s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 27/07/2026 đạt 93.0 µmol/L, Z-score = -0.70 SD. Vi phạm quy tắc Westgard 4-1S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -3202,7 +3202,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 27/07/2026 đạt 326.0 µmol/L, Z-score = -3.29 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -3237,7 +3237,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 28/07/2026 đạt 6.5 mmol/L, Z-score = -3.83 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -3272,7 +3272,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 30/07/2026 đạt 6.45 mmol/L, Z-score = -4.11 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -3307,7 +3307,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 04/08/2026 đạt 24.6 mmol/L, Z-score = +3.53 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -3342,7 +3342,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 04/08/2026 đạt 87.8 µmol/L, Z-score = -2.96 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -3377,7 +3377,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 04/08/2026 đạt 375.0 µmol/L, Z-score = +2.47 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -3412,7 +3412,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 07/08/2026 đạt 21.0 mmol/L, Z-score = -3.02 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -3447,7 +3447,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '4-1s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 07/08/2026 đạt 93.0 µmol/L, Z-score = -0.70 SD. Vi phạm quy tắc Westgard 4-1S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -3482,7 +3482,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 07/08/2026 đạt 337.0 µmol/L, Z-score = -2.00 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -3517,7 +3517,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 10/08/2026 đạt 24.7 mmol/L, Z-score = +3.71 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -3552,7 +3552,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 12/08/2026 đạt 20.7 mmol/L, Z-score = -3.56 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -3587,7 +3587,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 14/08/2026 đạt 86.0 µmol/L, Z-score = -3.74 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -3622,7 +3622,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 18/08/2026 đạt 102.0 µmol/L, Z-score = +3.22 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -3657,7 +3657,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 20/08/2026 đạt 24.6 mmol/L, Z-score = +3.53 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -3692,7 +3692,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 20/08/2026 đạt 105.0 µmol/L, Z-score = +4.52 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -3727,7 +3727,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 26/08/2026 đạt 87.0 µmol/L, Z-score = -3.30 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -3762,7 +3762,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '4-1s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-REN-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 27/08/2026 đạt 95.0 µmol/L, Z-score = +0.17 SD. Vi phạm quy tắc Westgard 4-1S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",
@@ -3797,7 +3797,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-REN-H',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 27/08/2026 đạt 324.0 µmol/L, Z-score = -3.53 SD. Vi phạm quy tắc Westgard 1-3S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên pha mẫu và nạp mẫu đúng vị trí quy định; lắc nhẹ mẫu tránh bọt khí.",
@@ -3832,7 +3832,7 @@ export const INITIATIVE_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '2-2s',
     errorType: 'systematic',
     lotNumber: 'LOT-2026-GLU-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: "Giá trị nội kiểm ngày 28/08/2026 đạt 5.8 mmol/L, Z-score = +2.90 SD. Vi phạm quy tắc Westgard 2-2S (Rejection rule). Hệ thống đã tự động cảnh báo và dừng trả kết quả bệnh nhân.",
     rootCauses: {
       man: "Kỹ thuật viên tuân thủ nghiêm ngặt quy trình nạp hóa chất và chất chuẩn.",

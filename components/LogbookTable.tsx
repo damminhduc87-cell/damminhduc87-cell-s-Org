@@ -311,7 +311,7 @@ export const LogbookTable: React.FC<LogbookTableProps> = ({
                 <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
                   <div className="flex items-center gap-2 truncate">
                     <span className="font-semibold text-slate-700">
-                      {activeTest.analyzerName || 'Máy Hóa sinh'}
+                      {r.analyzerName || activeTest.analyzerName || 'Sphera Edif'}
                     </span>
                     <span>•</span>
                     <span>Lô: {r.lotNumber || activeTest.configs?.[r.level]?.currentLot || getStandardLotForTest(r.testId || activeTest.id, r.level)}</span>
@@ -406,7 +406,7 @@ export const LogbookTable: React.FC<LogbookTableProps> = ({
 
                     {/* Machine */}
                     <td className="px-4 py-3.5 font-semibold text-slate-700">
-                      {activeTest.analyzerName || 'Máy Hóa sinh'}
+                      {r.analyzerName || activeTest.analyzerName || 'Sphera Edif'}
                     </td>
 
                     {/* Lot */}

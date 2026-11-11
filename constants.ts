@@ -1,8 +1,7 @@
 import { LabTest, QCLevel, QCResult, CAPARecord, QCLot, QCConfig } from './types';
 
 export const DEFAULT_ANALYZERS: string[] = [
-  'Máy Hóa sinh 1',
-  'Máy Hóa sinh 2',
+  'Sphera Edif',
   'Máy Miễn dịch 1',
   'Máy Điện giải & Khí máu'
 ];
@@ -56,7 +55,7 @@ const INITIAL_TESTS_RAW: LabTest[] = [
     name: 'Glucose (Đường huyết)',
     unit: 'mmol/L',
     tea: 8,
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     configs: {
       [QCLevel.LOW]: { mean: 3.5, sd: 0.08, bias: 1.39, eqaTarget: 3.6, eqaResult: 3.65, currentLot: 'LOT-2026-GLU-L' },
       [QCLevel.NORMAL]: { mean: 5.51, sd: 0.10, bias: 2.33, eqaTarget: 6.45, eqaResult: 6.30, currentLot: 'LOT-2026-GLU-N' },
@@ -68,7 +67,7 @@ const INITIAL_TESTS_RAW: LabTest[] = [
     name: 'Cholesterol toàn phần',
     unit: 'mmol/L',
     tea: 10,
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     configs: {
       [QCLevel.LOW]: { mean: 2.2, sd: 0.15, bias: 1.5, currentLot: 'LOT-2026-LIP-L' },
       [QCLevel.NORMAL]: { mean: 3.52, sd: 0.26, bias: 1.2, currentLot: 'LOT-2026-LIP-N' },
@@ -80,7 +79,7 @@ const INITIAL_TESTS_RAW: LabTest[] = [
     name: 'Triglycerides',
     unit: 'mmol/L',
     tea: 15,
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     configs: {
       [QCLevel.LOW]: { mean: 0.8, sd: 0.04, bias: 2.0, currentLot: 'LOT-2026-LIP-L' },
       [QCLevel.NORMAL]: { mean: 1.46, sd: 0.115, bias: 1.8, currentLot: 'LOT-2026-LIP-N' },
@@ -92,7 +91,7 @@ const INITIAL_TESTS_RAW: LabTest[] = [
     name: 'HDL Cholesterol',
     unit: 'mmol/L',
     tea: 20,
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     configs: {
       [QCLevel.LOW]: { mean: 0.7, sd: 0.05, bias: 3.0, currentLot: 'LOT-2026-LIP-L' },
       [QCLevel.NORMAL]: { mean: 1.15, sd: 0.145, bias: 2.5, currentLot: 'LOT-2026-LIP-N' },
@@ -104,7 +103,7 @@ const INITIAL_TESTS_RAW: LabTest[] = [
     name: 'LDL Cholesterol',
     unit: 'mmol/L',
     tea: 12,
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     configs: {
       [QCLevel.LOW]: { mean: 1.5, sd: 0.06, bias: 2.5, currentLot: 'LOT-2026-LIP-L' },
       [QCLevel.NORMAL]: { mean: 2.8, sd: 0.12, bias: 2.0, currentLot: 'LOT-2026-LIP-N' },
@@ -116,7 +115,7 @@ const INITIAL_TESTS_RAW: LabTest[] = [
     name: 'GOT (AST)',
     unit: 'U/L',
     tea: 15,
-    analyzerName: 'Máy Hóa sinh 2',
+    analyzerName: 'Sphera Edif',
     configs: {
       [QCLevel.LOW]: { mean: 25, sd: 1.2, bias: 2.5, currentLot: 'LOT-2026-ENZ-L' },
       [QCLevel.NORMAL]: { mean: 46, sd: 4.15, bias: 2.0, currentLot: 'LOT-2026-ENZ-N' },
@@ -128,7 +127,7 @@ const INITIAL_TESTS_RAW: LabTest[] = [
     name: 'GPT (ALT)',
     unit: 'U/L',
     tea: 15,
-    analyzerName: 'Máy Hóa sinh 2',
+    analyzerName: 'Sphera Edif',
     configs: {
       [QCLevel.LOW]: { mean: 22, sd: 1.0, bias: 2.5, currentLot: 'LOT-2026-ENZ-L' },
       [QCLevel.NORMAL]: { mean: 45.2, sd: 4.05, bias: 2.0, currentLot: 'LOT-2026-ENZ-N' },
@@ -140,7 +139,7 @@ const INITIAL_TESTS_RAW: LabTest[] = [
     name: 'GGT (Men gan)',
     unit: 'U/L',
     tea: 15,
-    analyzerName: 'Máy Hóa sinh 2',
+    analyzerName: 'Sphera Edif',
     configs: {
       [QCLevel.LOW]: { mean: 20, sd: 0.9, bias: 2.0, currentLot: 'LOT-2026-ENZ-L' },
       [QCLevel.NORMAL]: { mean: 42, sd: 1.7, bias: 1.8, currentLot: 'LOT-2026-ENZ-N' },
@@ -152,7 +151,7 @@ const INITIAL_TESTS_RAW: LabTest[] = [
     name: 'Creatinine (Thận)',
     unit: 'µmol/L',
     tea: 10,
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     configs: {
       [QCLevel.LOW]: { mean: 55, sd: 1.4, bias: 1.45, eqaTarget: 55.0, eqaResult: 55.8, currentLot: 'LOT-2026-REN-L' },
       [QCLevel.NORMAL]: { mean: 94.6, sd: 2.3, bias: 1.47, eqaTarget: 95.0, eqaResult: 96.4, currentLot: 'LOT-2026-REN-N' },
@@ -164,7 +163,7 @@ const INITIAL_TESTS_RAW: LabTest[] = [
     name: 'Urea (Ure máu)',
     unit: 'mmol/L',
     tea: 9,
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     configs: {
       [QCLevel.LOW]: { mean: 3.0, sd: 0.08, bias: 2.77, eqaTarget: 3.97, eqaResult: 4.08, currentLot: 'LOT-2026-REN-L' },
       [QCLevel.NORMAL]: { mean: 7.19, sd: 0.18, bias: 1.53, eqaTarget: 7.20, eqaResult: 7.31, currentLot: 'LOT-2026-REN-N' },
@@ -176,7 +175,7 @@ const INITIAL_TESTS_RAW: LabTest[] = [
     name: 'Acid Uric',
     unit: 'µmol/L',
     tea: 12,
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     configs: {
       [QCLevel.LOW]: { mean: 180, sd: 6, bias: 1.8, currentLot: 'LOT-2026-URI-L' },
       [QCLevel.NORMAL]: { mean: 297, sd: 22, bias: 1.5, currentLot: 'LOT-2026-URI-N' },
@@ -188,7 +187,7 @@ const INITIAL_TESTS_RAW: LabTest[] = [
     name: 'Albumin',
     unit: 'g/L',
     tea: 8,
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     configs: {
       [QCLevel.LOW]: { mean: 25, sd: 0.6, bias: 1.5, currentLot: 'LOT-2026-PRO-L' },
       [QCLevel.NORMAL]: { mean: 39.2, sd: 3.5, bias: 1.2, currentLot: 'LOT-2026-PRO-N' },
@@ -200,7 +199,7 @@ const INITIAL_TESTS_RAW: LabTest[] = [
     name: 'Protein toàn phần',
     unit: 'g/L',
     tea: 8,
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     configs: {
       [QCLevel.LOW]: { mean: 45, sd: 1.2, bias: 1.5, currentLot: 'LOT-2026-PRO-L' },
       [QCLevel.NORMAL]: { mean: 56, sd: 3.5, bias: 1.2, currentLot: 'LOT-2026-PRO-N' },
@@ -212,7 +211,7 @@ const INITIAL_TESTS_RAW: LabTest[] = [
     name: 'Bilirubin toàn phần',
     unit: 'µmol/L',
     tea: 15,
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     configs: {
       [QCLevel.LOW]: { mean: 10.5, sd: 0.5, bias: 2.0, currentLot: 'LOT-2026-BIL-L' },
       [QCLevel.NORMAL]: { mean: 18.0, sd: 0.8, bias: 1.8, currentLot: 'LOT-2026-BIL-N' },
@@ -224,7 +223,7 @@ const INITIAL_TESTS_RAW: LabTest[] = [
     name: 'Bilirubin trực tiếp',
     unit: 'µmol/L',
     tea: 15,
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     configs: {
       [QCLevel.LOW]: { mean: 3.2, sd: 0.18, bias: 2.0, currentLot: 'LOT-2026-BIL-L' },
       [QCLevel.NORMAL]: { mean: 5.5, sd: 0.25, bias: 1.8, currentLot: 'LOT-2026-BIL-N' },
@@ -236,7 +235,7 @@ const INITIAL_TESTS_RAW: LabTest[] = [
     name: 'Canxi toàn phần',
     unit: 'mmol/L',
     tea: 6,
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     configs: {
       [QCLevel.LOW]: { mean: 1.8, sd: 0.05, bias: 1.5, currentLot: 'LOT-2026-MIN-L' },
       [QCLevel.NORMAL]: { mean: 2.35, sd: 0.07, bias: 1.2, currentLot: 'LOT-2026-MIN-N' },
@@ -446,7 +445,7 @@ export const INITIAL_CAPA_RECORDS: CAPARecord[] = [
     violatedRule: '1-3s',
     errorType: 'random',
     lotNumber: 'LOT-2026-GLU-N',
-    analyzerName: 'Máy Hóa sinh 1',
+    analyzerName: 'Sphera Edif',
     incidentDescription: 'Giá trị nội kiểm buổi sáng đạt 6.08 mmol/L, Z-score = +3.43SD. Vượt quá ngưỡng loại trừ 3SD (Vi phạm quy tắc Westgard 1_3s).',
     rootCauses: {
       man: 'Kỹ thuật viên hoàn nguyên mẫu QC đúng thể tích, không có lỗi bọt khí.',

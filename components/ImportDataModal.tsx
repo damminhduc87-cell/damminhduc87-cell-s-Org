@@ -307,7 +307,7 @@ export const ImportDataModal: React.FC<ImportDataModalProps> = ({
           name: row.testId === 'albumin' ? 'Albumin (AIBUMIL)' : (row.rawTestName || 'Xét nghiệm mới'),
           unit: 'g/L',
           tea: 10,
-          analyzerName: row.analyzerName || 'Máy Hóa sinh 1',
+          analyzerName: row.analyzerName || 'Sphera Edif',
           configs: {
             [QCLevel.LOW]: { mean: row.level === QCLevel.LOW && row.targetMean ? row.targetMean : 25, sd: row.level === QCLevel.LOW && row.targetSd ? row.targetSd : 1.5, bias: 2, currentLot: 'LOT-2026' },
             [QCLevel.NORMAL]: { mean: row.level === QCLevel.NORMAL && row.targetMean ? row.targetMean : 40, sd: row.level === QCLevel.NORMAL && row.targetSd ? row.targetSd : 2.5, bias: 1.5, currentLot: 'LOT-2026' },

@@ -173,7 +173,7 @@ for phase_key, fpath in files:
                     'violatedRule': rule_ts,
                     'errorType': error_type,
                     'lotNumber': cfg['lot'],
-                    'analyzerName': 'Máy Hóa sinh 1',
+                    'analyzerName': 'Sphera Edif',
                     'incidentDescription': incident_desc,
                     'rootCauses': {
                         'man': man,

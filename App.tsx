@@ -646,7 +646,7 @@ export const App: React.FC = () => {
       }
       return [...prev, savedTest];
     });
-    handleAddAnalyzer(savedTest.analyzerName || 'Máy Hóa sinh 1');
+    handleAddAnalyzer(savedTest.analyzerName || 'Sphera Edif');
     setSelectedTestId(savedTest.id);
     addToast('success', 'Thành công', `Đã lưu thông số xét nghiệm "${savedTest.name}".`);
   };
@@ -1081,7 +1081,7 @@ export const App: React.FC = () => {
     const dataToExport = activeLevelResults.slice().sort((a, b) => b.timestamp - a.timestamp).map(r => ({
       'Ngày giờ': new Date(r.timestamp).toLocaleString('vi-VN'),
       'Xét nghiệm': activeTest.name,
-      'Máy phân tích': activeTest.analyzerName || 'Máy Hóa sinh',
+      'Máy phân tích': activeTest.analyzerName || 'Sphera Edif',
       'Mức QC': r.level,
       'Số Lô': r.lotNumber || activeLevelConfig.currentLot || '---',
       'Giá trị đo': r.value,
@@ -1106,14 +1106,18 @@ export const App: React.FC = () => {
 
   // Lọc danh mục cấu hình
   const filteredConfigTests = useMemo(() => {
-    if (!configSearchTerm.trim()) return tests;
+    let list = tests;
+    if (selectedConfigAnalyzerFilter !== 'all') {
+      list = list.filter(t => (t.analyzerName || 'Sphera Edif') === selectedConfigAnalyzerFilter);
+    }
+    if (!configSearchTerm.trim()) return list;
     const term = configSearchTerm.toLowerCase();
-    return tests.filter(t => 
+    return list.filter(t => 
       t.name.toLowerCase().includes(term) || 
       t.unit.toLowerCase().includes(term) ||
       (t.analyzerName && t.analyzerName.toLowerCase().includes(term))
     );
-  }, [tests, configSearchTerm]);
+  }, [tests, configSearchTerm, selectedConfigAnalyzerFilter]);
 
   // Lọc danh mục CAPA
   const filteredCapas = useMemo(() => {
@@ -1359,7 +1363,7 @@ export const App: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <h4 className="font-bold text-sm text-[#0F1F3D]">{t.name}</h4>
-                        <span className="text-[10px] text-slate-500 font-semibold">{t.unit} • {t.analyzerName || 'Máy Hóa sinh'}</span>
+                        <span className="text-[10px] text-slate-500 font-semibold">{t.unit} • {t.analyzerName || 'Sphera Edif'}</span>
                       </div>
                     </div>
 
@@ -1428,7 +1432,7 @@ export const App: React.FC = () => {
                         <td className="px-4 py-3 text-slate-400 font-medium">{t.unit}</td>
                         <td className="px-4 py-3 text-slate-600 font-medium">
                           <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[11px]">
-                            {t.analyzerName || 'Máy Hóa sinh 1'}
+                            {t.analyzerName || 'Sphera Edif'}
                           </span>
                         </td>
                         {[QCLevel.LOW, QCLevel.NORMAL, QCLevel.HIGH].map(lvl => {
@@ -1630,7 +1634,7 @@ export const App: React.FC = () => {
                 {/* Big Value Input Box */}
                 <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 text-center space-y-1">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                    Giá trị đo ({activeTest.unit}) • {activeTest.analyzerName || 'Máy Hóa sinh'}
+                    Giá trị đo ({activeTest.unit}) • {activeTest.analyzerName || 'Sphera Edif'}
                   </span>
                   <input
                     type="number"
@@ -1801,6 +1805,166 @@ export const App: React.FC = () => {
                 </div>
               </div>
 
+              {/* Quản lý Danh mục Máy phân tích */}
+              <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 sm:p-6 shadow-xs space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                  <div>
+                    <h4 className="text-base font-bold text-[#0F1F3D] flex items-center gap-2">
+                      <i className="fas fa-microchip text-indigo-600"></i>
+                      <span>Danh mục Máy phân tích</span>
+                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                        {analyzers.length} thiết bị
+                      </span>
+                    </h4>
+                    <p className="text-xs text-slate-400 font-medium mt-0.5">
+                      Máy chính: <strong className="text-emerald-700 font-bold">Sphera Edif</strong> (Hóa sinh tự động). Quản lý thêm, đổi tên hoặc phân loại các thiết bị trong phòng xét nghiệm.
+                    </p>
+                  </div>
+
+                  {/* Thêm máy nhanh */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="Thêm máy phân tích mới..."
+                      value={newAnalyzerNameInput}
+                      onChange={e => setNewAnalyzerNameInput(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && newAnalyzerNameInput.trim()) {
+                          handleAddAnalyzer(newAnalyzerNameInput);
+                          setNewAnalyzerNameInput('');
+                        }
+                      }}
+                      className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-indigo-500 focus:bg-white transition-colors w-44 sm:w-56"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (newAnalyzerNameInput.trim()) {
+                          handleAddAnalyzer(newAnalyzerNameInput);
+                          setNewAnalyzerNameInput('');
+                        }
+                      }}
+                      className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs shrink-0"
+                    >
+                      <i className="fas fa-plus text-[11px]"></i>
+                      <span>Thêm máy</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Grid các máy phân tích */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {analyzers.map(an => {
+                    const assignedTests = tests.filter(t => (t.analyzerName || 'Sphera Edif') === an);
+                    const isMainChemistry = an === 'Sphera Edif';
+                    const isFiltered = selectedConfigAnalyzerFilter === an;
+
+                    return (
+                      <div
+                        key={an}
+                        className={`p-4 rounded-xl border transition-all ${
+                          isFiltered
+                            ? 'bg-indigo-50/70 border-indigo-300 ring-2 ring-indigo-500/20 shadow-xs'
+                            : 'bg-slate-50/70 hover:bg-white border-slate-200/80 hover:border-slate-300 shadow-2xs'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <span className={`w-2 h-2 rounded-full ${isMainChemistry ? 'bg-emerald-500 animate-pulse' : 'bg-indigo-500'}`}></span>
+                              <h5 className="font-bold text-sm text-[#0F1F3D] truncate" title={an}>
+                                {an}
+                              </h5>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {isMainChemistry && (
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100/80 text-emerald-800 border border-emerald-200">
+                                  Hóa sinh chính
+                                </span>
+                              )}
+                              <span className="text-[11px] text-slate-500 font-medium">
+                                <strong>{assignedTests.length}</strong> chỉ số gán máy
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newName = prompt(`Nhập tên mới cho máy "${an}":`, an);
+                                if (newName && newName.trim()) {
+                                  handleRenameAnalyzer(an, newName.trim());
+                                }
+                              }}
+                              className="w-7 h-7 rounded-lg bg-white hover:bg-slate-100 text-slate-600 hover:text-blue-600 border border-slate-200 flex items-center justify-center cursor-pointer transition-colors shadow-2xs"
+                              title={`Đổi tên máy "${an}"`}
+                            >
+                              <i className="fas fa-pen text-[10px]"></i>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteAnalyzer(an)}
+                              className="w-7 h-7 rounded-lg bg-white hover:bg-red-50 text-slate-400 hover:text-red-600 border border-slate-200 flex items-center justify-center cursor-pointer transition-colors shadow-2xs"
+                              title={`Xóa máy "${an}"`}
+                            >
+                              <i className="fas fa-trash-alt text-[10px]"></i>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Lọc nhanh xét nghiệm theo máy */}
+                        <div className="mt-3 pt-2.5 border-t border-slate-200/60 flex items-center justify-between">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedConfigAnalyzerFilter(prev => prev === an ? 'all' : an);
+                            }}
+                            className={`text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                              isFiltered
+                                ? 'text-indigo-700 underline'
+                                : 'text-slate-500 hover:text-indigo-600'
+                            }`}
+                          >
+                            <i className={`fas ${isFiltered ? 'fa-check-circle text-indigo-600' : 'fa-filter text-slate-400'} text-[11px]`}></i>
+                            <span>{isFiltered ? 'Đang lọc xem máy này' : 'Lọc xét nghiệm máy này'}</span>
+                          </button>
+
+                          {isFiltered && (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedConfigAnalyzerFilter('all')}
+                              className="text-[10px] text-slate-400 hover:text-slate-600 underline cursor-pointer"
+                            >
+                              Hủy lọc
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Banner khi đang lọc theo máy */}
+                {selectedConfigAnalyzerFilter !== 'all' && (
+                  <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl flex items-center justify-between text-xs font-medium text-indigo-900">
+                    <div className="flex items-center gap-2">
+                      <i className="fas fa-info-circle text-indigo-600"></i>
+                      <span>
+                        Đang lọc hiển thị các xét nghiệm chạy trên máy: <strong>{selectedConfigAnalyzerFilter}</strong> ({filteredConfigTests.length} xét nghiệm)
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedConfigAnalyzerFilter('all')}
+                      className="px-2.5 py-1 bg-white hover:bg-indigo-100 text-indigo-700 rounded-lg font-bold border border-indigo-200 shadow-2xs transition-colors cursor-pointer text-xs"
+                    >
+                      Hiện tất cả xét nghiệm
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {/* Search Bar */}
               <div className="relative">
                 <i className="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
@@ -1835,7 +1999,7 @@ export const App: React.FC = () => {
                           </span>
                         </div>
                         <p className="text-xs text-slate-400 font-medium mt-0.5">
-                          Đơn vị: <strong>{test.unit}</strong> • Máy: <strong className="text-indigo-600">{test.analyzerName || 'Máy Hóa sinh'}</strong>
+                          Đơn vị: <strong>{test.unit}</strong> • Máy: <strong className="text-indigo-600">{test.analyzerName || 'Sphera Edif'}</strong>
                         </p>
                       </div>
 

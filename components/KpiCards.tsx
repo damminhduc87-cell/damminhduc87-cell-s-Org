@@ -67,7 +67,7 @@ export const KpiCards: React.FC<KpiCardsProps> = ({ test, config, totalSamples }
     {
       id: 'machine',
       label: 'MÁY PHÂN TÍCH',
-      value: test.analyzerName || 'Máy Hóa sinh',
+      value: test.analyzerName || 'Sphera Edif',
       subtext: `${totalSamples} kết quả đo nội kiểm`,
       icon: 'fa-microchip',
       iconBg: 'bg-slate-100 text-slate-700',

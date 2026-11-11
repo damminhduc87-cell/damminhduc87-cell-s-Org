@@ -31,12 +31,12 @@ export const AddEditTestModal: React.FC<AddEditTestModalProps> = ({
     ? availableAnalyzers
     : (analyzers && analyzers.length > 0)
       ? analyzers
-      : ['Máy Hóa sinh 1', 'Máy Hóa sinh 2', 'Máy Miễn dịch 1', 'Máy Điện giải & Khí máu'];
+      : ['Sphera Edif', 'Máy Miễn dịch 1', 'Máy Điện giải & Khí máu'];
   const currentOnSave = onSaveTest ?? onSave;
   const currentOnAddAnalyzer = onAddAnalyzer ?? onAddNewAnalyzer;
   const [name, setName] = useState('');
   const [unit, setUnit] = useState('mmol/L');
-  const [analyzerName, setAnalyzerName] = useState('Máy Hóa sinh 1');
+  const [analyzerName, setAnalyzerName] = useState('Sphera Edif');
   const [customAnalyzer, setCustomAnalyzer] = useState('');
   const [tea, setTea] = useState('10');
 
@@ -63,7 +63,7 @@ export const AddEditTestModal: React.FC<AddEditTestModalProps> = ({
     if (activeEditingTest) {
       setName(activeEditingTest.name || '');
       setUnit(activeEditingTest.unit || '');
-      setAnalyzerName(activeEditingTest.analyzerName || currentAnalyzers[0] || 'Máy Hóa sinh 1');
+      setAnalyzerName(activeEditingTest.analyzerName || currentAnalyzers[0] || 'Sphera Edif');
       setTea(String(activeEditingTest.tea ?? 10));
 
       const l = activeEditingTest.configs?.[QCLevel.LOW];
@@ -89,7 +89,7 @@ export const AddEditTestModal: React.FC<AddEditTestModalProps> = ({
     } else {
       setName('');
       setUnit('mmol/L');
-      setAnalyzerName(currentAnalyzers[0] || 'Máy Hóa sinh 1');
+      setAnalyzerName(currentAnalyzers[0] || 'Sphera Edif');
       setTea('10');
       setLowMean(''); setLowSd(''); setLowLot('LOT-2026-L');
       setLowEqaTarget(''); setLowEqaResult('');

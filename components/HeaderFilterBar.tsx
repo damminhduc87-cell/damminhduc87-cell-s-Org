@@ -51,7 +51,7 @@ export const HeaderFilterBar: React.FC<HeaderFilterBarProps> = ({
         <div className="flex items-center gap-2 flex-wrap">
           <span className="px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1.5">
             <i className="fas fa-microchip text-blue-600 text-[11px]"></i>
-            {activeTest?.analyzerName || 'Máy Hóa sinh'}
+            {activeTest?.analyzerName || 'Sphera Edif'}
           </span>
           <span className="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold">
             TEa CLIA: {activeTest?.tea}%

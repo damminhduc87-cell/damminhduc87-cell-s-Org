@@ -217,7 +217,7 @@ export function formatResultToSheetRow(
     SD_INDEX_Z_SCORE: Number((result.zScore || 0).toFixed(2)),
     TRANG_THAI: statusText,
     HANH_DONG_KHAC_PHUC: result.correctiveAction || (result.capaId ? `Mã CAPA: ${result.capaId}` : ''),
-    TEN_MAY: test?.analyzerName || 'Máy Hóa sinh 1',
+    TEN_MAY: test?.analyzerName || 'Sphera Edif',
     NGUOI_THUC_HIEN: tech
   };
 }
