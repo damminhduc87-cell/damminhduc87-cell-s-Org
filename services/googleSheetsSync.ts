@@ -551,6 +551,14 @@ export async function pullResultsFromGoogleSheets(
         rowTechnician = rowTechnician.replace(/^KTV\.?\s*/i, '').trim();
       }
 
+      // Trích xuất mã CAPA nếu có trong cột hành động khắc phục
+      const correctiveActionStr = String(row.HANH_DONG_KHAC_PHUC || row['Hành động khắc phục'] || '');
+      let capaIdFromRow: string | undefined = undefined;
+      const capaMatch = correctiveActionStr.match(/CAPA-\d+-[A-Z0-9\-]+/i);
+      if (capaMatch) {
+        capaIdFromRow = capaMatch[0].toUpperCase();
+      }
+
       parsedResults.push({
         id: `sheet_${timestamp}_${idx}`,
         testId,
@@ -562,7 +570,8 @@ export async function pullResultsFromGoogleSheets(
         westgardRule,
         technician: rowTechnician,
         lotNumber: 'LOT-SHEET',
-        correctiveAction: String(row.HANH_DONG_KHAC_PHUC || row['Hành động khắc phục'] || '')
+        capaId: capaIdFromRow,
+        correctiveAction: correctiveActionStr
       });
     });
 

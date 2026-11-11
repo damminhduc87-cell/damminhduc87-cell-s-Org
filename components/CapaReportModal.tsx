@@ -221,8 +221,11 @@ export const CapaReportModal: React.FC<CapaReportModalProps> = ({
     return `CAPA-${dateStr}-${test.id.toUpperCase().slice(0, 4)}-${Math.floor(100 + Math.random() * 900)}`;
   });
 
-  const [analyzerName, setAnalyzerName] = useState(test.analyzerName || 'Máy sinh hóa / miễn dịch tự động');
+  const [analyzerName, setAnalyzerName] = useState(
+    existingCapa?.analyzerName || (result as any)?.analyzerName || test.analyzerName || 'Sphera Edif'
+  );
   const [lotNumber, setLotNumber] = useState(() => {
+    if (existingCapa?.lotNumber) return existingCapa.lotNumber;
     if (result.lotNumber && result.lotNumber !== '---' && result.lotNumber !== 'LOT-DEFAULT' && result.lotNumber !== 'LOT-2026') {
       return result.lotNumber;
     }
@@ -232,14 +235,14 @@ export const CapaReportModal: React.FC<CapaReportModalProps> = ({
     return getStandardLotForTest(test.id, result.level);
   });
   const [technician, setTechnician] = useState(() => {
-    let t = (result.technician || '').trim();
+    let t = (existingCapa?.technician || result.technician || '').trim();
     if (!t || t.toLowerCase().includes('google') || t.toLowerCase().includes('sheet')) {
       t = safeLocalStorageGet('mdlab_technician') || 'Đàm Minh Đức';
     }
     return t.replace(/^KTV\.?\s*/i, '');
   });
   const [approver, setApprover] = useState(() => {
-    return result.approver || safeLocalStorageGet('mdlab_approver') || '';
+    return existingCapa?.approver || result.approver || safeLocalStorageGet('mdlab_approver') || 'BS. CKII Trưởng Khoa';
   });
   
   const [incidentDescription, setIncidentDescription] = useState(

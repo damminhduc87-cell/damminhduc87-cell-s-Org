@@ -353,11 +353,19 @@ export const App: React.FC = () => {
           const { cleanTests } = cleanAndDeduplicateTests(INITIAL_TESTS);
           const standardized = standardizeResultsList(parsed, cleanTests);
           return standardized.map(r => {
-            const an = r.analyzerName;
-            if (!an || an === 'Máy Hóa sinh 1' || an === 'Máy Hóa sinh 2' || an === 'Máy Hóa sinh') {
-              return { ...r, analyzerName: 'Sphera Edif' };
+            const an = (!r.analyzerName || r.analyzerName === 'Máy Hóa sinh 1' || r.analyzerName === 'Máy Hóa sinh 2' || r.analyzerName === 'Máy Hóa sinh') ? 'Sphera Edif' : r.analyzerName;
+            let capaId = r.capaId;
+            let correctiveAction = r.correctiveAction;
+            if (!capaId && (r.westgardStatus === 'violation' || (r.zScore !== undefined && Math.abs(r.zScore) >= 2.0))) {
+              const matched = INITIATIVE_CAPA_RECORDS.find(c => 
+                c.testId === r.testId && c.level === r.level && Math.abs(c.timestamp - r.timestamp) <= 120000
+              );
+              if (matched) {
+                capaId = matched.code;
+                if (!correctiveAction) correctiveAction = matched.immediateCorrection;
+              }
             }
-            return r;
+            return { ...r, analyzerName: an, capaId, correctiveAction };
           });
         }
       } catch (e) {
@@ -374,24 +382,26 @@ export const App: React.FC = () => {
 
   const [capas, setCapas] = useState<CAPARecord[]>(() => {
     const saved = safeLocalStorageGet('mdlab_capas_v7') || safeLocalStorageGet('mdlab_capas_v3');
+    const baseList = [...INITIATIVE_CAPA_RECORDS, ...INITIAL_CAPA_RECORDS.filter(c => !INITIATIVE_CAPA_RECORDS.some(ic => ic.code === c.code))];
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((c: CAPARecord) => ({
-            ...c,
-            analyzerName: (c.analyzerName === 'Máy Hóa sinh 1' || c.analyzerName === 'Máy Hóa sinh 2' || c.analyzerName === 'Máy Hóa sinh' || !c.analyzerName) ? 'Sphera Edif' : c.analyzerName
-          }));
+          const capaMap = new Map<string, CAPARecord>();
+          // Luôn đảm bảo nạp đầy đủ 95 biên bản chuẩn của 2 giai đoạn
+          baseList.forEach(c => capaMap.set(c.code, c));
+          parsed.forEach((c: CAPARecord) => {
+            const an = (c.analyzerName === 'Máy Hóa sinh 1' || c.analyzerName === 'Máy Hóa sinh 2' || c.analyzerName === 'Máy Hóa sinh' || !c.analyzerName) ? 'Sphera Edif' : c.analyzerName;
+            capaMap.set(c.code, { ...c, analyzerName: an });
+          });
+          return Array.from(capaMap.values());
         }
       } catch (e) {
         console.error(e);
       }
     }
     // Mặc định nạp toàn bộ 95 biên bản CAPA đã xử lý hoàn tất cho tất cả các ngày vi phạm của 2 giai đoạn
-    return [
-      ...INITIATIVE_CAPA_RECORDS,
-      ...INITIAL_CAPA_RECORDS.filter(c => !INITIATIVE_CAPA_RECORDS.some(ic => ic.code === c.code))
-    ];
+    return baseList;
   });
 
   const [analyzers, setAnalyzers] = useState<string[]>(() => {
@@ -764,8 +774,25 @@ export const App: React.FC = () => {
   const evaluatedResults = useMemo(() => {
     if (!activeTest) return [];
     const testResults = rawResults.filter(r => r.testId === activeTest.id);
-    return evaluateAllResults(testResults, activeTest.configs);
-  }, [rawResults, activeTest]);
+    const evaluated = evaluateAllResults(testResults, activeTest.configs);
+    // Tự động kết nối biên bản CAPA đã hoàn tất cho các kết quả vi phạm
+    return evaluated.map(r => {
+      if (r.westgardStatus === 'violation' && !r.capaId) {
+        const matchingCapa = capas.find(c => 
+          c.id === r.id ||
+          (c.testId === r.testId && c.level === r.level && Math.abs(c.timestamp - r.timestamp) <= 120000)
+        );
+        if (matchingCapa) {
+          return {
+            ...r,
+            capaId: matchingCapa.code,
+            correctiveAction: matchingCapa.immediateCorrection
+          };
+        }
+      }
+      return r;
+    });
+  }, [rawResults, activeTest, capas]);
 
   // Lọc kết quả theo mức và thời gian
   const activeLevelResults = useMemo(() => {
@@ -854,6 +881,8 @@ export const App: React.FC = () => {
             const sig = getResultSignature(local);
             if (deletedSignatures.includes(sig)) return false;
             if (sheetSignatures.has(sig)) return true;
+            // Bảo toàn dữ liệu 2 giai đoạn đề tài sáng kiến
+            if (local.id.startsWith('gd1-') || local.id.startsWith('gd2-')) return true;
             return (now - local.timestamp) < 60000;
           });
 
@@ -867,6 +896,19 @@ export const App: React.FC = () => {
               localSigSet.add(sig);
               addedCount++;
             }
+          });
+
+          // Tự động kết nối lại mã CAPA cho các ngày vi phạm nếu bị mất trong quá trình đồng bộ Sheet
+          reconciledLocal = reconciledLocal.map(r => {
+            if (r.westgardStatus === 'violation' && !r.capaId) {
+              const matchedCapa = INITIATIVE_CAPA_RECORDS.find(c => 
+                c.testId === r.testId && c.level === r.level && Math.abs(c.timestamp - r.timestamp) <= 120000
+              );
+              if (matchedCapa) {
+                return { ...r, capaId: matchedCapa.code, correctiveAction: matchedCapa.immediateCorrection };
+              }
+            }
+            return r;
           });
 
           // Sắp xếp lại theo thời gian
@@ -2161,7 +2203,12 @@ export const App: React.FC = () => {
           result={selectedResultForCapa}
           test={tests.find(t => t.id === selectedResultForCapa.testId) || activeTest}
           onSaveCapa={handleSaveCapa}
-          existingCapa={capas.find(c => c.code === selectedResultForCapa.capaId || c.id === selectedResultForCapa.id || c.id === selectedResultForCapa.capaId)}
+          existingCapa={capas.find(c => 
+            (selectedResultForCapa.capaId && c.code === selectedResultForCapa.capaId) || 
+            c.id === selectedResultForCapa.id || 
+            c.code === selectedResultForCapa.id ||
+            (c.testId === selectedResultForCapa.testId && c.level === selectedResultForCapa.level && Math.abs(c.timestamp - selectedResultForCapa.timestamp) <= 120000)
+          )}
         />
       )}
 
